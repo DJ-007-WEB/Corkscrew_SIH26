@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DragEvent } from "react";
 import GatePalette from "./GatePalette";
 import CodePanel from "./CodePanel";
@@ -32,6 +32,7 @@ export default function CircuitBuilder() {
   const [armedGate, setArmedGate] = useState<GateType | null>(null);
   const [pendingControl, setPendingControl] = useState<{ qubit: number; column: number } | null>(null);
   const [result, setResult] = useState<SimulationResult | null>(null);
+  const [activeGateIndex, setActiveGateIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingGates, setLoadingGates] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,11 +53,13 @@ export default function CircuitBuilder() {
       gates: [...current.gates.slice(0, column), gate, ...current.gates.slice(column)],
     }));
     setResult(null);
+    setActiveGateIndex(null);
   }
 
   function placeGate(type: GateType, qubit: number, column: number) {
     setError(null);
     setResult(null);
+    setActiveGateIndex(null);
 
     if (type === "CNOT") {
       if (!pendingControl) {
@@ -102,6 +105,7 @@ export default function CircuitBuilder() {
     setPendingControl(null);
     setArmedGate(null);
     setResult(null);
+    setActiveGateIndex(null);
   }
 
   function clearAll() {
@@ -109,6 +113,7 @@ export default function CircuitBuilder() {
     setPendingControl(null);
     setArmedGate(null);
     setResult(null);
+    setActiveGateIndex(null);
     setError(null);
   }
 
@@ -116,6 +121,7 @@ export default function CircuitBuilder() {
     if (circuit.qubits < MAX_QUBITS) {
       setCircuit((current) => ({ ...current, qubits: current.qubits + 1 }));
       setResult(null);
+      setActiveGateIndex(null);
     }
   }
 
@@ -127,6 +133,7 @@ export default function CircuitBuilder() {
     if (circuit.qubits > MIN_QUBITS && !inUse) {
       setCircuit((current) => ({ ...current, qubits: current.qubits - 1 }));
       setResult(null);
+      setActiveGateIndex(null);
     } else if (inUse) {
       setError(`q[${highest}] is used by a gate. Remove that gate before removing the qubit.`);
     }
@@ -139,6 +146,7 @@ export default function CircuitBuilder() {
       setPendingControl(null);
       setArmedGate(null);
       setResult(null);
+      setActiveGateIndex(null);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invalid circuit");
@@ -148,6 +156,7 @@ export default function CircuitBuilder() {
   async function run() {
     setLoading(true);
     setError(null);
+    setActiveGateIndex(null);
     try {
       const validated = await validateCircuit(circuit);
       setCircuit(validated);
@@ -158,6 +167,10 @@ export default function CircuitBuilder() {
       setLoading(false);
     }
   }
+
+  const handleStepChange = useCallback((_: number, gateIndex: number | null) => {
+    setActiveGateIndex(gateIndex);
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -195,6 +208,8 @@ export default function CircuitBuilder() {
                       const gate = gateAt(circuit.gates, ci, qi);
                       const isOpenSlot = ci === maxColumn;
                       const pending = pendingControl?.column === ci && pendingControl.qubit === qi;
+                      const active = activeGateIndex === ci;
+                      const gateColor = gate ? familyColor(definitions, gate.type) : "var(--bp-cyan)";
 
                       return (
                         <div
@@ -210,10 +225,23 @@ export default function CircuitBuilder() {
                           style={{ left: 64 + ci * COL_WIDTH, top: 0, width: COL_WIDTH, height: WIRE_HEIGHT }}
                         >
                           {pending && <span className="absolute w-8 h-8 rounded-md border border-dashed border-[var(--bp-violet)] opacity-70" />}
-                          {gate && gate.type === "CNOT" && gate.controls?.[0] === qi && <span className="block w-3 h-3 rounded-full" style={{ background: "var(--bp-violet)" }} />}
-                          {gate && gate.type === "CNOT" && gate.targets[0] === qi && <span className="flex items-center justify-center w-7 h-7 rounded-full border-2 font-mono text-xs" style={{ borderColor: "var(--bp-violet)", color: "var(--bp-violet)" }}>⊕</span>}
+                          {gate && gate.type === "CNOT" && gate.controls?.[0] === qi && (
+                            <span
+                              className="block w-3 h-3 rounded-full transition-all duration-300"
+                              style={{ background: active ? "var(--bp-cyan)" : "var(--bp-violet)", boxShadow: active ? "0 0 14px var(--bp-cyan)" : "none" }}
+                            />
+                          )}
+                          {gate && gate.type === "CNOT" && gate.targets[0] === qi && (
+                            <span
+                              className="flex items-center justify-center w-7 h-7 rounded-full border-2 font-mono text-xs transition-all duration-300"
+                              style={{ borderColor: active ? "var(--bp-cyan)" : "var(--bp-violet)", color: active ? "var(--bp-cyan)" : "var(--bp-violet)", boxShadow: active ? "0 0 14px var(--bp-cyan)" : "none", transform: active ? "scale(1.08)" : "scale(1)" }}
+                            >⊕</span>
+                          )}
                           {gate && gate.type !== "CNOT" && gate.targets[0] === qi && (
-                            <span className="flex items-center justify-center w-8 h-8 rounded-md font-mono text-xs font-semibold" style={{ border: `1.5px solid ${familyColor(definitions, gate.type)}`, color: familyColor(definitions, gate.type) }}>
+                            <span
+                              className="flex items-center justify-center w-8 h-8 rounded-md font-mono text-xs font-semibold transition-all duration-300"
+                              style={{ border: `1.5px solid ${active ? "var(--bp-cyan)" : gateColor}`, color: active ? "var(--bp-cyan)" : gateColor, boxShadow: active ? "0 0 14px var(--bp-cyan)" : "none", transform: active ? "scale(1.08)" : "scale(1)" }}
+                            >
                               {definitions.find((definition) => definition.type === gate.type)?.label ?? gate.type}
                             </span>
                           )}
@@ -226,7 +254,18 @@ export default function CircuitBuilder() {
 
                 {circuit.gates.map((gate, ci) =>
                   gate.type === "CNOT" && gate.controls ? (
-                    <div key={`conn-${ci}`} className="absolute w-px pointer-events-none" style={{ left: 64 + ci * COL_WIDTH + COL_WIDTH / 2, top: Math.min(gate.controls[0], gate.targets[0]) * WIRE_HEIGHT + WIRE_HEIGHT / 2, height: Math.abs(gate.targets[0] - gate.controls[0]) * WIRE_HEIGHT, background: "var(--bp-violet)", opacity: 0.75 }} />
+                    <div
+                      key={`conn-${ci}`}
+                      className="absolute w-px pointer-events-none transition-all duration-300"
+                      style={{
+                        left: 64 + ci * COL_WIDTH + COL_WIDTH / 2,
+                        top: Math.min(gate.controls[0], gate.targets[0]) * WIRE_HEIGHT + WIRE_HEIGHT / 2,
+                        height: Math.abs(gate.targets[0] - gate.controls[0]) * WIRE_HEIGHT,
+                        background: activeGateIndex === ci ? "var(--bp-cyan)" : "var(--bp-violet)",
+                        opacity: activeGateIndex === ci ? 1 : 0.75,
+                        boxShadow: activeGateIndex === ci ? "0 0 10px var(--bp-cyan)" : "none",
+                      }}
+                    />
                   ) : null,
                 )}
               </div>
@@ -244,7 +283,7 @@ export default function CircuitBuilder() {
         <CodePanel circuit={circuit} onCircuitChange={handleCodeCircuit} />
       </div>
 
-      {result && <ResultsPanel result={result} />}
+      {result && <ResultsPanel result={result} onStepChange={handleStepChange} />}
     </div>
   );
 }
