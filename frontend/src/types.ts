@@ -38,6 +38,7 @@ export interface StateSnapshot {
 
 export interface SimulationStep {
   step: number;
+  gate_index?: number | null;
   after_gate: Gate | null;
   state: StateSnapshot;
 }
