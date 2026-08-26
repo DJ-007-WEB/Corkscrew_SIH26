@@ -1,18 +1,50 @@
-import type { Circuit, SimulationResult } from "./types";
+import type { Circuit, CodeRequest, GateDefinition, SimulationResult } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
 
-export async function simulateCircuit(circuit: Circuit): Promise<SimulationResult> {
-  const res = await fetch(`${API_BASE}/api/simulate`, {
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, options);
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(detail || `Request failed (${res.status})`);
+  }
+  return res.json();
+}
+
+export function getGateDefinitions(): Promise<GateDefinition[]> {
+  return request<GateDefinition[]>("/api/gates");
+}
+
+export function validateCircuit(circuit: Circuit): Promise<Circuit> {
+  return request<Circuit>("/api/circuits/validate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(circuit),
   });
+}
 
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`Simulation failed (${res.status}): ${detail}`);
-  }
+export function circuitFromCode(code: string): Promise<Circuit> {
+  const payload: CodeRequest = { code };
+  return request<Circuit>("/api/circuits/from-code", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
 
-  return res.json();
+export async function circuitToCode(circuit: Circuit): Promise<string> {
+  const result = await request<{ code: string }>("/api/circuits/to-code", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(circuit),
+  });
+  return result.code;
+}
+
+export function simulateCircuit(circuit: Circuit): Promise<SimulationResult> {
+  return request<SimulationResult>("/api/simulate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(circuit),
+  });
 }
