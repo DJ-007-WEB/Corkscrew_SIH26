@@ -1,5 +1,5 @@
 // Shared Circuit IR contract. The backend is authoritative for gate definitions,
-// validation and code <-> circuit translation.
+// validation, code <-> circuit translation and simulation results.
 
 export type GateType = "H" | "X" | "Y" | "Z" | "CNOT";
 export type GateFamily = "basis" | "pauli" | "multi";
@@ -26,13 +26,25 @@ export interface CodeRequest {
   code: string;
 }
 
-export interface SimulationStep {
-  after_gate: Gate | null;
+export interface ComplexAmplitude {
+  real: number;
+  imag: number;
+}
+
+export interface StateSnapshot {
+  statevector: Record<string, ComplexAmplitude>;
   probabilities: Record<string, number>;
+}
+
+export interface SimulationStep {
+  step: number;
+  after_gate: Gate | null;
+  state: StateSnapshot;
 }
 
 export interface SimulationResult {
   steps: SimulationStep[];
+  final_statevector: Record<string, ComplexAmplitude>;
   final_probabilities: Record<string, number>;
   explanation: string;
   backend: string;
