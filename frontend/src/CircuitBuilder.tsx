@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { DragEvent } from "react";
 import GatePalette from "./GatePalette";
 import CodePanel from "./CodePanel";
-import HistogramChart from "./HistogramChart";
+import ResultsPanel from "./ResultsPanel";
 import { FAMILY_COLOR } from "./gates";
 import { getGateDefinitions, simulateCircuit, validateCircuit } from "./api";
 import { removeGate } from "./circuitBuilderLogic";
@@ -244,16 +244,7 @@ export default function CircuitBuilder() {
         <CodePanel circuit={circuit} onCircuitChange={handleCodeCircuit} />
       </div>
 
-      {result && (
-        <div className="grid sm:grid-cols-2 gap-4">
-          <HistogramChart probabilities={result.final_probabilities} />
-          <div className="bp-panel p-4">
-            <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-text-dim)] mb-3">Simulation result</p>
-            <p className="text-sm text-[var(--bp-text)] leading-relaxed">{result.explanation}</p>
-            <p className="text-[11px] font-mono text-[var(--bp-text-faint)] mt-3">backend: {result.backend}</p>
-          </div>
-        </div>
-      )}
+      {result && <ResultsPanel result={result} />}
     </div>
   );
 }
