@@ -1,9 +1,8 @@
-// Shared circuit IR contract — this is the JSON shape both the drag-and-drop
-// builder and the code editor must compile to before hitting the backend.
-// Backend team: this is the contract /api/simulate expects and returns.
-// Keep this file in sync with backend/app/schemas.py.
+// Shared Circuit IR contract. The backend is authoritative for gate definitions,
+// validation and code <-> circuit translation.
 
 export type GateType = "H" | "X" | "Y" | "Z" | "CNOT";
+export type GateFamily = "basis" | "pauli" | "multi";
 
 export interface Gate {
   type: GateType;
@@ -16,14 +15,21 @@ export interface Circuit {
   gates: Gate[];
 }
 
+export interface GateDefinition {
+  type: GateType;
+  label: string;
+  family: GateFamily;
+  description: string;
+}
+
 export interface SimulationStep {
-  after_gate: Gate | null; // null = initial state, before any gate
-  probabilities: Record<string, number>; // e.g. { "00": 0.5, "11": 0.5 }
+  after_gate: Gate | null;
+  probabilities: Record<string, number>;
 }
 
 export interface SimulationResult {
   steps: SimulationStep[];
   final_probabilities: Record<string, number>;
   explanation: string;
-  backend: string; // "mock" until Qiskit is wired in, then "qiskit-aer"
+  backend: string;
 }
