@@ -1,3 +1,4 @@
+import type { DragEvent } from "react";
 import { FAMILY_COLOR } from "./gates";
 import type { GateDefinition, GateType } from "./types";
 
@@ -8,7 +9,7 @@ interface Props {
 }
 
 export default function GatePalette({ definitions, armedGate, onArm }: Props) {
-  function startDrag(event: React.DragEvent<HTMLButtonElement>, type: GateType) {
+  function startDrag(event: DragEvent<HTMLButtonElement>, type: GateType) {
     event.dataTransfer.setData("application/x-corkscrew-gate", type);
     event.dataTransfer.effectAllowed = "copy";
     onArm(type);
@@ -16,9 +17,7 @@ export default function GatePalette({ definitions, armedGate, onArm }: Props) {
 
   return (
     <div className="bp-panel p-4 w-full sm:w-48 shrink-0">
-      <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-text-dim)] mb-3">
-        Gates
-      </p>
+      <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-text-dim)] mb-3">Gates</p>
       <div className="grid grid-cols-3 sm:grid-cols-2 gap-2">
         {definitions.map((gate) => {
           const color = FAMILY_COLOR[gate.family];
