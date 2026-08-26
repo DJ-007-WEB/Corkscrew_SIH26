@@ -172,118 +172,118 @@ export default function CircuitBuilder() {
     setActiveGateIndex(gateIndex);
   }, []);
 
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-4 items-start">
-        <GatePalette definitions={definitions} armedGate={armedGate} onArm={setArmedGate} />
+  const builderPanels = (
+    <div className="flex flex-col xl:flex-row gap-4 items-start">
+      <GatePalette definitions={definitions} armedGate={armedGate} onArm={setArmedGate} />
 
-        <div className="bp-panel p-4 flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-text-dim)]">
-                Circuit — {circuit.qubits} qubit{circuit.qubits > 1 ? "s" : ""}
-              </p>
-              <p className="text-[10px] font-mono text-[var(--bp-text-faint)] mt-1">
-                Drag a gate onto a wire. Drop CNOT on control, then target in the same column.
-              </p>
-            </div>
-            <div className="flex gap-2 items-center">
-              <button onClick={removeQubit} className="w-6 h-6 rounded border border-[var(--bp-border-strong)] text-[var(--bp-text-dim)] text-sm hover:border-[var(--bp-cyan)] hover:text-[var(--bp-cyan)]">−</button>
-              <button onClick={addQubit} className="w-6 h-6 rounded border border-[var(--bp-border-strong)] text-[var(--bp-text-dim)] text-sm hover:border-[var(--bp-cyan)] hover:text-[var(--bp-cyan)]">+</button>
-              <button onClick={clearAll} className="text-xs font-mono text-[var(--bp-text-faint)] hover:text-[var(--bp-coral)] ml-2">clear</button>
-            </div>
+      <div className="bp-panel p-4 flex-1 min-w-0 w-full">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-text-dim)]">
+              Circuit — {circuit.qubits} qubit{circuit.qubits > 1 ? "s" : ""}
+            </p>
+            <p className="text-[10px] font-mono text-[var(--bp-text-faint)] mt-1">
+              Drag a gate onto a wire. Drop CNOT on control, then target in the same column.
+            </p>
           </div>
-
-          {loadingGates ? (
-            <div className="h-24 flex items-center justify-center text-xs font-mono text-[var(--bp-text-faint)]">Loading gate catalog…</div>
-          ) : (
-            <div className="overflow-x-auto bp-scrollbar pb-2">
-              <div className="relative" style={{ minWidth: circuitWidth }}>
-                {Array.from({ length: circuit.qubits }, (_, qi) => (
-                  <div key={qi} className="flex items-center h-14 relative">
-                    <span className="w-16 shrink-0 font-mono text-sm text-[var(--bp-text-dim)]">q[{qi}]</span>
-                    <div className="absolute h-px bg-[var(--bp-border-strong)]" style={{ left: 64, right: 0, top: "50%" }} />
-
-                    {Array.from({ length: maxColumn + 1 }, (_, ci) => {
-                      const gate = gateAt(circuit.gates, ci, qi);
-                      const isOpenSlot = ci === maxColumn;
-                      const pending = pendingControl?.column === ci && pendingControl.qubit === qi;
-                      const active = activeGateIndex === ci;
-                      const gateColor = gate ? familyColor(definitions, gate.type) : "var(--bp-cyan)";
-
-                      return (
-                        <div
-                          key={`${qi}-${ci}`}
-                          onClick={() => {
-                            if (armedGate) placeGate(armedGate, qi, ci);
-                            else if (gate) removeColumn(ci);
-                          }}
-                          onDragOver={onCellDragOver}
-                          onDrop={(event) => onCellDrop(event, qi, ci)}
-                          title={isOpenSlot || !gate ? "Drop a gate here" : "Click to remove this gate"}
-                          className="absolute flex items-center justify-center rounded cursor-pointer transition-colors hover:bg-[var(--bp-cyan)]/5"
-                          style={{ left: 64 + ci * COL_WIDTH, top: 0, width: COL_WIDTH, height: WIRE_HEIGHT }}
-                        >
-                          {pending && <span className="absolute w-8 h-8 rounded-md border border-dashed border-[var(--bp-violet)] opacity-70" />}
-                          {gate && gate.type === "CNOT" && gate.controls?.[0] === qi && (
-                            <span
-                              className="block w-3 h-3 rounded-full transition-all duration-300"
-                              style={{ background: active ? "var(--bp-cyan)" : "var(--bp-violet)", boxShadow: active ? "0 0 14px var(--bp-cyan)" : "none" }}
-                            />
-                          )}
-                          {gate && gate.type === "CNOT" && gate.targets[0] === qi && (
-                            <span
-                              className="flex items-center justify-center w-7 h-7 rounded-full border-2 font-mono text-xs transition-all duration-300"
-                              style={{ borderColor: active ? "var(--bp-cyan)" : "var(--bp-violet)", color: active ? "var(--bp-cyan)" : "var(--bp-violet)", boxShadow: active ? "0 0 14px var(--bp-cyan)" : "none", transform: active ? "scale(1.08)" : "scale(1)" }}
-                            >⊕</span>
-                          )}
-                          {gate && gate.type !== "CNOT" && gate.targets[0] === qi && (
-                            <span
-                              className="flex items-center justify-center w-8 h-8 rounded-md font-mono text-xs font-semibold transition-all duration-300"
-                              style={{ border: `1.5px solid ${active ? "var(--bp-cyan)" : gateColor}`, color: active ? "var(--bp-cyan)" : gateColor, boxShadow: active ? "0 0 14px var(--bp-cyan)" : "none", transform: active ? "scale(1.08)" : "scale(1)" }}
-                            >
-                              {definitions.find((definition) => definition.type === gate.type)?.label ?? gate.type}
-                            </span>
-                          )}
-                          {!gate && armedGate && <span className="w-8 h-8 rounded-md border border-dashed border-[var(--bp-cyan)] opacity-40" />}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-
-                {circuit.gates.map((gate, ci) =>
-                  gate.type === "CNOT" && gate.controls ? (
-                    <div
-                      key={`conn-${ci}`}
-                      className="absolute w-px pointer-events-none transition-all duration-300"
-                      style={{
-                        left: 64 + ci * COL_WIDTH + COL_WIDTH / 2,
-                        top: Math.min(gate.controls[0], gate.targets[0]) * WIRE_HEIGHT + WIRE_HEIGHT / 2,
-                        height: Math.abs(gate.targets[0] - gate.controls[0]) * WIRE_HEIGHT,
-                        background: activeGateIndex === ci ? "var(--bp-cyan)" : "var(--bp-violet)",
-                        opacity: activeGateIndex === ci ? 1 : 0.75,
-                        boxShadow: activeGateIndex === ci ? "0 0 10px var(--bp-cyan)" : "none",
-                      }}
-                    />
-                  ) : null,
-                )}
-              </div>
-            </div>
-          )}
-
-          {pendingControl && <p className="text-xs font-mono text-[var(--bp-violet)] mt-2">Control set on q[{pendingControl.qubit}] — drop or click the target in the highlighted column.</p>}
-
-          <button onClick={run} disabled={loading || circuit.gates.length === 0} className="mt-4 px-5 py-2 rounded-md font-mono text-sm font-medium transition-all disabled:opacity-40" style={{ background: "var(--bp-cyan)", color: "#081527", boxShadow: loading ? "none" : "0 0 16px var(--bp-cyan-dim)" }}>
-            {loading ? "Running…" : "▶ Run circuit"}
-          </button>
-          {error && <p className="text-sm text-[var(--bp-coral)] mt-2">{error}</p>}
+          <div className="flex gap-2 items-center">
+            <button onClick={removeQubit} className="w-6 h-6 rounded border border-[var(--bp-border-strong)] text-[var(--bp-text-dim)] text-sm hover:border-[var(--bp-cyan)] hover:text-[var(--bp-cyan)]">−</button>
+            <button onClick={addQubit} className="w-6 h-6 rounded border border-[var(--bp-border-strong)] text-[var(--bp-text-dim)] text-sm hover:border-[var(--bp-cyan)] hover:text-[var(--bp-cyan)]">+</button>
+            <button onClick={clearAll} className="text-xs font-mono text-[var(--bp-text-faint)] hover:text-[var(--bp-coral)] ml-2">clear</button>
+          </div>
         </div>
 
-        <CodePanel circuit={circuit} onCircuitChange={handleCodeCircuit} />
+        {loadingGates ? (
+          <div className="h-24 flex items-center justify-center text-xs font-mono text-[var(--bp-text-faint)]">Loading gate catalog…</div>
+        ) : (
+          <div className="overflow-x-auto bp-scrollbar pb-2">
+            <div className="relative" style={{ minWidth: circuitWidth }}>
+              {Array.from({ length: circuit.qubits }, (_, qi) => (
+                <div key={qi} className="flex items-center h-14 relative">
+                  <span className="w-16 shrink-0 font-mono text-sm text-[var(--bp-text-dim)]">q[{qi}]</span>
+                  <div className="absolute h-px bg-[var(--bp-border-strong)]" style={{ left: 64, right: 0, top: "50%" }} />
+
+                  {Array.from({ length: maxColumn + 1 }, (_, ci) => {
+                    const gate = gateAt(circuit.gates, ci, qi);
+                    const isOpenSlot = ci === maxColumn;
+                    const pending = pendingControl?.column === ci && pendingControl.qubit === qi;
+                    const active = activeGateIndex === ci;
+                    const gateColor = gate ? familyColor(definitions, gate.type) : "var(--bp-cyan)";
+
+                    return (
+                      <div
+                        key={`${qi}-${ci}`}
+                        onClick={() => {
+                          if (armedGate) placeGate(armedGate, qi, ci);
+                          else if (gate) removeColumn(ci);
+                        }}
+                        onDragOver={onCellDragOver}
+                        onDrop={(event) => onCellDrop(event, qi, ci)}
+                        title={isOpenSlot || !gate ? "Drop a gate here" : "Click to remove this gate"}
+                        className="absolute flex items-center justify-center rounded cursor-pointer transition-colors hover:bg-[var(--bp-cyan)]/5"
+                        style={{ left: 64 + ci * COL_WIDTH, top: 0, width: COL_WIDTH, height: WIRE_HEIGHT }}
+                      >
+                        {pending && <span className="absolute w-8 h-8 rounded-md border border-dashed border-[var(--bp-violet)] opacity-70" />}
+                        {gate && gate.type === "CNOT" && gate.controls?.[0] === qi && (
+                          <span className="block w-3 h-3 rounded-full transition-all duration-300" style={{ background: active ? "var(--bp-cyan)" : "var(--bp-violet)", boxShadow: active ? "0 0 14px var(--bp-cyan)" : "none" }} />
+                        )}
+                        {gate && gate.type === "CNOT" && gate.targets[0] === qi && (
+                          <span className="flex items-center justify-center w-7 h-7 rounded-full border-2 font-mono text-xs transition-all duration-300" style={{ borderColor: active ? "var(--bp-cyan)" : "var(--bp-violet)", color: active ? "var(--bp-cyan)" : "var(--bp-violet)", boxShadow: active ? "0 0 14px var(--bp-cyan)" : "none", transform: active ? "scale(1.08)" : "scale(1)" }}>⊕</span>
+                        )}
+                        {gate && gate.type !== "CNOT" && gate.targets[0] === qi && (
+                          <span className="flex items-center justify-center w-8 h-8 rounded-md font-mono text-xs font-semibold transition-all duration-300" style={{ border: `1.5px solid ${active ? "var(--bp-cyan)" : gateColor}`, color: active ? "var(--bp-cyan)" : gateColor, boxShadow: active ? "0 0 14px var(--bp-cyan)" : "none", transform: active ? "scale(1.08)" : "scale(1)" }}>
+                            {definitions.find((definition) => definition.type === gate.type)?.label ?? gate.type}
+                          </span>
+                        )}
+                        {!gate && armedGate && <span className="w-8 h-8 rounded-md border border-dashed border-[var(--bp-cyan)] opacity-40" />}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+
+              {circuit.gates.map((gate, ci) =>
+                gate.type === "CNOT" && gate.controls ? (
+                  <div
+                    key={`conn-${ci}`}
+                    className="absolute w-px pointer-events-none transition-all duration-300"
+                    style={{
+                      left: 64 + ci * COL_WIDTH + COL_WIDTH / 2,
+                      top: Math.min(gate.controls[0], gate.targets[0]) * WIRE_HEIGHT + WIRE_HEIGHT / 2,
+                      height: Math.abs(gate.targets[0] - gate.controls[0]) * WIRE_HEIGHT,
+                      background: activeGateIndex === ci ? "var(--bp-cyan)" : "var(--bp-violet)",
+                      opacity: activeGateIndex === ci ? 1 : 0.75,
+                      boxShadow: activeGateIndex === ci ? "0 0 10px var(--bp-cyan)" : "none",
+                    }}
+                  />
+                ) : null,
+              )}
+            </div>
+          </div>
+        )}
+
+        {pendingControl && <p className="text-xs font-mono text-[var(--bp-violet)] mt-2">Control set on q[{pendingControl.qubit}] — drop or click the target in the highlighted column.</p>}
+
+        <button onClick={run} disabled={loading || circuit.gates.length === 0} className="mt-4 px-5 py-2 rounded-md font-mono text-sm font-medium transition-all disabled:opacity-40" style={{ background: "var(--bp-cyan)", color: "#081527", boxShadow: loading ? "none" : "0 0 16px var(--bp-cyan-dim)" }}>
+          {loading ? "Running…" : "▶ Run circuit"}
+        </button>
+        {error && <p className="text-sm text-[var(--bp-coral)] mt-2">{error}</p>}
       </div>
 
-      {result && <ResultsPanel result={result} onStepChange={handleStepChange} />}
+      <CodePanel circuit={circuit} onCircuitChange={handleCodeCircuit} />
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      {result ? (
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(340px,0.68fr)] gap-4 items-start">
+          <div className="min-w-0 space-y-4">{builderPanels}</div>
+          <div className="min-w-0"><ResultsPanel result={result} compact onStepChange={handleStepChange} /></div>
+        </div>
+      ) : (
+        builderPanels
+      )}
     </div>
   );
 }
