@@ -44,6 +44,7 @@ class StateSnapshot(BaseModel):
 
 class SimulationStep(BaseModel):
     step: int
+    gate_index: Optional[int] = None
     after_gate: Optional[Gate]
     state: StateSnapshot
 
