@@ -74,7 +74,11 @@ def circuit_from_qiskit(source: str) -> Circuit:
         cnot = re.fullmatch(r"qc\.cx\(\s*(\d+)\s*,\s*(\d+)\s*\)", line, re.IGNORECASE)
         if cnot:
             circuit.gates.append(
-                Gate(type="CNOT", controls=[int(cnot.group(1))], targets=[int(cnot.group(2)])
+                Gate(
+                    type="CNOT",
+                    controls=[int(cnot.group(1))],
+                    targets=[int(cnot.group(2))],
+                )
             )
             continue
 
