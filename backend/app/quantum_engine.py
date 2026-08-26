@@ -87,6 +87,7 @@ def run_circuit(circuit: Circuit) -> SimulationResult:
     steps = [
         SimulationStep(
             step=0,
+            gate_index=None,
             after_gate=None,
             state=_state_snapshot(initial_state, circuit.qubits),
         )
@@ -99,6 +100,7 @@ def run_circuit(circuit: Circuit) -> SimulationResult:
         steps.append(
             SimulationStep(
                 step=index,
+                gate_index=index - 1,
                 after_gate=circuit.gates[index - 1],
                 state=_state_snapshot(state, circuit.qubits),
             )
