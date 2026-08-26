@@ -1,9 +1,11 @@
 import { useState } from "react";
 import CircuitBuilder from "./CircuitBuilder";
+import LandingPage from "./LandingPage";
 
-type Tab = "builder" | "code" | "learn" | "waves";
+type Tab = "home" | "builder" | "code" | "learn" | "waves";
 
 const TABS: { id: Tab; label: string }[] = [
+  { id: "home", label: "Home" },
   { id: "builder", label: "Circuit Builder" },
   { id: "code", label: "Code Editor" },
   { id: "waves", label: "Visualizations" },
@@ -23,25 +25,28 @@ function Placeholder({ owner, title, note }: { owner: string; title: string; not
 }
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>("builder");
+  const [tab, setTab] = useState<Tab>("home");
 
   return (
     <div className="min-h-screen">
       <header className="border-b border-[var(--bp-border)] px-6 py-5 flex items-baseline gap-3">
-        <h1 className="font-display text-xl font-semibold text-[var(--bp-text)]">
+        <button
+          onClick={() => setTab("home")}
+          className="font-display text-xl font-semibold text-[var(--bp-text)]"
+        >
           Quantum<span style={{ color: "var(--bp-cyan)" }}>Lab</span>
-        </h1>
+        </button>
         <p className="text-xs font-mono text-[var(--bp-text-faint)]">
           circuit builder · SIH 2026
         </p>
       </header>
 
-      <nav className="flex gap-1 px-6 pt-4 border-b border-[var(--bp-border)]">
+      <nav className="flex gap-1 px-6 pt-4 border-b border-[var(--bp-border)] overflow-x-auto">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className="px-4 py-2 text-sm font-mono rounded-t-md border-b-2 transition-colors"
+            className="px-4 py-2 text-sm font-mono rounded-t-md border-b-2 transition-colors whitespace-nowrap"
             style={{
               borderColor: tab === t.id ? "var(--bp-cyan)" : "transparent",
               color: tab === t.id ? "var(--bp-text)" : "var(--bp-text-faint)",
@@ -52,7 +57,14 @@ export default function App() {
         ))}
       </nav>
 
-      <main className="p-6 max-w-5xl mx-auto">
+      <main className="p-6 max-w-6xl mx-auto">
+        {tab === "home" && (
+          <LandingPage
+            onOpenBuilder={() => setTab("builder")}
+            onOpenCode={() => setTab("code")}
+            onOpenVisualizations={() => setTab("waves")}
+          />
+        )}
         {tab === "builder" && <CircuitBuilder />}
         {tab === "code" && (
           <Placeholder
