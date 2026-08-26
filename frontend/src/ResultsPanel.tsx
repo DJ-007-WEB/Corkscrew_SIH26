@@ -63,36 +63,54 @@ function ProbabilityBars({ probabilities }: { probabilities: Record<string, numb
   );
 }
 
-export default function ResultsPanel({ result }: { result: SimulationResult }) {
+interface ResultsPanelProps {
+  result: SimulationResult;
+  onStepChange?: (step: number, gateIndex: number | null) => void;
+}
+
+export default function ResultsPanel({ result, onStepChange }: ResultsPanelProps) {
   const [selectedStep, setSelectedStep] = useState(0);
   const [playing, setPlaying] = useState(false);
   const probabilityEntries = Object.entries(result.final_probabilities);
   const nonZeroStates = probabilityEntries.filter(([, p]) => p > 1e-10);
   const stateEntries = Object.entries(result.final_statevector);
+  const stepCount = result.steps.length;
   const currentStep = result.steps[selectedStep] ?? result.steps[0];
   const currentProbabilities = currentStep?.state.probabilities ?? result.final_probabilities;
   const currentGate = currentStep?.after_gate ?? null;
   const currentActive = Object.entries(currentProbabilities).filter(([, p]) => p > 1e-10);
-  const stepCount = result.steps.length;
+
+  function selectStep(step: number) {
+    const safeStep = Math.max(0, Math.min(step, Math.max(stepCount - 1, 0)));
+    const selected = result.steps[safeStep];
+    setSelectedStep(safeStep);
+    onStepChange?.(safeStep, selected?.gate_index ?? null);
+  }
 
   useEffect(() => {
-    setSelectedStep(0);
     setPlaying(false);
-  }, [result]);
+    setSelectedStep(0);
+    onStepChange?.(0, result.steps[0]?.gate_index ?? null);
+  }, [result, onStepChange]);
 
   useEffect(() => {
     if (!playing || stepCount <= 1) return;
+
     const timer = window.setInterval(() => {
       setSelectedStep((step) => {
         if (step >= stepCount - 1) {
           setPlaying(false);
           return step;
         }
-        return step + 1;
+        const next = step + 1;
+        const nextGateIndex = result.steps[next]?.gate_index ?? null;
+        onStepChange?.(next, nextGateIndex);
+        return next;
       });
     }, 1200);
+
     return () => window.clearInterval(timer);
-  }, [playing, stepCount]);
+  }, [playing, stepCount, result.steps, onStepChange]);
 
   const evolutionDescription = useMemo(
     () => gateExplanation(currentGate, currentProbabilities),
@@ -150,15 +168,19 @@ export default function ResultsPanel({ result }: { result: SimulationResult }) {
             <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-text-dim)] mb-1">03 · State evolution</p>
             <p className="text-[11px] text-[var(--bp-text-faint)]">Step through the actual simulated state after each operation.</p>
           </div>
-          <button onClick={() => setPlaying((value) => !value)} disabled={stepCount <= 1} className="px-3 py-1.5 rounded border border-[var(--bp-border-strong)] text-[10px] font-mono text-[var(--bp-cyan)] hover:border-[var(--bp-cyan)] disabled:opacity-40">
-            {playing ? "Ⅱ Pause" : "▶ Replay evolution"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => selectStep(selectedStep - 1)} disabled={selectedStep <= 0} aria-label="Previous simulation step" className="w-8 h-8 rounded border border-[var(--bp-border-strong)] text-xs font-mono text-[var(--bp-text-dim)] hover:border-[var(--bp-cyan)] hover:text-[var(--bp-cyan)] disabled:opacity-30">‹</button>
+            <button onClick={() => setPlaying((value) => !value)} disabled={stepCount <= 1} aria-label={playing ? "Pause simulation replay" : "Play simulation replay"} className="min-w-24 px-3 py-1.5 rounded border border-[var(--bp-border-strong)] text-[10px] font-mono text-[var(--bp-cyan)] hover:border-[var(--bp-cyan)] disabled:opacity-40">
+              {playing ? "Ⅱ Pause" : "▶ Play"}
+            </button>
+            <button onClick={() => selectStep(selectedStep + 1)} disabled={selectedStep >= stepCount - 1} aria-label="Next simulation step" className="w-8 h-8 rounded border border-[var(--bp-border-strong)] text-xs font-mono text-[var(--bp-text-dim)] hover:border-[var(--bp-cyan)] hover:text-[var(--bp-cyan)] disabled:opacity-30">›</button>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2 mb-4">
           {result.steps.map((step) => (
-            <button key={step.step} onClick={() => { setPlaying(false); setSelectedStep(step.step); }} className={`px-3 py-1.5 rounded border text-[10px] font-mono transition-colors ${selectedStep === step.step ? "border-[var(--bp-cyan)] text-[var(--bp-cyan)] bg-[var(--bp-cyan)]/5" : "border-[var(--bp-border)] text-[var(--bp-text-faint)] hover:text-[var(--bp-text-dim)]"}`}>
-              STEP {step.step}
+            <button key={step.step} onClick={() => { setPlaying(false); selectStep(step.step); }} className={`px-3 py-1.5 rounded border text-[10px] font-mono transition-colors ${selectedStep === step.step ? "border-[var(--bp-cyan)] text-[var(--bp-cyan)] bg-[var(--bp-cyan)]/5" : "border-[var(--bp-border)] text-[var(--bp-text-faint)] hover:text-[var(--bp-text-dim)]"}`}>
+              STEP {step.step}{step.gate_index !== null && step.gate_index !== undefined ? ` · GATE ${step.gate_index + 1}` : ""}
             </button>
           ))}
         </div>
@@ -176,7 +198,7 @@ export default function ResultsPanel({ result }: { result: SimulationResult }) {
                 <div key={state} className="grid grid-cols-[52px_1fr_52px] items-center gap-3">
                   <span className="font-mono text-xs text-[var(--bp-text)]">|{state}⟩</span>
                   <div className="h-2 rounded-full bg-[var(--bp-border)] overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${probability * 100}%`, background: "var(--bp-violet)", boxShadow: "0 0 10px var(--bp-violet)" }} />
+                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${probability * 100}%`, background: "var(--bp-violet)", boxShadow: "0 0 10px var(--bp-violet)" }} />
                   </div>
                   <span className="text-right text-[10px] font-mono text-[var(--bp-text-dim)]">{(probability * 100).toFixed(1)}%</span>
                 </div>
