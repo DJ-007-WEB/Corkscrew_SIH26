@@ -13,6 +13,8 @@ export default function CodePanel({ circuit, onCircuitChange }: Props) {
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const circuitSignature = JSON.stringify(circuit);
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -33,7 +35,7 @@ export default function CodePanel({ circuit, onCircuitChange }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [circuit.qubits, circuit.gates]);
+  }, [circuitSignature]);
 
   async function applyCode() {
     setApplying(true);
@@ -51,9 +53,7 @@ export default function CodePanel({ circuit, onCircuitChange }: Props) {
   return (
     <div className="bp-panel p-4 w-full sm:w-80 shrink-0">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-text-dim)]">
-          Code builder
-        </p>
+        <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-text-dim)]">Code builder</p>
         <span className="text-[10px] font-mono text-[var(--bp-text-faint)]">QISKIT</span>
       </div>
 
