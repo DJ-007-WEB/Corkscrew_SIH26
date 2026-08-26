@@ -1,0 +1,8 @@
+# Loose top-level deps only — do NOT replace this with a raw `pip freeze`.
+# uvicorn[standard] pulls in uvloop/httptools on Mac/Linux and skips them
+# automatically on Windows (they have no Windows wheels) via its own
+# platform markers. Pinning frozen output here breaks Windows installs.
+fastapi>=0.115
+uvicorn[standard]>=0.32
+pydantic>=2.9
+numpy>=1.26
