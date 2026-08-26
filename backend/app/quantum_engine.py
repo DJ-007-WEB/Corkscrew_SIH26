@@ -39,14 +39,11 @@ def _state_snapshot(statevector, n: int) -> StateSnapshot:
         probability = float(abs(amplitude) ** 2)
         basis = format(index, f"0{n}b")
 
-        # Keep the complete statevector so the UI can inspect every basis state,
-        # while omitting numerical noise from the probability display.
         amplitudes[basis] = ComplexAmplitude(
             real=0.0 if abs(real) < _EPSILON else real,
             imag=0.0 if abs(imag) < _EPSILON else imag,
         )
-        if probability > _EPSILON:
-            probabilities[basis] = round(probability, 10)
+        probabilities[basis] = round(probability, 10)
 
     return StateSnapshot(statevector=amplitudes, probabilities=probabilities)
 
@@ -57,14 +54,14 @@ def _general_explanation(circuit: Circuit, final_probabilities: dict[str, float]
     This is deliberately not an LLM call. Every statement is derived from the
     actual circuit/result; the AI explainer will be layered on later.
     """
-    non_zero = len(final_probabilities)
+    non_zero = sum(1 for probability in final_probabilities.values() if probability > _EPSILON)
     total_states = 2 ** circuit.qubits
 
     if not circuit.gates:
         return f"The circuit contains {circuit.qubits} qubit(s) and no gates. The initial state is |{'0' * circuit.qubits}⟩."
 
     if non_zero == 1:
-        basis, probability = next(iter(final_probabilities.items()))
+        basis, probability = max(final_probabilities.items(), key=lambda item: item[1])
         if abs(probability - 1.0) < 1e-8:
             return (
                 f"The circuit ends in the definite computational-basis state |{basis}⟩. "
@@ -85,7 +82,6 @@ def _general_explanation(circuit: Circuit, final_probabilities: dict[str, float]
 
 
 def run_circuit(circuit: Circuit) -> SimulationResult:
-    # Initial state snapshot.
     initial_qc = QuantumCircuit(circuit.qubits)
     initial_state = _run_statevector(initial_qc)
     steps = [
@@ -96,8 +92,6 @@ def run_circuit(circuit: Circuit) -> SimulationResult:
         )
     ]
 
-    # Simulate every prefix of the user's circuit. This gives us a genuine
-    # state snapshot after each gate without hardcoding any expected result.
     for index in range(1, len(circuit.gates) + 1):
         prefix = circuit.gates[:index]
         qc = _build_qiskit_circuit(circuit, prefix)
