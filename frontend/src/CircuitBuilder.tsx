@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import type { DragEvent } from "react";
 import GatePalette from "./GatePalette";
 import CodePanel from "./CodePanel";
 import HistogramChart from "./HistogramChart";
 import { FAMILY_COLOR } from "./gates";
 import { getGateDefinitions, simulateCircuit, validateCircuit } from "./api";
-import { addCnotGate, addSingleQubitGate, removeGate } from "./circuitBuilderLogic";
+import { removeGate } from "./circuitBuilderLogic";
 import type { Circuit, Gate, GateDefinition, GateType, SimulationResult } from "./types";
 
 const MIN_QUBITS = 1;
@@ -46,13 +47,10 @@ export default function CircuitBuilder() {
   const circuitWidth = useMemo(() => 80 + (maxColumn + 1) * COL_WIDTH, [maxColumn]);
 
   function insertGate(gate: Gate, column: number) {
-    setCircuit((current) => {
-      const next = {
-        ...current,
-        gates: [...current.gates.slice(0, column), gate, ...current.gates.slice(column)],
-      };
-      return next;
-    });
+    setCircuit((current) => ({
+      ...current,
+      gates: [...current.gates.slice(0, column), gate, ...current.gates.slice(column)],
+    }));
     setResult(null);
   }
 
@@ -77,8 +75,7 @@ export default function CircuitBuilder() {
         return;
       }
 
-      const nextGate: Gate = { type: "CNOT", controls: [pendingControl.qubit], targets: [qubit] };
-      insertGate(nextGate, column);
+      insertGate({ type: "CNOT", controls: [pendingControl.qubit], targets: [qubit] }, column);
       setPendingControl(null);
       setArmedGate(null);
       return;
@@ -89,14 +86,13 @@ export default function CircuitBuilder() {
     setPendingControl(null);
   }
 
-  function onCellDrop(event: React.DragEvent<HTMLDivElement>, qubit: number, column: number) {
+  function onCellDrop(event: DragEvent<HTMLDivElement>, qubit: number, column: number) {
     event.preventDefault();
     const type = event.dataTransfer.getData(DRAG_TYPE) as GateType;
-    if (!type) return;
-    placeGate(type, qubit, column);
+    if (type) placeGate(type, qubit, column);
   }
 
-  function onCellDragOver(event: React.DragEvent<HTMLDivElement>) {
+  function onCellDragOver(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
     event.dataTransfer.dropEffect = "copy";
   }
@@ -213,26 +209,15 @@ export default function CircuitBuilder() {
                           className="absolute flex items-center justify-center rounded cursor-pointer transition-colors hover:bg-[var(--bp-cyan)]/5"
                           style={{ left: 64 + ci * COL_WIDTH, top: 0, width: COL_WIDTH, height: WIRE_HEIGHT }}
                         >
-                          {pending && (
-                            <span className="absolute w-8 h-8 rounded-md border border-dashed border-[var(--bp-violet)] opacity-70" />
-                          )}
-                          {gate && gate.type === "CNOT" && gate.controls?.[0] === qi && (
-                            <span className="block w-3 h-3 rounded-full" style={{ background: "var(--bp-violet)" }} />
-                          )}
-                          {gate && gate.type === "CNOT" && gate.targets[0] === qi && (
-                            <span className="flex items-center justify-center w-7 h-7 rounded-full border-2 font-mono text-xs" style={{ borderColor: "var(--bp-violet)", color: "var(--bp-violet)" }}>⊕</span>
-                          )}
+                          {pending && <span className="absolute w-8 h-8 rounded-md border border-dashed border-[var(--bp-violet)] opacity-70" />}
+                          {gate && gate.type === "CNOT" && gate.controls?.[0] === qi && <span className="block w-3 h-3 rounded-full" style={{ background: "var(--bp-violet)" }} />}
+                          {gate && gate.type === "CNOT" && gate.targets[0] === qi && <span className="flex items-center justify-center w-7 h-7 rounded-full border-2 font-mono text-xs" style={{ borderColor: "var(--bp-violet)", color: "var(--bp-violet)" }}>⊕</span>}
                           {gate && gate.type !== "CNOT" && gate.targets[0] === qi && (
-                            <span
-                              className="flex items-center justify-center w-8 h-8 rounded-md font-mono text-xs font-semibold"
-                              style={{ border: `1.5px solid ${familyColor(definitions, gate.type)}`, color: familyColor(definitions, gate.type) }}
-                            >
+                            <span className="flex items-center justify-center w-8 h-8 rounded-md font-mono text-xs font-semibold" style={{ border: `1.5px solid ${familyColor(definitions, gate.type)}`, color: familyColor(definitions, gate.type) }}>
                               {definitions.find((definition) => definition.type === gate.type)?.label ?? gate.type}
                             </span>
                           )}
-                          {!gate && armedGate && (
-                            <span className="w-8 h-8 rounded-md border border-dashed border-[var(--bp-cyan)] opacity-40" />
-                          )}
+                          {!gate && armedGate && <span className="w-8 h-8 rounded-md border border-dashed border-[var(--bp-cyan)] opacity-40" />}
                         </div>
                       );
                     })}
@@ -248,11 +233,7 @@ export default function CircuitBuilder() {
             </div>
           )}
 
-          {pendingControl && (
-            <p className="text-xs font-mono text-[var(--bp-violet)] mt-2">
-              Control set on q[{pendingControl.qubit}] — drop or click the target in the highlighted column.
-            </p>
-          )}
+          {pendingControl && <p className="text-xs font-mono text-[var(--bp-violet)] mt-2">Control set on q[{pendingControl.qubit}] — drop or click the target in the highlighted column.</p>}
 
           <button onClick={run} disabled={loading || circuit.gates.length === 0} className="mt-4 px-5 py-2 rounded-md font-mono text-sm font-medium transition-all disabled:opacity-40" style={{ background: "var(--bp-cyan)", color: "#081527", boxShadow: loading ? "none" : "0 0 16px var(--bp-cyan-dim)" }}>
             {loading ? "Running…" : "▶ Run circuit"}
