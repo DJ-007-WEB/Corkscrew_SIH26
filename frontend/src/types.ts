@@ -22,6 +22,10 @@ export interface GateDefinition {
   description: string;
 }
 
+export interface CodeRequest {
+  code: string;
+}
+
 export interface SimulationStep {
   after_gate: Gate | null;
   probabilities: Record<string, number>;
