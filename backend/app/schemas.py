@@ -1,5 +1,6 @@
 """
-Circuit IR contract shared by the visual builder, code builder and simulator.
+Circuit IR and simulation response contracts shared by the builder,
+code builder, simulator and results UI.
 """
 
 from typing import Literal, Optional
@@ -31,13 +32,25 @@ class CodeRequest(BaseModel):
     code: str = Field(min_length=1, max_length=20000)
 
 
-class SimulationStep(BaseModel):
-    after_gate: Optional[Gate]
+class ComplexAmplitude(BaseModel):
+    real: float
+    imag: float
+
+
+class StateSnapshot(BaseModel):
+    statevector: dict[str, ComplexAmplitude]
     probabilities: dict[str, float]
+
+
+class SimulationStep(BaseModel):
+    step: int
+    after_gate: Optional[Gate]
+    state: StateSnapshot
 
 
 class SimulationResult(BaseModel):
     steps: list[SimulationStep]
+    final_statevector: dict[str, ComplexAmplitude]
     final_probabilities: dict[str, float]
     explanation: str
     backend: str
