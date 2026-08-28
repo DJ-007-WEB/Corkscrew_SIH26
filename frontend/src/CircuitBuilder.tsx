@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import type { DragEvent } from "react";
 import GatePalette from "./GatePalette";
 import CodePanel from "./CodePanel";
@@ -26,8 +27,13 @@ function gateAt(gates: Gate[], column: number, qubit: number) {
   return null;
 }
 
-export default function CircuitBuilder() {
-  const [circuit, setCircuit] = useState<Circuit>({ qubits: 2, gates: [] });
+interface Props {
+  circuit: Circuit;
+  onCircuitChange: Dispatch<SetStateAction<Circuit>>;
+  theme: "dark" | "light";
+}
+
+export default function CircuitBuilder({ circuit, onCircuitChange, theme }: Props) {
   const [definitions, setDefinitions] = useState<GateDefinition[]>([]);
   const [armedGate, setArmedGate] = useState<GateType | null>(null);
   const [pendingControl, setPendingControl] = useState<{ qubit: number; column: number } | null>(null);
@@ -48,7 +54,7 @@ export default function CircuitBuilder() {
   const circuitWidth = useMemo(() => 80 + (maxColumn + 1) * COL_WIDTH, [maxColumn]);
 
   function insertGate(gate: Gate, column: number) {
-    setCircuit((current) => ({
+    onCircuitChange((current) => ({
       ...current,
       gates: [...current.gates.slice(0, column), gate, ...current.gates.slice(column)],
     }));
@@ -98,7 +104,7 @@ export default function CircuitBuilder() {
   }
 
   function removeColumn(index: number) {
-    setCircuit((current) => removeGate(current, index));
+    onCircuitChange(removeGate(circuit, index));
     setPendingControl(null);
     setArmedGate(null);
     setResult(null);
@@ -106,7 +112,7 @@ export default function CircuitBuilder() {
   }
 
   function clearAll() {
-    setCircuit((current) => ({ ...current, gates: [] }));
+    onCircuitChange({ ...circuit, gates: [] });
     setPendingControl(null);
     setArmedGate(null);
     setResult(null);
@@ -116,7 +122,7 @@ export default function CircuitBuilder() {
 
   function addQubit() {
     if (circuit.qubits < MAX_QUBITS) {
-      setCircuit((current) => ({ ...current, qubits: current.qubits + 1 }));
+      onCircuitChange({ ...circuit, qubits: circuit.qubits + 1 });
       setResult(null);
       setActiveGateIndex(null);
     }
@@ -126,7 +132,7 @@ export default function CircuitBuilder() {
     const highest = circuit.qubits - 1;
     const inUse = circuit.gates.some((gate) => gate.targets.includes(highest) || gate.controls?.includes(highest));
     if (circuit.qubits > MIN_QUBITS && !inUse) {
-      setCircuit((current) => ({ ...current, qubits: current.qubits - 1 }));
+      onCircuitChange({ ...circuit, qubits: circuit.qubits - 1 });
       setResult(null);
       setActiveGateIndex(null);
     } else if (inUse) {
@@ -137,7 +143,7 @@ export default function CircuitBuilder() {
   async function handleCodeCircuit(nextCircuit: Circuit) {
     try {
       const validated = await validateCircuit(nextCircuit);
-      setCircuit(validated);
+      onCircuitChange(validated);
       setPendingControl(null);
       setArmedGate(null);
       setResult(null);
@@ -154,8 +160,10 @@ export default function CircuitBuilder() {
     setActiveGateIndex(null);
     try {
       const validated = await validateCircuit(circuit);
-      setCircuit(validated);
-      setResult(await simulateCircuit(validated));
+      onCircuitChange(validated);
+      const simulation = await simulateCircuit(validated);
+      setResult(simulation);
+      window.dispatchEvent(new CustomEvent("quantum:simulation", { detail: simulation }));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Simulation failed");
     } finally {
@@ -224,7 +232,7 @@ export default function CircuitBuilder() {
           {error && <p className="text-sm text-[var(--bp-coral)] mt-2">{error}</p>}
         </div>
 
-        <CodePanel circuit={circuit} onCircuitChange={handleCodeCircuit} />
+        <CodePanel circuit={circuit} onCircuitChange={handleCodeCircuit} theme={theme} />
       </div>
 
       {result && <ResultsPanel result={result} onStepChange={handleStepChange} />}

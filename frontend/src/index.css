@@ -89,3 +89,23 @@ h1, h2, h3, .font-display {
   border-radius: 4px;
 }
 .bp-scrollbar::-webkit-scrollbar-track { background: transparent; }
+
+
+html[data-theme="light"] {
+  --bp-ink: #f4f8fc;
+  --bp-panel: #ffffff;
+  --bp-panel-raised: #eef5fa;
+  --bp-line: rgba(18, 91, 120, 0.10);
+  --bp-border: #c8dce8;
+  --bp-border-strong: #9dbdce;
+  --bp-cyan: #087f9d;
+  --bp-cyan-dim: rgba(8, 127, 157, 0.16);
+  --bp-amber: #a86400;
+  --bp-coral: #c03939;
+  --bp-violet: #6842b8;
+  --bp-mint: #16823d;
+  --bp-text: #102235;
+  --bp-text-dim: #4c657b;
+  --bp-text-faint: #7890a4;
+}
+html[data-theme="light"] body { background-image: linear-gradient(var(--bp-line) 1px, transparent 1px), linear-gradient(90deg, var(--bp-line) 1px, transparent 1px); }

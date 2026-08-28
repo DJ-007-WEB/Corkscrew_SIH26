@@ -11,7 +11,11 @@
   },
   "dependencies": {
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "@monaco-editor/react": "^4.7.0",
+    "@react-three/drei": "^10.7.6",
+    "@react-three/fiber": "^9.3.0",
+    "three": "^0.179.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
@@ -24,6 +28,7 @@
     "postcss": "^8.5.26",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
-    "vite": "^8.2.2"
+    "vite": "^8.2.2",
+    "@types/three": "^0.179.0"
   }
 }

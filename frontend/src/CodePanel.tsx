@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
+import Editor from "@monaco-editor/react";
 import { circuitFromCode, circuitToCode } from "./api";
 import type { Circuit } from "./types";
 
 interface Props {
   circuit: Circuit;
-  onCircuitChange: (circuit: Circuit) => void;
+  onCircuitChange: Dispatch<SetStateAction<Circuit>>;
+  theme: "dark" | "light";
 }
 
-export default function CodePanel({ circuit, onCircuitChange }: Props) {
+export default function CodePanel({ circuit, onCircuitChange, theme }: Props) {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
@@ -57,14 +60,27 @@ export default function CodePanel({ circuit, onCircuitChange }: Props) {
         <span className="text-[10px] font-mono text-[var(--bp-text-faint)]">QISKIT</span>
       </div>
 
-      <textarea
-        value={loading ? "Generating from circuit…" : code}
-        onChange={(event) => setCode(event.target.value)}
-        disabled={loading || applying}
-        spellCheck={false}
-        aria-label="Qiskit circuit code"
-        className="w-full min-h-64 resize-y rounded-md border border-[var(--bp-border)] bg-[var(--bp-ink)] px-3 py-3 font-mono text-[12px] leading-6 text-[var(--bp-text)] outline-none focus:border-[var(--bp-cyan)] bp-scrollbar"
-      />
+      <div className="rounded-md border border-[var(--bp-border)]" style={{ height: 320, overflow: "visible" }}>
+        <Editor
+          height="100%"
+          language="python"
+          theme={theme === "light" ? "vs" : "vs-dark"}
+          value={loading ? "# Generating from circuit…" : code}
+          onChange={(value) => setCode(value ?? "")}
+          options={{
+            readOnly: loading || applying,
+            minimap: { enabled: false },
+            lineNumbers: "on",
+            wordWrap: "on",
+            fontSize: 12,
+            tabSize: 4,
+            automaticLayout: true,
+            fixedOverflowWidgets: true,
+            scrollBeyondLastLine: false,
+            padding: { top: 10, bottom: 10 },
+          }}
+        />
+      </div>
 
       <div className="flex items-center justify-between gap-3 mt-3">
         <p className="text-[10px] text-[var(--bp-text-faint)] leading-relaxed">
