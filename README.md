@@ -1,101 +1,182 @@
-# Quantum Learning Platform — Foundation Scaffold
+# QuantumLab — Quantum Learning Platform
 
-This is Days 1–3 from the roadmap: frontend + backend scaffolded, one working
-API (send circuit → simulate → return results), and Milestone 1 (Bell state)
-already running end-to-end.
+An interactive, Qiskit-grounded quantum computing simulator, 3D visualization suite, and AI tutor platform developed for SIH 2026.
 
-## Requirements (checked to work on Windows, Mac, Linux)
+---
 
-- **Node.js 20.19+ or 22.12+** — Vite 8 requires this; an older Node (e.g. 18)
-  will fail to install. Check with `node --version`.
-- **Python 3.10+** — needed for numpy 2.x. Check with `python3 --version`
-  (Mac/Linux) or `python --version` (Windows).
-- Nothing in here is OS-specific — no shell scripts, no hardcoded paths,
-  no platform-only packages in requirements.txt (see the note in that file
-  if you ever regenerate it with `pip freeze` — don't).
+## ⚡ Core Features
 
-## What's already working
+- **Interactive Circuit Builder**: Drag-and-drop quantum gate editor ($H, X, Y, Z, CNOT$) with multi-qubit controls, real-time circuit validation, and dynamic Qiskit code generation.
+- **3D Visualization Microscope**:
+  - **Bloch Sphere (Three.js)**: Single-qubit reduced state representation with exact Cartesian ($X, Y, Z$) coordinates and pole orientation.
+  - **Q-Sphere**: Full multi-qubit statevector visualization showing basis states, Hamming weight latitude, probability radii, and quantum phase color hues.
+  - **Probability Timeline**: Step-by-step gate execution tracking how amplitudes and measurement probabilities evolve.
+- **Centralized Floating Quantum Tutor**:
+  - Available across all tabs (Home, Circuit Builder, Visualizations, Learning).
+  - **Qiskit-Grounded Pipeline**: Qiskit calculates the exact statevector, Bloch coordinates, and Q-Sphere phases *before* the AI is invoked. The LLM receives immutable verified facts, guaranteeing 0% mathematical hallucination.
+  - **Two-Tier System**: Works offline with a deterministic rule engine, and seamlessly connects to **Gemini 2.5 Flash** for dynamic conversational teaching when an API key is configured.
 
-- Backend: FastAPI + a **real numpy statevector simulator** (not a mock stub —
-  it computes actual quantum amplitudes for H/X/Y/Z/CNOT). This means the app
-  gives correct results right now, before anyone has touched Qiskit.
-- Frontend: React + TypeScript + Vite + Tailwind, with a tab shell matching
-  the architecture doc, and a working "Run circuit" demo that calls the
-  backend and shows step-by-step probabilities + a placeholder explanation.
-- The Circuit IR contract (`frontend/src/types.ts` ↔ `backend/app/schemas.py`)
-  — this is the shape everyone builds against, so the circuit builder, the
-  code editor, and Qiskit can all plug into the same interface independently.
+---
 
-## Why numpy instead of Qiskit right now
+## 🧠 Quantum Tutor Architecture
 
-So frontend and backend work can start immediately without blocking on
-whoever installs and learns Qiskit. Swapping in Qiskit Aer later is a
-**one-file change**: rewrite `backend/app/quantum_engine.py::run_circuit`,
-keep the same function signature and `SimulationResult` shape, set
-`backend="qiskit-aer"`. Nothing else in the app needs to change.
+```
+Student Question + Active Circuit
+        ↓
+FastAPI Intent & Focus Router
+        ↓
+Qiskit Aer + quantum_info Tools
+  (Computes: statevector, probabilities, timeline, Bloch vectors, Q-Sphere phases)
+        ↓
+Immutable "CIRCUIT VERIFIED FACTS" Block
+        ↓
+Google Gemini 2.5 Flash LLM
+        ↓
+Student-friendly, mathematically accurate AI response in Floating Drawer
+```
 
-## Run it
+---
 
-### Backend
+## 🚀 Getting Started
+
+### Requirements
+- **Node.js**: 20.19+ or 22.12+ (Check with `node --version`)
+- **Python**: 3.10+ (Check with `python --version`)
+
+---
+
+### 1. Backend Setup
+
 ```bash
 cd backend
+
+# Create & activate virtual environment
+# Windows:
+python -m venv venv
+venv\Scripts\activate
 
 # Mac/Linux:
 python3 -m venv venv
 source venv/bin/activate
 
-# Windows (Command Prompt or PowerShell):
-python -m venv venv
-venv\Scripts\activate
-
-# then, on any OS:
+# Install dependencies
 pip install -r requirements.txt
+
+# Configure environment variables
+cp .env.example .env   # (or create backend/.env)
+```
+
+Edit `backend/.env` and add your free Gemini key from [Google AI Studio](https://aistudio.google.com/):
+```env
+GEMINI_API_KEY=AIzaSy...your_actual_key_here
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+Start the FastAPI server:
+```bash
 python run.py
 ```
-`run.py` just wraps the full uvicorn command so you don't have to type it
-every time — same server, same `--reload` live-restart behavior, same port
-8000. If you ever want the raw command it's wrapping:
-`uvicorn app.main:app --reload --port 8000`.
-Check it's alive: `curl http://localhost:8000/api/health`
+*Backend runs on `http://localhost:8000` (Health check: `http://localhost:8000/api/health`).*
 
-### Frontend
+---
+
+### 2. Frontend Setup
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Open http://localhost:5173, go to the "Milestone 1 Demo" tab, click **Run circuit**.
-You should see the Bell state: `|00⟩` and `|11⟩` at 50% each, with the
-intermediate superposition step shown.
+*Frontend runs on `http://localhost:5173`.*
 
-## Next up (whoever's picking these up)
+---
 
-- **AIML 2 (Quantum Intelligence):** swap `quantum_engine.py` for real Qiskit
-  Aer. Same function signature, same return shape — see the TODO comment
-  in that file.
-- **Full-Stack 1 (Frontend):** build the React Flow circuit builder in the
-  "Circuit Builder" tab — compile to `Circuit` from `types.ts`, call
-  `simulateCircuit()` from `api.ts`. Same for Monaco in "Code Editor".
-- **AIML 1 (AI Tutor):** replace `_explain()` in `quantum_engine.py` with
-  the grounded LLM call (Section 4 of the roadmap doc) — pass it
-  `final_probabilities` and the gate list, nothing else.
-- **Backend / Integration:** sandbox code execution before the Code Editor
-  tab is wired to a real endpoint (Section 3 of the roadmap doc).
+## 📡 API Reference
 
-## Project structure
+### Tutor Chat Endpoint: `POST /api/tutor/chat`
+
+#### Request Body:
+```json
+{
+  "message": "Why is q[0] at the top of the Bloch sphere?",
+  "circuit": {
+    "qubits": 2,
+    "gates": []
+  },
+  "history": [],
+  "focus": "bloch"
+}
 ```
-quantum-platform/
+
+#### Response Body:
+```json
+{
+  "answer": "Qubit q[0] starts in ground state |0⟩, which is mapped to the North Pole (Z = +1). Since no gates have rotated it, its Bloch vector remains at (0, 0, 1).",
+  "mode": "grounded",
+  "tools_used": ["simulate_circuit", "measurement_probabilities", "probability_timeline", "q_sphere_data", "bloch_vector"],
+  "facts": [
+    { "name": "measurement_probabilities", "value": "|00>: 1.0000" },
+    { "name": "bloch_vector_q0", "value": "(0.000000, 0.000000, 1.000000)" }
+  ],
+  "provider": "gemini",
+  "recommendation": "Next, compare the Bloch vector before and after one gate to see how its direction changes."
+}
+```
+
+### Other Key Endpoints:
+- `POST /api/simulate`: Runs circuit through Qiskit statevector simulator and returns steps, amplitudes, and probabilities.
+- `POST /api/circuits/validate`: Validates circuit IR constraints (1–8 qubits, target index bounds).
+- `POST /api/circuits/to-code`: Converts visual circuit to executable Qiskit Python code.
+- `POST /api/circuits/from-code`: Parses Qiskit Python code into circuit IR.
+- `GET /api/gates`: Returns the supported gate catalog ($H, X, Y, Z, CNOT$).
+
+---
+
+## 📁 Project Structure
+
+```
+Corkscrew_SIH26/
+├── backend/
+│   ├── app/
+│   │   ├── circuit_builder.py  # Qiskit code parsing & circuit IR validation
+│   │   ├── quantum_engine.py   # Qiskit Aer simulation engine
+│   │   ├── quantum_tools.py    # Deterministic Qiskit factual extraction tools
+│   │   ├── tutor_service.py    # Grounding prompt builder, Gemini API, offline fallbacks
+│   │   ├── tutor_store.py      # Conversation turn persistence & learning signals
+│   │   ├── auth.py             # Google OAuth & JWT token verification
+│   │   ├── schemas.py          # Shared Pydantic data models & contracts
+│   │   └── main.py             # FastAPI routing & rate limiting
+│   ├── tests/
+│   │   └── test_tutor.py       # Automated unit tests for Quantum Tutor
+│   ├── .env.example            # Environment configuration template
+│   ├── requirements.txt        # Backend dependencies
+│   └── run.py                  # Uvicorn entrypoint
+│
 ├── frontend/
 │   ├── src/
-│   │   ├── types.ts          ← Circuit IR contract (keep in sync with schemas.py)
-│   │   ├── api.ts            ← calls backend /api/simulate
-│   │   ├── BellStateDemo.tsx ← Milestone 1, already working
-│   │   └── App.tsx           ← tab shell (builder/code/learn are placeholders)
-│   └── ...
-└── backend/
-    ├── app/
-    │   ├── schemas.py         ← Circuit IR contract (keep in sync with types.ts)
-    │   ├── quantum_engine.py  ← numpy simulator — swap for Qiskit here
-    │   └── main.py            ← FastAPI app, /api/simulate endpoint
-    └── requirements.txt
+│   │   ├── App.tsx             # Root container with centralized floating Quantum Tutor
+│   │   ├── QuantumTutor.tsx    # Centralized floating AI chatbot drawer component
+│   │   ├── CircuitBuilder.tsx  # Drag-and-drop circuit canvas
+│   │   ├── BlochSphere.tsx     # 3D Three.js single-qubit Bloch Sphere
+│   │   ├── QSphere.tsx         # 3D Three.js multi-qubit Q-Sphere
+│   │   ├── ProbabilityTimeline.tsx # Step-by-step probability progression
+│   │   ├── CodePanel.tsx       # Monaco-powered Qiskit Python code builder
+│   │   ├── api.ts              # Typed backend client
+│   │   └── types.ts            # TypeScript interfaces & IR contracts
+│   ├── package.json
+│   └── vite.config.ts
+│
+├── .gitignore
+└── README.md
+```
+
+---
+
+## 🧪 Testing
+
+To run the backend test suite:
+```bash
+cd backend
+venv\Scripts\python -m pytest tests   # Windows
+# or: pytest tests                     # Linux/Mac
 ```

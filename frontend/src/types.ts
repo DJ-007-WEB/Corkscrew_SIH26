@@ -50,3 +50,22 @@ export interface SimulationResult {
   explanation: string;
   backend: string;
 }
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface GroundedFact {
+  name: string;
+  value: string;
+}
+
+export interface TutorResponse {
+  answer: string;
+  mode: "grounded" | "conceptual";
+  tools_used: string[];
+  facts: GroundedFact[];
+  provider: string;
+  recommendation?: string | null;
+}

@@ -239,3 +239,4 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme }: Prop
     </div>
   );
 }
+

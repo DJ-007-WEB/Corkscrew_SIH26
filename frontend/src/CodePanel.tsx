@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import type { Dispatch, SetStateAction } from "react";
 import Editor from "@monaco-editor/react";
 import { circuitFromCode, circuitToCode } from "./api";
 import type { Circuit } from "./types";
 
 interface Props {
   circuit: Circuit;
-  onCircuitChange: Dispatch<SetStateAction<Circuit>>;
+  onCircuitChange: (circuit: Circuit) => void;
   theme: "dark" | "light";
 }
 

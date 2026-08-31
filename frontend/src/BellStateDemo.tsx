@@ -82,7 +82,7 @@ export default function BellStateDemo() {
                       ? `After ${step.after_gate.type} on q${step.after_gate.targets.join(",")}`
                       : "Initial state"}
                   </p>
-                  <ProbabilityBars probabilities={step.probabilities} />
+                  <ProbabilityBars probabilities={step.state.probabilities} />
                 </div>
               ))}
             </div>

@@ -55,3 +55,32 @@ class SimulationResult(BaseModel):
     final_probabilities: dict[str, float]
     explanation: str
     backend: str
+
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=4000)
+
+
+class ChatRequest(BaseModel):
+    """A tutor request. The current circuit is optional for theory-only questions."""
+
+    message: str = Field(min_length=1, max_length=4000)
+    circuit: Optional[Circuit] = None
+    history: list[ChatMessage] = Field(default_factory=list, max_length=12)
+    conversation_id: Optional[str] = Field(default=None, max_length=80)
+    focus: Optional[Literal["circuit", "bloch", "q_sphere", "timeline", "gate"]] = None
+
+
+class GroundedFact(BaseModel):
+    name: str
+    value: str
+
+
+class ChatResponse(BaseModel):
+    answer: str
+    mode: Literal["grounded", "conceptual"]
+    tools_used: list[str] = Field(default_factory=list)
+    facts: list[GroundedFact] = Field(default_factory=list)
+    provider: str
+    recommendation: Optional[str] = None

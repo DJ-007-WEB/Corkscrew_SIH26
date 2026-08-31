@@ -1,4 +1,4 @@
-import type { Circuit, CodeRequest, GateDefinition, SimulationResult } from "./types";
+import type { ChatMessage, Circuit, CodeRequest, GateDefinition, SimulationResult, TutorResponse } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
 
@@ -46,5 +46,13 @@ export function simulateCircuit(circuit: Circuit): Promise<SimulationResult> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(circuit),
+  });
+}
+
+export function askTutor(message: string, circuit: Circuit, history: ChatMessage[], conversationId: string, focus?: string): Promise<TutorResponse> {
+  return request<TutorResponse>("/api/tutor/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, circuit, history, conversation_id: conversationId, focus }),
   });
 }

@@ -13,6 +13,7 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "@monaco-editor/react": "^4.7.0",
+    "@react-oauth/google": "^0.12.2",
     "@react-three/drei": "^10.7.6",
     "@react-three/fiber": "^9.3.0",
     "three": "^0.179.1"

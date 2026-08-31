@@ -1,8 +1,12 @@
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { useEffect, useState } from "react";
 import VisualizationPage from "./VisualizationPage";
 import type { Circuit, SimulationResult } from "./types";
 import CircuitBuilder from "./CircuitBuilder";
 import LandingPage from "./LandingPage";
+import AuthPage from "./AuthPage";
+import LearningPage from "./LearningPage";
+import QuantumTutor from "./QuantumTutor";
 
 type Tab = "home" | "builder" | "learn" | "waves";
 
@@ -13,30 +17,20 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "learn", label: "Learning" },
 ];
 
-function Placeholder({ owner, title, note }: { owner: string; title: string; note: string }) {
-  return (
-    <div className="bp-panel p-10 text-center">
-      <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-cyan)] mb-2">
-        {owner}
-      </p>
-      <h3 className="font-display text-lg text-[var(--bp-text)] mb-2">{title}</h3>
-      <p className="text-sm text-[var(--bp-text-dim)] max-w-md mx-auto leading-relaxed">{note}</p>
-    </div>
-  );
-}
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("home");
   const [latestResult, setLatestResult] = useState<SimulationResult | null>(null);
-  // Keep the circuit in the app while navigating between pages, but intentionally
-  // do not persist it to localStorage: a refresh/new server session starts clean.
   const [circuit, setCircuit] = useState<Circuit>({ qubits: 2, gates: [] });
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem("quantum-token"));
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("quantum-theme", theme);
   }, [theme]);
+
   useEffect(() => {
     const saved = localStorage.getItem("quantum-theme") as "dark" | "light" | null;
     if (saved) setTheme(saved);
@@ -45,57 +39,44 @@ export default function App() {
     return () => window.removeEventListener("quantum:simulation", handler);
   }, []);
 
-  return (
+  function logout() {
+    localStorage.removeItem("quantum-token");
+    setToken(null);
+    setTab("home");
+  }
+
+  const content = (
     <div className="min-h-screen">
       <header className="border-b border-[var(--bp-border)] px-6 py-5 flex items-baseline gap-3">
-        <button
-          onClick={() => setTab("home")}
-          className="font-display text-xl font-semibold text-[var(--bp-text)]"
-        >
+        <button onClick={() => setTab("home")} className="font-display text-xl font-semibold text-[var(--bp-text)]">
           Quantum<span style={{ color: "var(--bp-cyan)" }}>Lab</span>
         </button>
-        <p className="text-xs font-mono text-[var(--bp-text-faint)]">
-          circuit builder · SIH 2026
-        </p>
-        <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="ml-auto px-3 py-1.5 rounded border border-[var(--bp-border)] text-[10px] font-mono text-[var(--bp-text-dim)] hover:text-[var(--bp-cyan)]">{theme === "dark" ? "☼ Light" : "☾ Dark"}</button>
+        <p className="text-xs font-mono text-[var(--bp-text-faint)]">circuit builder · SIH 2026</p>
+        <div className="ml-auto flex items-center gap-2">
+          {token && <button onClick={logout} className="px-3 py-1.5 rounded border border-[var(--bp-border)] text-[10px] font-mono text-[var(--bp-text-dim)] hover:text-[var(--bp-cyan)]">Sign out</button>}
+          <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="px-3 py-1.5 rounded border border-[var(--bp-border)] text-[10px] font-mono text-[var(--bp-text-dim)] hover:text-[var(--bp-cyan)]">{theme === "dark" ? "☼ Light" : "☾ Dark"}</button>
+        </div>
       </header>
 
       <nav className="flex gap-1 px-6 pt-4 border-b border-[var(--bp-border)] overflow-x-auto">
         {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className="px-4 py-2 text-sm font-mono rounded-t-md border-b-2 transition-colors whitespace-nowrap"
-            style={{
-              borderColor: tab === t.id ? "var(--bp-cyan)" : "transparent",
-              color: tab === t.id ? "var(--bp-text)" : "var(--bp-text-faint)",
-            }}
-          >
-            {t.label}
+          <button key={t.id} onClick={() => setTab(t.id)} className="px-4 py-2 text-sm font-mono rounded-t-md border-b-2 transition-colors whitespace-nowrap" style={{ borderColor: tab === t.id ? "var(--bp-cyan)" : "transparent", color: tab === t.id ? "var(--bp-text)" : "var(--bp-text-faint)" }}>
+            {t.label}{t.id === "learn" && !token ? " · Free login" : ""}
           </button>
         ))}
       </nav>
 
       <main className="p-6 max-w-6xl mx-auto">
-        {tab === "home" && (
-          <LandingPage
-            onOpenBuilder={() => setTab("builder")}
-            onOpenCode={() => setTab("builder")}
-            onOpenVisualizations={() => setTab("waves")}
-          />
-        )}
-        {tab === "builder" && (
-          <CircuitBuilder circuit={circuit} onCircuitChange={setCircuit} theme={theme} />
-        )}
+        {tab === "home" && <LandingPage onOpenBuilder={() => setTab("builder")} onOpenCode={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} />}
+        {tab === "builder" && <CircuitBuilder circuit={circuit} onCircuitChange={setCircuit} theme={theme} />}
         {tab === "waves" && <VisualizationPage result={latestResult} />}
-        {tab === "learn" && (
-          <Placeholder
-            owner="Roadmap only"
-            title="Structured learning modules"
-            note="Not built for the hackathon MVP — mockup screens only, per the roadmap doc."
-          />
-        )}
+        {tab === "learn" && (token ? <LearningPage onOpenBuilder={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("learn"); }} />)}
       </main>
+      <QuantumTutor circuit={circuit} />
     </div>
   );
+
+  return GOOGLE_CLIENT_ID ? <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>{content}</GoogleOAuthProvider> : content;
 }
+
+
