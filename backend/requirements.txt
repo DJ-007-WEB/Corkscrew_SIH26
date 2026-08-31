@@ -8,5 +8,6 @@ qiskit-aer>=0.15
 pymongo>=4.10
 PyJWT>=2.9
 google-auth>=2.35
+requests>=2.32
 python-dotenv>=1.0
 pytest>=8.0

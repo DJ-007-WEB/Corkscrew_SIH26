@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { askTutor } from "./api";
 import type { ChatMessage, Circuit } from "./types";
 
 interface Props {
   circuit: Circuit;
+  isOpen: boolean;
+  onToggle: (open: boolean) => void;
 }
 
-export default function QuantumTutor({ circuit }: Props) {
-  const [isOpen, setIsOpen] = useState(false);
+export default function QuantumTutor({ circuit, isOpen, onToggle }: Props) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -46,7 +49,7 @@ export default function QuantumTutor({ circuit }: Props) {
     <>
       {!isOpen && (
         <button
-          onClick={() => setIsOpen(true)}
+          onClick={() => onToggle(true)}
           className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-full font-mono text-xs font-semibold shadow-2xl transition-all duration-300 hover:scale-105 group border border-[var(--bp-cyan)]/50 cursor-pointer"
           style={{ background: "var(--bp-panel)", color: "var(--bp-text)", boxShadow: "0 0 24px rgba(79, 216, 240, 0.25), 0 8px 32px rgba(8, 21, 39, 0.6)" }}
           title="Open Quantum Tutor"
@@ -58,14 +61,12 @@ export default function QuantumTutor({ circuit }: Props) {
       )}
 
       {isOpen && (
-        <>
-          <button aria-label="Close Quantum Tutor" onClick={() => setIsOpen(false)} className="fixed inset-0 z-40 bg-black/20 cursor-default" />
-          <aside
-            className="fixed top-0 right-0 z-50 h-screen w-[min(440px,92vw)] flex flex-col border-l border-[var(--bp-border-strong)] shadow-2xl overflow-hidden"
-            style={{ background: "var(--bp-panel)", boxShadow: "-18px 0 45px rgba(8, 21, 39, 0.55), -2px 0 18px rgba(79, 216, 240, 0.10)" }}
-            role="dialog"
-            aria-label="Quantum Tutor"
-          >
+        <aside
+          className="flex flex-col border-l border-[var(--bp-border-strong)] shadow-2xl overflow-hidden h-full"
+          style={{ background: "var(--bp-panel)", boxShadow: "-18px 0 45px rgba(8, 21, 39, 0.55), -2px 0 18px rgba(79, 216, 240, 0.10)", minWidth: "min(440px, 92vw)", maxWidth: "min(440px, 92vw)" }}
+          role="dialog"
+          aria-label="Quantum Tutor"
+        >
             <div className="px-4 py-3 border-b border-[var(--bp-border)] flex items-center justify-between bg-[var(--bp-panel-raised)] shrink-0">
               <div className="flex items-center gap-2">
                 <span className="text-base">⚡</span>
@@ -76,7 +77,7 @@ export default function QuantumTutor({ circuit }: Props) {
               </div>
               <div className="flex items-center gap-1.5">
                 {messages.length > 0 && <button type="button" onClick={clearHistory} className="px-2 py-1 text-[10px] font-mono text-[var(--bp-text-faint)] hover:text-[var(--bp-text)] rounded border border-transparent hover:border-[var(--bp-border)] transition-colors cursor-pointer">↺ Clear</button>}
-                <button type="button" onClick={() => setIsOpen(false)} className="w-7 h-7 flex items-center justify-center text-sm font-mono text-[var(--bp-text-dim)] hover:text-[var(--bp-cyan)] rounded hover:bg-[var(--bp-border)]/50 transition-colors cursor-pointer" title="Close tutor">✕</button>
+                <button type="button" onClick={() => onToggle(false)} className="w-7 h-7 flex items-center justify-center text-sm font-mono text-[var(--bp-text-dim)] hover:text-[var(--bp-cyan)] rounded hover:bg-[var(--bp-border)]/50 transition-colors cursor-pointer" title="Close tutor">✕</button>
               </div>
             </div>
 
@@ -95,8 +96,38 @@ export default function QuantumTutor({ circuit }: Props) {
               )}
               {messages.map((message, index) => (
                 <div key={index} className={`flex flex-col ${message.role === "user" ? "items-end" : "items-start"}`}>
-                  <div className="flex items-center gap-1.5 mb-1 px-1"><span className="font-mono text-[9px] uppercase tracking-wider text-[var(--bp-text-faint)]">{message.role === "user" ? "You" : "Quantum Tutor · Qiskit"}</span></div>
-                  <div className={`rounded-lg p-3 text-xs sm:text-sm leading-relaxed max-w-[90%] whitespace-pre-wrap ${message.role === "user" ? "bg-[var(--bp-cyan-dim)] text-[var(--bp-text)] border border-[var(--bp-cyan)]/30 rounded-tr-none" : "bg-[var(--bp-panel-raised)] text-[var(--bp-text)] border border-[var(--bp-border)] rounded-tl-none"}`}>{message.content}</div>
+                  <div className="flex items-center gap-1.5 mb-1 px-1">
+                    <span className="font-mono text-[9px] uppercase tracking-wider text-[var(--bp-text-faint)]">
+                      {message.role === "user" ? "You" : "Quantum AI Tutor · Qiskit"}
+                    </span>
+                  </div>
+                  {message.role === "user" ? (
+                    <div className="rounded-lg p-3 text-xs sm:text-sm leading-relaxed max-w-[90%] whitespace-pre-wrap bg-[var(--bp-cyan-dim)] text-[var(--bp-text)] border border-[var(--bp-cyan)]/30 rounded-tr-none">
+                      {message.content}
+                    </div>
+                  ) : (
+                    <div className="rounded-lg p-3.5 text-xs sm:text-sm leading-relaxed max-w-[95%] bg-[var(--bp-panel-raised)] text-[var(--bp-text)] border border-[var(--bp-border)] rounded-tl-none space-y-2 shadow-lg">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          h1: ({ children }) => <h1 className="font-display font-bold text-base text-[var(--bp-cyan)] mt-3 mb-1.5 pb-1 border-b border-[var(--bp-border)]">{children}</h1>,
+                          h2: ({ children }) => <h2 className="font-display font-semibold text-sm text-[var(--bp-cyan)] mt-2.5 mb-1">{children}</h2>,
+                          h3: ({ children }) => <h3 className="font-display font-semibold text-xs text-[var(--bp-cyan)] mt-2 mb-0.5">{children}</h3>,
+                          p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed text-[var(--bp-text)]">{children}</p>,
+                          ul: ({ children }) => <ul className="list-disc pl-4 space-y-1 my-2 text-[var(--bp-text-dim)]">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal pl-4 space-y-1 my-2 text-[var(--bp-text-dim)]">{children}</ol>,
+                          li: ({ children }) => <li className="leading-relaxed pl-0.5"><span className="text-[var(--bp-text)]">{children}</span></li>,
+                          strong: ({ children }) => <strong className="font-semibold text-[var(--bp-cyan)]">{children}</strong>,
+                          em: ({ children }) => <em className="italic text-[var(--bp-text)]">{children}</em>,
+                          code: ({ children }) => <code className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-[var(--bp-panel)] text-[var(--bp-amber)] border border-[var(--bp-border)]">{children}</code>,
+                          hr: () => <hr className="border-[var(--bp-border)] my-2.5" />,
+                          blockquote: ({ children }) => <blockquote className="border-l-2 border-[var(--bp-cyan)] pl-2.5 my-2 italic text-[var(--bp-text-dim)]">{children}</blockquote>,
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                  )}
                 </div>
               ))}
               {loading && <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--bp-panel-raised)] border border-[var(--bp-border)] max-w-[70%]"><span className="animate-spin text-xs text-[var(--bp-cyan)]">✦</span><p className="text-xs font-mono text-[var(--bp-text-dim)]">Simulating in Qiskit…</p></div>}
@@ -113,8 +144,7 @@ export default function QuantumTutor({ circuit }: Props) {
               <input value={input} onChange={(event) => setInput(event.target.value)} placeholder="Ask about this circuit or quantum theory…" className="min-w-0 flex-1 rounded border border-[var(--bp-border)] bg-[var(--bp-panel-raised)] px-3 py-2 text-xs sm:text-sm text-[var(--bp-text)] placeholder-[var(--bp-text-faint)] focus:outline-none focus:border-[var(--bp-cyan)] transition-colors" />
               <button type="submit" disabled={loading || !input.trim()} className="rounded px-3.5 py-2 text-xs font-mono font-semibold transition-all disabled:opacity-40 hover:opacity-90 cursor-pointer" style={{ background: "var(--bp-cyan)", color: "#081527" }}>Send</button>
             </form>
-          </aside>
-        </>
+        </aside>
       )}
     </>
   );

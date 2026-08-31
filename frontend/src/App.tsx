@@ -25,6 +25,7 @@ export default function App() {
   const [circuit, setCircuit] = useState<Circuit>({ qubits: 2, gates: [] });
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [token, setToken] = useState<string | null>(() => localStorage.getItem("quantum-token"));
+  const [tutorOpen, setTutorOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -46,8 +47,8 @@ export default function App() {
   }
 
   const content = (
-    <div className="min-h-screen">
-      <header className="border-b border-[var(--bp-border)] px-6 py-5 flex items-baseline gap-3">
+    <div className="h-screen flex flex-col overflow-hidden">
+      <header className="border-b border-[var(--bp-border)] px-6 py-4 flex items-baseline gap-3 shrink-0">
         <button onClick={() => setTab("home")} className="font-display text-xl font-semibold text-[var(--bp-text)]">
           Quantum<span style={{ color: "var(--bp-cyan)" }}>Lab</span>
         </button>
@@ -58,7 +59,7 @@ export default function App() {
         </div>
       </header>
 
-      <nav className="flex gap-1 px-6 pt-4 border-b border-[var(--bp-border)] overflow-x-auto">
+      <nav className="flex gap-1 px-6 pt-4 border-b border-[var(--bp-border)] overflow-x-auto shrink-0">
         {TABS.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)} className="px-4 py-2 text-sm font-mono rounded-t-md border-b-2 transition-colors whitespace-nowrap" style={{ borderColor: tab === t.id ? "var(--bp-cyan)" : "transparent", color: tab === t.id ? "var(--bp-text)" : "var(--bp-text-faint)" }}>
             {t.label}{t.id === "learn" && !token ? " · Free login" : ""}
@@ -66,13 +67,15 @@ export default function App() {
         ))}
       </nav>
 
-      <main className="p-6 max-w-6xl mx-auto">
-        {tab === "home" && <LandingPage onOpenBuilder={() => setTab("builder")} onOpenCode={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} />}
-        {tab === "builder" && <CircuitBuilder circuit={circuit} onCircuitChange={setCircuit} theme={theme} />}
-        {tab === "waves" && <VisualizationPage result={latestResult} />}
-        {tab === "learn" && (token ? <LearningPage onOpenBuilder={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("learn"); }} />)}
-      </main>
-      <QuantumTutor circuit={circuit} />
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        <main className="flex-1 min-w-0 overflow-y-auto p-6 max-w-6xl mx-auto w-full">
+          {tab === "home" && <LandingPage onOpenBuilder={() => setTab("builder")} onOpenCode={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} />}
+          {tab === "builder" && <CircuitBuilder circuit={circuit} onCircuitChange={setCircuit} theme={theme} />}
+          {tab === "waves" && <VisualizationPage result={latestResult} />}
+          {tab === "learn" && (token ? <LearningPage onOpenBuilder={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("learn"); }} />)}
+        </main>
+        <QuantumTutor circuit={circuit} isOpen={tutorOpen} onToggle={setTutorOpen} />
+      </div>
     </div>
   );
 

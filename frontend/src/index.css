@@ -34,7 +34,12 @@
   --bp-text-faint: #52719e;
 }
 
+html {
+  height: 100%;
+}
+
 body {
+  min-height: 100%;
   background: var(--bp-ink);
   color: var(--bp-text);
   font-family: var(--font-body);
@@ -42,6 +47,12 @@ body {
     linear-gradient(var(--bp-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--bp-line) 1px, transparent 1px);
   background-size: 28px 28px;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 h1, h2, h3, .font-display {

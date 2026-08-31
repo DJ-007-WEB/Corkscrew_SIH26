@@ -24,12 +24,53 @@ _CIRCUIT_WORDS = (
     "state", "measure", "result", "timeline", "visual", "phase",
     "amplitude", "histogram", "microscope", "cnot", "hadamard", "step"
 )
-_SYSTEM_PROMPT = """You are QuantumLab Tutor, a friendly quantum-computing teacher.
-For a CIRCUIT VERIFIED FACTS block, treat every numeric fact as immutable Qiskit output.
-Never calculate, replace, or invent a statevector, probability, Bloch value, gate, or measurement result.
-Explain why the verified result follows from the listed gates in clear student-friendly language.
-If the facts do not answer the question, say what simulation/tool result is needed.
-For theory and visualization questions, explain clearly with intuition, definitions, and visual analogies."""
+_SYSTEM_PROMPT = """You are QuantumLab AI, an expert, inspiring, and friendly Quantum Physics Professor & AI Tutor.
+Your mission is to guide students through quantum computing, circuit simulations, and quantum phenomena with clarity, deep physical intuition, and engaging conversational warmth — just like modern ChatGPT and Gemini.
+
+FORMATTING & STYLE RULES:
+1. RICH VISUAL STRUCTURE:
+   - Organize your answer with clear bold headings (e.g. ### 🌀 Gate Dynamics, ### ⚛️ Statevector Evolution, ### 📊 Measurement Outcomes, ### 💡 Physical Intuition).
+   - Use clean bulleted lists with bold keywords to break down complex mechanisms step-by-step.
+   - Use helpful contextual emojis (⚛️, 🌀, 🔗, 📊, 💡, 🎯, 🚀) to make explanations inviting and visually engaging.
+2. CLEAN PLAIN TEXT NOTATION (NO LATEX):
+   - Never use dollar signs ($ or $$) or raw LaTeX backslash commands (never write \\rangle, \\langle, \\to, \\frac, \\psi, etc.).
+   - Write quantum states and gates using standard readable text: |0>, |1>, |+>, |->, |00>, |11>, (|00> + |11>)/sqrt(2), q0, q1, ->.
+3. GROUNDED IN REAL SIMULATION FACTS:
+   - When a 'CIRCUIT VERIFIED FACTS' block is provided, explain why those exact measurement probabilities, Bloch vectors, and Q-Sphere phases follow mathematically and physically from the gates in the circuit.
+4. FULL & POLISHED:
+   - Always deliver a complete, friendly, and comprehensive pedagogical explanation from start to finish."""
+
+
+
+def _clean_latex(text: str) -> str:
+    if not text:
+        return ""
+    t = text
+    # Remove block math delimiters $$ ... $$
+    t = re.sub(r"\$\$(.*?)\$\$", r"\1", t, flags=re.DOTALL)
+    # Replace common LaTeX macros with clean text
+    t = t.replace(r"\rangle", ">")
+    t = t.replace(r"\langle", "|")
+    t = t.replace(r"\longrightarrow", " -> ")
+    t = t.replace(r"\rightarrow", " -> ")
+    t = t.replace(r"\to", " -> ")
+    t = t.replace(r"\otimes", " (x) ")
+    t = t.replace(r"\sqrt{2}", "sqrt(2)")
+    t = re.sub(r"\\sqrt\{([^}]+)\}", r"sqrt(\1)", t)
+    t = re.sub(r"\\frac\{([^}]+)\}\{([^}]+)\}", r"(\1) / (\2)", t)
+    t = re.sub(r"\\text\{([^}]+)\}", r"\1", t)
+    t = t.replace(r"\pi", "pi")
+    t = t.replace(r"\psi", "psi")
+    t = t.replace(r"\phi", "phi")
+    t = t.replace(r"\Phi", "Phi")
+    t = t.replace(r"\Psi", "Psi")
+    # Remove inline $...$ math wrappers
+    t = re.sub(r"\$([^$]+)\$", r"\1", t)
+    # Remove any stray dollar signs
+    t = t.replace("$", "")
+    # Clean up subscripts like q_0 -> q0
+    t = re.sub(r"q_(\d+)", r"q\1", t)
+    return t
 
 
 def answer(request: ChatRequest) -> ChatResponse:
@@ -44,8 +85,9 @@ def answer(request: ChatRequest) -> ChatResponse:
     prompt = _build_prompt(request, facts)
     llm_answer = _gemini_answer(prompt)
     if llm_answer:
+        cleaned_answer = _clean_latex(llm_answer)
         response = ChatResponse(
-            answer=llm_answer,
+            answer=cleaned_answer,
             mode="grounded" if grounded else "conceptual",
             tools_used=tools_used,
             facts=facts,
@@ -83,28 +125,51 @@ def _build_prompt(request: ChatRequest, facts: list[GroundedFact]) -> str:
     return f"{history}\nuser: {request.message}\n\nCIRCUIT VERIFIED FACTS:\n{verified}"
 
 
+import logging
+import requests
+
+logger = logging.getLogger("quantum_tutor")
+
+
 def _gemini_answer(prompt: str) -> str | None:
+    load_dotenv(override=True)
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
+        logger.warning("GEMINI_API_KEY is not configured in .env")
         return None
-    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-    payload = json.dumps({
+
+    configured_model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+    if "2.5-flash" in configured_model:
+        configured_model = "gemini-3.5-flash"
+
+    candidate_models = [configured_model, "gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.1-flash-lite", "gemini-3.5-flash-lite"]
+    # De-duplicate while preserving order
+    seen = set()
+    models_to_try = [m for m in candidate_models if not (m in seen or seen.add(m))]
+
+    payload = {
         "system_instruction": {"parts": [{"text": _SYSTEM_PROMPT}]},
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {"maxOutputTokens": 500},
-    }).encode("utf-8")
-    request = Request(
-        f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-        data=payload,
-        headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
-        method="POST",
-    )
-    try:
-        with urlopen(request, timeout=20) as response:
-            data = json.loads(response.read().decode("utf-8"))
-        return data["candidates"][0]["content"]["parts"][0].get("text")
-    except (HTTPError, URLError, KeyError, IndexError, json.JSONDecodeError):
-        return None
+        "generationConfig": {"maxOutputTokens": 2048, "temperature": 0.7},
+    }
+
+    for model in models_to_try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        try:
+            res = requests.post(url, json=payload, timeout=25)
+            if res.status_code == 200:
+                data = res.json()
+                text = data["candidates"][0]["content"]["parts"][0].get("text")
+                if text and text.strip():
+                    return text
+            else:
+                logger.warning("Gemini model %s returned status %s: %s", model, res.status_code, res.text[:200])
+        except Exception as exc:
+            logger.warning("Gemini model %s request failed: %s", model, exc)
+
+    return None
+
+
 
 
 def _fallback_answer(message: str, facts: list[GroundedFact], grounded: bool, focus: str | None = None) -> str:
