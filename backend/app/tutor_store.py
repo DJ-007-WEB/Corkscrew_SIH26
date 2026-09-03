@@ -6,13 +6,16 @@ when MONGODB_URI is configured by the deployment team.
 
 from datetime import datetime, timezone
 
-from .auth import _db
+from .auth import get_db
 
 
 def save_turn(conversation_id: str | None, message: str, answer: str, mode: str, tools: list[str]) -> None:
-    if _db is None or not conversation_id:
+    if not conversation_id:
         return
-    _db["tutor_conversations"].insert_one({
+    db = get_db()
+    if db is None:
+        return
+    db["tutor_conversations"].insert_one({
         "conversation_id": conversation_id,
         "message": message,
         "answer": answer,

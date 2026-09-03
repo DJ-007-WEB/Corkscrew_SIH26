@@ -1,12 +1,16 @@
 import os
 from datetime import datetime, timedelta, timezone
 
+import dns.resolver
 import jwt
 from dotenv import load_dotenv
 from fastapi import HTTPException, Request
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
 from pymongo import MongoClient
+
+from . import dns_fix  # noqa: F401
+
 
 load_dotenv()
 
@@ -15,9 +19,36 @@ MONGODB_DATABASE = os.getenv("MONGODB_DATABASE", "corkscrew")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 JWT_SECRET = os.getenv("JWT_SECRET")
 
-_client = MongoClient(MONGODB_URI) if MONGODB_URI else None
-_db = _client[MONGODB_DATABASE] if _client is not None else None
-_users = _db["users"] if _db is not None else None
+_client = None
+_db = None
+_users = None
+
+
+def get_db():
+    global _client, _db
+    if _db is not None:
+        return _db
+    if not MONGODB_URI:
+        return None
+    try:
+        _client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
+        _db = _client[MONGODB_DATABASE]
+        return _db
+    except Exception as exc:
+        print(f"[auth] MongoDB connection warning: {exc}")
+        return None
+
+
+def get_users_collection():
+    global _users
+    if _users is not None:
+        return _users
+    db = get_db()
+    if db is not None:
+        _users = db["users"]
+        return _users
+    return None
+
 
 
 def google_login(credential: str) -> dict:
@@ -25,8 +56,10 @@ def google_login(credential: str) -> dict:
         raise HTTPException(500, "GOOGLE_CLIENT_ID is not configured")
     if not JWT_SECRET:
         raise HTTPException(500, "JWT_SECRET is not configured")
-    if _users is None:
-        raise HTTPException(500, "MONGODB_URI is not configured")
+    
+    users = get_users_collection()
+    if users is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
 
     try:
         info = id_token.verify_oauth2_token(
@@ -42,7 +75,7 @@ def google_login(credential: str) -> dict:
         "picture": info.get("picture"),
         "updated_at": datetime.now(timezone.utc),
     }
-    _users.update_one(
+    users.update_one(
         {"google_id": user["google_id"]},
         {"$set": user, "$setOnInsert": {"created_at": user["updated_at"]}},
         upsert=True,

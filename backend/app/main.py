@@ -4,6 +4,7 @@ import time
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
+from . import dns_fix  # noqa: F401
 from .auth import current_user, google_login
 from .circuit_builder import circuit_from_qiskit, circuit_to_qiskit, gate_catalog, validate_circuit
 from .quantum_engine import run_circuit

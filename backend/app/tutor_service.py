@@ -64,8 +64,8 @@ def _clean_latex(text: str) -> str:
     t = t.replace(r"\phi", "phi")
     t = t.replace(r"\Phi", "Phi")
     t = t.replace(r"\Psi", "Psi")
-    # Remove inline $...$ math wrappers
-    t = re.sub(r"\$([^$]+)\$", r"\1", t)
+    # Remove inline $...$ math wrappers safely (single line)
+    t = re.sub(r"\$([^$\n]+)\$", r"\1", t)
     # Remove any stray dollar signs
     t = t.replace("$", "")
     # Clean up subscripts like q_0 -> q0
@@ -142,7 +142,7 @@ def _gemini_answer(prompt: str) -> str | None:
     if "2.5-flash" in configured_model:
         configured_model = "gemini-3.5-flash"
 
-    candidate_models = [configured_model, "gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.1-flash-lite", "gemini-3.5-flash-lite"]
+    candidate_models = [configured_model, "gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.1-flash-lite"]
     # De-duplicate while preserving order
     seen = set()
     models_to_try = [m for m in candidate_models if not (m in seen or seen.add(m))]
@@ -150,18 +150,22 @@ def _gemini_answer(prompt: str) -> str | None:
     payload = {
         "system_instruction": {"parts": [{"text": _SYSTEM_PROMPT}]},
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {"maxOutputTokens": 2048, "temperature": 0.7},
+        "generationConfig": {"maxOutputTokens": 8192, "temperature": 0.7},
     }
 
     for model in models_to_try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
         try:
-            res = requests.post(url, json=payload, timeout=25)
+            res = requests.post(url, json=payload, timeout=30)
             if res.status_code == 200:
                 data = res.json()
-                text = data["candidates"][0]["content"]["parts"][0].get("text")
-                if text and text.strip():
-                    return text
+                candidates = data.get("candidates", [])
+                if candidates:
+                    parts = candidates[0].get("content", {}).get("parts", [])
+                    if parts:
+                        text = parts[0].get("text")
+                        if text and text.strip():
+                            return text
             else:
                 logger.warning("Gemini model %s returned status %s: %s", model, res.status_code, res.text[:200])
         except Exception as exc:
