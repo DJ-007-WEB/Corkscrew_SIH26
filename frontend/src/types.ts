@@ -26,6 +26,14 @@ export interface CodeRequest {
   code: string;
 }
 
+export interface SavedWork {
+  id: string;
+  title: string;
+  code: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ComplexAmplitude {
   real: number;
   imag: number;

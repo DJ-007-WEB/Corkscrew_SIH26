@@ -1,4 +1,4 @@
-import type { ChatMessage, Circuit, CodeRequest, GateDefinition, SimulationResult, TutorResponse } from "./types";
+import type { ChatMessage, Circuit, CodeRequest, GateDefinition, SavedWork, SimulationResult, TutorResponse } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -54,5 +54,21 @@ export function askTutor(message: string, circuit: Circuit, history: ChatMessage
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message, circuit, history, conversation_id: conversationId, focus }),
+  });
+}
+
+function authHeaders(token: string) {
+  return { Authorization: `Bearer ${token}` };
+}
+
+export function listSavedWorks(token: string): Promise<SavedWork[]> {
+  return request<SavedWork[]>("/api/works", { headers: authHeaders(token) });
+}
+
+export function saveWork(token: string, code: string, title: string): Promise<SavedWork> {
+  return request<SavedWork>("/api/works", {
+    method: "POST",
+    headers: { ...authHeaders(token), "Content-Type": "application/json" },
+    body: JSON.stringify({ code, title }),
   });
 }

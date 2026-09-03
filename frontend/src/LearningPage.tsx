@@ -30,8 +30,8 @@ const LESSONS: Lesson[] = [
   { id: "gates", title: "Quantum Gates", summary: "Learn the core gates and how they transform qubits.", sections: [
     { heading: "X, Y and Z", body: "The Pauli gates are fundamental single-qubit operations. X swaps |0⟩ and |1⟩. Y also swaps them while introducing phase factors. Z leaves |0⟩ unchanged and changes the phase of |1⟩." , formula: "X = [[0,1],[1,0]]    Y = [[0,-i],[i,0]]    Z = [[1,0],[0,-1]]" },
     { heading: "Hadamard H", body: "H maps computational-basis states to equal superpositions and is one of the most useful gates for creating interference." , formula: "H = 1/√2 [[1,1],[1,-1]]" },
-    { heading: "S and T", body: "S and T are phase gates. They change relative phase without changing computational-basis probabilities immediately. Their phase changes can later become visible through interference." },
-    { heading: "Rotation gates", body: "Rx(θ), Ry(θ) and Rz(θ) rotate a single-qubit state around the corresponding Bloch-sphere axes. The angle parameter controls the rotation." },
+     { heading: "S and T (theory only)", body: "S and T are phase gates. They change relative phase without changing computational-basis probabilities immediately. Their phase changes can later become visible through interference. These gates are not yet buildable in Circuit Builder." },
+     { heading: "Rotation gates (theory only)", body: "Rx(θ), Ry(θ) and Rz(θ) rotate a single-qubit state around the corresponding Bloch-sphere axes. The angle parameter controls the rotation. These gates are not yet buildable in Circuit Builder." },
   ] },
   { id: "circuits", title: "How to Read Quantum Circuits", summary: "Understand wires, gate order, controls, targets and circuit depth.", sections: [
     { heading: "Wires and registers", body: "Each horizontal wire represents a qubit. A collection of wires is a quantum register. Gates are applied in circuit order, conventionally from left to right." },
@@ -67,10 +67,10 @@ const LESSONS: Lesson[] = [
     { heading: "Composition", body: "A circuit is a sequence of transformations. Matrix multiplication represents that composition, with the rightmost operation acting first when states are written as column vectors." },
   ] },
   { id: "algorithms", title: "Quantum Algorithms: The Big Picture", summary: "See how the fundamentals become useful algorithms.", sections: [
-    { heading: "Deutsch-Jozsa", body: "Uses quantum interference and an oracle to distinguish a promised class of Boolean functions with fewer queries than a deterministic classical strategy." },
-    { heading: "Grover search", body: "Uses amplitude amplification to increase the probability of marked states, providing a quadratic query improvement for unstructured search." },
-    { heading: "Quantum Fourier Transform", body: "Transforms amplitudes between computational and phase-like descriptions and is a core component of phase-estimation-based algorithms." },
-    { heading: "Teleportation", body: "Uses shared entanglement, local operations and classical communication to transfer an unknown quantum state without physically sending the original qubit." },
+     { heading: "Deutsch-Jozsa (theory roadmap)", body: "Uses quantum interference and an oracle to distinguish a promised class of Boolean functions with fewer queries than a deterministic classical strategy. This lesson is theory only and is not yet buildable in Circuit Builder." },
+     { heading: "Grover search (theory roadmap)", body: "Uses amplitude amplification to increase the probability of marked states, providing a quadratic query improvement for unstructured search. This lesson is theory only and is not yet buildable in Circuit Builder." },
+     { heading: "Quantum Fourier Transform (theory roadmap)", body: "Transforms amplitudes between computational and phase-like descriptions and is a core component of phase-estimation-based algorithms. This lesson is theory only and is not yet buildable in Circuit Builder." },
+     { heading: "Teleportation (theory roadmap)", body: "Uses shared entanglement, local operations and classical communication to transfer an unknown quantum state without physically sending the original qubit. This lesson is theory only and is not yet buildable in Circuit Builder." },
   ] },
   { id: "noise", title: "Noise, Decoherence & NISQ", summary: "Understand why real quantum hardware behaves differently from an ideal simulator.", sections: [
     { heading: "Noise", body: "Physical qubits interact with their environment and hardware imperfections. Gate errors, readout errors and unwanted interactions can change results." },

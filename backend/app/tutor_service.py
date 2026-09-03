@@ -132,7 +132,6 @@ logger = logging.getLogger("quantum_tutor")
 
 
 def _gemini_answer(prompt: str) -> str | None:
-    load_dotenv(override=True)
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         logger.warning("GEMINI_API_KEY is not configured in .env")

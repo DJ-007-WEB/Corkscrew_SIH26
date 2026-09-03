@@ -7,14 +7,20 @@ import LandingPage from "./LandingPage";
 import AuthPage from "./AuthPage";
 import LearningPage from "./LearningPage";
 import QuantumTutor from "./QuantumTutor";
+import MyWorksPage from "./MyWorksPage";
+import AssessmentPage from "./AssessmentPage";
+import ContestPage from "./ContestPage";
 
-type Tab = "home" | "builder" | "learn" | "waves";
+type Tab = "home" | "builder" | "learn" | "waves" | "works" | "assessment" | "contests";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "home", label: "Home" },
   { id: "builder", label: "Circuit Builder" },
   { id: "waves", label: "Visualizations" },
   { id: "learn", label: "Learning" },
+  { id: "works", label: "My Works" },
+  { id: "assessment", label: "Assessment" },
+  { id: "contests", label: "Contests · Roadmap" },
 ];
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
@@ -70,9 +76,12 @@ export default function App() {
       <div className="flex flex-1 min-h-0 overflow-hidden">
         <main className="flex-1 min-w-0 overflow-y-auto p-6 max-w-6xl mx-auto w-full">
           {tab === "home" && <LandingPage onOpenBuilder={() => setTab("builder")} onOpenCode={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} />}
-          {tab === "builder" && <CircuitBuilder circuit={circuit} onCircuitChange={setCircuit} theme={theme} />}
+          {tab === "builder" && <CircuitBuilder circuit={circuit} onCircuitChange={setCircuit} theme={theme} token={token} onRequireLogin={() => setTab("works")} />}
           {tab === "waves" && <VisualizationPage result={latestResult} />}
           {tab === "learn" && (token ? <LearningPage onOpenBuilder={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("learn"); }} />)}
+          {tab === "works" && (token ? <MyWorksPage token={token} onOpenCircuit={(nextCircuit) => { setCircuit(nextCircuit); setTab("builder"); }} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("works"); }} />)}
+          {tab === "assessment" && <AssessmentPage />}
+          {tab === "contests" && <ContestPage />}
         </main>
         <QuantumTutor circuit={circuit} isOpen={tutorOpen} onToggle={setTutorOpen} />
       </div>

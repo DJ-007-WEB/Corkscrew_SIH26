@@ -32,6 +32,19 @@ class CodeRequest(BaseModel):
     code: str = Field(min_length=1, max_length=20000)
 
 
+class SavedWorkRequest(BaseModel):
+    code: str = Field(min_length=1, max_length=20000)
+    title: str = Field(default="Untitled circuit", min_length=1, max_length=120)
+
+
+class SavedWork(BaseModel):
+    id: str
+    title: str
+    code: str
+    created_at: str
+    updated_at: str
+
+
 class ComplexAmplitude(BaseModel):
     real: float
     imag: float

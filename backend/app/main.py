@@ -1,14 +1,15 @@
 import logging
 import time
+from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import dns_fix  # noqa: F401
-from .auth import current_user, google_login
+from .auth import current_user, get_saved_works_collection, google_login
 from .circuit_builder import circuit_from_qiskit, circuit_to_qiskit, gate_catalog, validate_circuit
 from .quantum_engine import run_circuit
-from .schemas import ChatRequest, ChatResponse, Circuit, CodeRequest, GateDefinition, SimulationResult
+from .schemas import ChatRequest, ChatResponse, Circuit, CodeRequest, GateDefinition, SavedWork, SavedWorkRequest, SimulationResult
 from .tutor_service import answer as tutor_answer
 
 app = FastAPI(title="Quantum Learning Platform API")
@@ -69,6 +70,41 @@ def circuit_to_code(circuit: Circuit):
         return {"code": circuit_to_qiskit(circuit)}
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
+
+
+@app.get("/api/works", response_model=list[SavedWork])
+def list_saved_works(request: Request):
+    user = current_user(request)
+    collection = get_saved_works_collection()
+    if collection is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    works = collection.find({"user_id": user["sub"]}).sort("updated_at", -1)
+    return [
+        {
+            "id": str(work["_id"]),
+            "title": work["title"],
+            "code": work["code"],
+            "created_at": work["created_at"].isoformat(),
+            "updated_at": work["updated_at"].isoformat(),
+        }
+        for work in works
+    ]
+
+
+@app.post("/api/works", response_model=SavedWork)
+def save_work(payload: SavedWorkRequest, request: Request):
+    user = current_user(request)
+    collection = get_saved_works_collection()
+    if collection is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    try:
+        code = circuit_to_qiskit(circuit_from_qiskit(payload.code))
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    now = datetime.now(timezone.utc)
+    document = {"user_id": user["sub"], "title": payload.title.strip(), "code": code, "created_at": now, "updated_at": now}
+    result = collection.insert_one(document)
+    return {"id": str(result.inserted_id), "title": document["title"], "code": code, "created_at": now.isoformat(), "updated_at": now.isoformat()}
 
 
 @app.post("/api/simulate", response_model=SimulationResult)

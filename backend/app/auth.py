@@ -22,6 +22,7 @@ JWT_SECRET = os.getenv("JWT_SECRET")
 _client = None
 _db = None
 _users = None
+_saved_works = None
 
 
 def get_db():
@@ -47,6 +48,17 @@ def get_users_collection():
     if db is not None:
         _users = db["users"]
         return _users
+    return None
+
+
+def get_saved_works_collection():
+    global _saved_works
+    if _saved_works is not None:
+        return _saved_works
+    db = get_db()
+    if db is not None:
+        _saved_works = db["saved_works"]
+        return _saved_works
     return None
 
 

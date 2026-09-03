@@ -5,7 +5,8 @@ import GatePalette from "./GatePalette";
 import CodePanel from "./CodePanel";
 import ResultsPanel from "./ResultsPanel";
 import { FAMILY_COLOR } from "./gates";
-import { getGateDefinitions, simulateCircuit, validateCircuit } from "./api";
+import { circuitToCode, getGateDefinitions, saveWork, simulateCircuit, validateCircuit } from "./api";
+import { downloadCircuitPdf } from "./pdfExport";
 import { removeGate } from "./circuitBuilderLogic";
 import type { Circuit, Gate, GateDefinition, GateType, SimulationResult } from "./types";
 
@@ -31,9 +32,11 @@ interface Props {
   circuit: Circuit;
   onCircuitChange: Dispatch<SetStateAction<Circuit>>;
   theme: "dark" | "light";
+  token: string | null;
+  onRequireLogin: () => void;
 }
 
-export default function CircuitBuilder({ circuit, onCircuitChange, theme }: Props) {
+export default function CircuitBuilder({ circuit, onCircuitChange, theme, token, onRequireLogin }: Props) {
   const [definitions, setDefinitions] = useState<GateDefinition[]>([]);
   const [armedGate, setArmedGate] = useState<GateType | null>(null);
   const [pendingControl, setPendingControl] = useState<{ qubit: number; column: number } | null>(null);
@@ -42,6 +45,7 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme }: Prop
   const [loading, setLoading] = useState(false);
   const [loadingGates, setLoadingGates] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     getGateDefinitions()
@@ -171,6 +175,46 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme }: Prop
     }
   }
 
+  async function download() {
+    try {
+      const code = await circuitToCode(circuit);
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(new Blob([code], { type: "text/x-python" }));
+      link.download = "corkscrew-circuit.py";
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not download circuit");
+    }
+  }
+
+  async function downloadPdf() {
+    try {
+      const code = await circuitToCode(circuit);
+      const reportResult = result ?? await simulateCircuit(circuit);
+      downloadCircuitPdf(circuit, code, reportResult);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not download PDF report");
+    }
+  }
+
+  async function save() {
+    if (!token) {
+      onRequireLogin();
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const code = await circuitToCode(circuit);
+      await saveWork(token, code, `Circuit · ${new Date().toLocaleDateString()}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save circuit");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const handleStepChange = useCallback((_: number, gateIndex: number | null) => {
     setActiveGateIndex(gateIndex);
   }, []);
@@ -228,7 +272,7 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme }: Prop
           )}
 
           {pendingControl && <p className="text-xs font-mono text-[var(--bp-violet)] mt-2">Control set on q[{pendingControl.qubit}] — drop or click the target in the highlighted column.</p>}
-          <button onClick={run} disabled={loading || circuit.gates.length === 0} className="mt-4 px-5 py-2 rounded-md font-mono text-sm font-medium transition-all disabled:opacity-40" style={{ background: "var(--bp-cyan)", color: "#081527", boxShadow: loading ? "none" : "0 0 16px var(--bp-cyan-dim)" }}>{loading ? "Running…" : "▶ Run circuit"}</button>
+           <div className="mt-4 flex flex-wrap gap-2"><button onClick={run} disabled={loading || circuit.gates.length === 0} className="px-5 py-2 rounded-md font-mono text-sm font-medium transition-all disabled:opacity-40" style={{ background: "var(--bp-cyan)", color: "#081527", boxShadow: loading ? "none" : "0 0 16px var(--bp-cyan-dim)" }}>{loading ? "Running…" : "▶ Run circuit"}</button><button onClick={save} disabled={saving || circuit.gates.length === 0} className="px-4 py-2 rounded-md border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)] disabled:opacity-40">{saving ? "Saving…" : "Save"}</button><button onClick={download} disabled={circuit.gates.length === 0} className="px-4 py-2 rounded-md border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)] disabled:opacity-40">Download .py</button><button onClick={downloadPdf} disabled={circuit.gates.length === 0} className="px-4 py-2 rounded-md border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)] disabled:opacity-40">Download PDF</button></div>
           {error && <p className="text-sm text-[var(--bp-coral)] mt-2">{error}</p>}
         </div>
 
