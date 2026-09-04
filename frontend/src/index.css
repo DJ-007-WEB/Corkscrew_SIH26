@@ -101,6 +101,15 @@ h1, h2, h3, .font-display {
 }
 .bp-scrollbar::-webkit-scrollbar-track { background: transparent; }
 
+/* Keep page scrolling functional while hiding the viewport scrollbar. */
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
 
 html[data-theme="light"] {
   --bp-ink: #f4f8fc;

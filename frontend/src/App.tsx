@@ -74,7 +74,7 @@ export default function App() {
       </nav>
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
-        <main className="flex-1 min-w-0 overflow-y-auto p-6 max-w-6xl mx-auto w-full">
+        <main className="scrollbar-hidden flex-1 min-w-0 overflow-y-auto p-6 max-w-6xl mx-auto w-full">
           {tab === "home" && <LandingPage onOpenBuilder={() => setTab("builder")} onOpenCode={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} />}
           {tab === "builder" && <CircuitBuilder circuit={circuit} onCircuitChange={setCircuit} theme={theme} token={token} onRequireLogin={() => setTab("works")} />}
           {tab === "waves" && <VisualizationPage result={latestResult} />}
