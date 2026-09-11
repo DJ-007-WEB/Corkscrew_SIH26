@@ -110,7 +110,7 @@ class ChatRequest(BaseModel):
     circuit: Optional[Circuit] = None
     history: list[ChatMessage] = Field(default_factory=list, max_length=12)
     conversation_id: Optional[str] = Field(default=None, max_length=80)
-    focus: Optional[Literal["circuit", "bloch", "q_sphere", "timeline", "gate"]] = None
+    focus: Optional[Literal["circuit", "bloch", "q_sphere", "timeline", "gate", "bell", "deutsch", "grover", "teleport"]] = None
 
 
 class GroundedFact(BaseModel):

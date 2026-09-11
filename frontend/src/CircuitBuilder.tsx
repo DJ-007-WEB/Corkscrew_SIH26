@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { DragEvent } from "react";
 import GatePalette from "./GatePalette";
 import CodePanel from "./CodePanel";
 import ResultsPanel from "./ResultsPanel";
 import { FAMILY_COLOR } from "./gates";
-import { circuitToCode, diagnoseCircuit, getBackends, getGateDefinitions, saveWork, simulateCircuit, validateCircuit } from "./api";
+import { circuitToCode, circuitToQasm, diagnoseCircuit, getBackends, getGateDefinitions, saveWork, simulateCircuit, validateCircuit } from "./api";
 import { downloadCircuitPdf } from "./pdfExport";
 import { removeGate } from "./circuitBuilderLogic";
 import type { BackendId, BackendInfo, Circuit, CircuitDiagnosis, Gate, GateDefinition, GateType, SimulationResult } from "./types";
@@ -53,9 +53,11 @@ interface Props {
   theme: "dark" | "light";
   token: string | null;
   onRequireLogin: () => void;
+  presetCircuit: Circuit | null;
+  onPresetClear: () => void;
 }
 
-export default function CircuitBuilder({ circuit, onCircuitChange, theme, token, onRequireLogin }: Props) {
+export default function CircuitBuilder({ circuit, onCircuitChange, theme, token, onRequireLogin, presetCircuit, onPresetClear }: Props) {
   const [definitions, setDefinitions] = useState<GateDefinition[]>([]);
   const [armedGate, setArmedGate] = useState<GateType | null>(null);
   const [pendingControl, setPendingControl] = useState<{ qubit: number; column: number; type: GateType } | null>(null);
@@ -85,6 +87,24 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
         console.error("Could not load backend catalog:", err);
       });
   }, []);
+
+  const presetApplied = useRef(false);
+
+  useEffect(() => {
+    if (presetCircuit && !presetApplied.current) {
+      onCircuitChange(presetCircuit);
+      setPendingControl(null);
+      setArmedGate(null);
+      setResult(null);
+      setActiveGateIndex(null);
+      setError(null);
+      onPresetClear();
+      presetApplied.current = true;
+    }
+    if (!presetCircuit) {
+      presetApplied.current = false;
+    }
+  }, [presetCircuit]);
 
   const maxColumn = circuit.gates.length;
   const circuitWidth = useMemo(() => 80 + (maxColumn + 1) * COL_WIDTH, [maxColumn]);
@@ -262,6 +282,19 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
     }
   }
 
+  async function downloadQasm() {
+    try {
+      const qasm = await circuitToQasm(circuit);
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(new Blob([qasm], { type: "text/plain" }));
+      link.download = "corkscrew-circuit.qasm";
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not download QASM");
+    }
+  }
+
   async function downloadPdf() {
     try {
       const code = await circuitToCode(circuit);
@@ -301,7 +334,7 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
         <div className="bp-panel p-4 flex-1 min-w-0 w-full">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-text-dim)]">Circuit — {circuit.qubits} qubit{circuit.qubits > 1 ? "s" : ""}</p>
+              <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-text-dim)]">Circuit — {circuit.qubits} qubit{circuit.qubits > 1 ? "s" : ""} · {circuit.gates.length} gate{circuit.gates.length !== 1 ? "s" : ""} · depth {circuit.gates.length}</p>
               <p className="text-[10px] font-mono text-[var(--bp-text-faint)] mt-1">Drag a gate onto a wire. Two-qubit gates (CNOT, CZ, SWAP) need two clicks in the same column; rotation gates ask for an angle.</p>
             </div>
             <div className="flex gap-2 items-center flex-wrap justify-end">
@@ -388,7 +421,7 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
               {CONTROLLED_TYPES.includes(pendingControl.type) ? "Control" : "First qubit"} set on q[{pendingControl.qubit}] — drop or click the {CONTROLLED_TYPES.includes(pendingControl.type) ? "target" : "second qubit"} in the highlighted column.
             </p>
           )}
-           <div className="mt-4 flex flex-wrap gap-2"><button onClick={run} disabled={loading || circuit.gates.length === 0} className="px-5 py-2 rounded-md font-mono text-sm font-medium transition-all disabled:opacity-40" style={{ background: "var(--bp-cyan)", color: "#081527", boxShadow: loading ? "none" : "0 0 16px var(--bp-cyan-dim)" }}>{loading ? "Running…" : "▶ Run circuit"}</button><button onClick={save} disabled={saving || circuit.gates.length === 0} className="px-4 py-2 rounded-md border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)] disabled:opacity-40">{saving ? "Saving…" : "Save"}</button><button onClick={download} disabled={circuit.gates.length === 0} className="px-4 py-2 rounded-md border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)] disabled:opacity-40">Download .py</button><button onClick={downloadPdf} disabled={circuit.gates.length === 0} className="px-4 py-2 rounded-md border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)] disabled:opacity-40">Download PDF</button></div>
+           <div className="mt-4 flex flex-wrap gap-2"><button onClick={run} disabled={loading || circuit.gates.length === 0} className="px-5 py-2 rounded-md font-mono text-sm font-medium transition-all disabled:opacity-40" style={{ background: "var(--bp-cyan)", color: "#081527", boxShadow: loading ? "none" : "0 0 16px var(--bp-cyan-dim)" }}>{loading ? "Running…" : "▶ Run circuit"}</button><button onClick={save} disabled={saving || circuit.gates.length === 0} className="px-4 py-2 rounded-md border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)] disabled:opacity-40">{saving ? "Saving…" : "Save"}</button><button onClick={download} disabled={circuit.gates.length === 0} className="px-4 py-2 rounded-md border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)] disabled:opacity-40">Download .py</button><button onClick={downloadQasm} disabled={circuit.gates.length === 0} className="px-4 py-2 rounded-md border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)] disabled:opacity-40">Download .qasm</button><button onClick={downloadPdf} disabled={circuit.gates.length === 0} className="px-4 py-2 rounded-md border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)] disabled:opacity-40">Download PDF</button></div>
           {error && <p className="text-sm text-[var(--bp-coral)] mt-2">{error}</p>}
           {diagnosing && <p className="text-xs font-mono text-[var(--bp-text-faint)] mt-2">Checking the circuit for fixable issues…</p>}
           {diagnosis && diagnosis.issues.length > 0 && (

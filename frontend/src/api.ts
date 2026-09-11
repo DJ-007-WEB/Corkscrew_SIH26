@@ -45,6 +45,15 @@ export function getBackends(): Promise<BackendInfo[]> {
   return request<BackendInfo[]>("/api/backends");
 }
 
+export async function circuitToQasm(circuit: Circuit): Promise<string> {
+  const result = await request<{ qasm: string }>("/api/circuits/to-qasm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(circuit),
+  });
+  return result.qasm;
+}
+
 export function simulateCircuit(circuit: Circuit, backend: BackendId = "qiskit_aer"): Promise<SimulationResult> {
   return request<SimulationResult>("/api/simulate", {
     method: "POST",

@@ -152,3 +152,22 @@ def circuit_to_qiskit(circuit: Circuit) -> str:
 
     lines.extend(["", "print(qc)"])
     return "\n".join(lines)
+
+
+def circuit_to_qasm(circuit: Circuit) -> str:
+    """Export the circuit as OPENQASM 2.0 (same gate set as the builder)."""
+    validate_circuit(circuit)
+    lines = ["OPENQASM 2.0;", 'include "qelib1.inc";', f"qreg q[{circuit.qubits}];", f"creg c[{circuit.qubits}];", ""]
+    _QASM_METHOD = {"CNOT": "cx", "RX": "rx", "RY": "ry", "RZ": "rz"}
+
+    for gate in circuit.gates:
+        if gate.type in CONTROLLED_TYPES:
+            lines.append(f"{_QASM_METHOD.get(gate.type, gate.type.lower())} q[{gate.controls[0]}],q[{gate.targets[0]}];")
+        elif gate.type in SWAP_TYPES:
+            lines.append(f"swap q[{gate.targets[0]}],q[{gate.targets[1]}];")
+        elif gate.type in ROTATION_TYPES:
+            lines.append(f"{_QASM_METHOD[gate.type]}({gate.params[0]}) q[{gate.targets[0]}];")
+        else:
+            lines.append(f"{gate.type.lower()} q[{gate.targets[0]}];")
+
+    return "\n".join(lines) + "\n"

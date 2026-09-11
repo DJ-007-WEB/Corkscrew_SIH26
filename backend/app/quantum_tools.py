@@ -9,8 +9,72 @@ from math import atan2
 from qiskit.quantum_info import Statevector, partial_trace
 
 from .backends import _build_qiskit_circuit
-from .quantum_engine import run_circuit
-from .schemas import Circuit, GroundedFact
+from .quantum_engine import _general_explanation, run_circuit
+from .schemas import Circuit, GroundedFact, SimulationResult
+
+
+def _bell_state_explanation(circuit: Circuit, result: SimulationResult) -> str:
+    """Generate explanation specific to Bell state circuits."""
+    probabilities = result.final_probabilities
+    pair_00_11 = probabilities.get("00", 0) > 0.4 and probabilities.get("11", 0) > 0.4
+    pair_01_10 = probabilities.get("01", 0) > 0.4 and probabilities.get("10", 0) > 0.4
+
+    if pair_00_11 or pair_01_10:
+        pair = "|00> and |11>" if pair_00_11 else "|01> and |10>"
+        return (
+            f"This circuit creates a Bell state. The measurement probabilities show that only {pair} "
+            "have non-zero probability, which is the defining characteristic of maximal entanglement: "
+            "measuring one qubit instantly determines the state of the other."
+        )
+    return _general_explanation(circuit, probabilities)
+
+
+def _deutsch_jozsa_explanation(circuit: Circuit, result: SimulationResult) -> str:
+    """Generate explanation specific to Deutsch-Jozsa circuits."""
+    probabilities = result.final_probabilities
+    n = circuit.qubits - 1
+    all_zeros_key = "0" * n
+    prob_all_zeros = probabilities.get(all_zeros_key, 0)
+    if abs(prob_all_zeros - 1.0) < 1e-8:
+        return (
+            f"This circuit implements the Deutsch-Jozsa algorithm with {n} input qubit(s). "
+            f"The measurement result shows all zeros (|{'0' * n}⟩), meaning the function is constant. "
+            f"The quantum algorithm achieved this with only 1 query."
+        )
+    balanced_outcomes = [basis for basis, prob in probabilities.items()
+                        if prob > 0.01 and basis != all_zeros_key]
+    return (
+        f"This circuit implements the Deutsch-Jozsa algorithm with {n} input qubit(s). "
+        f"The measurement outcomes show a balanced function. "
+        f"Non-zero probabilities: {', '.join(balanced_outcomes)}. "
+        f"The quantum algorithm determined this with 1 query."
+    )
+
+
+def _grovers_explanation(circuit: Circuit, result: SimulationResult) -> str:
+    """Generate explanation specific to Grover's algorithm circuits."""
+    probabilities = result.final_probabilities
+    target = "1" * circuit.qubits
+    prob_target = probabilities.get(target, 0)
+    if prob_target > 0.9:
+        return (
+            f"This circuit implements Grover's algorithm with {circuit.qubits} qubit(s). "
+            f"The target state |{target}⟩ has probability {prob_target:.4f}, "
+            f"which is dramatically amplified from the initial uniform distribution of 1/{2**circuit.qubits}. "
+            f"Grover's algorithm achieves this quadratic speedup in O(√N) queries vs O(N) classically."
+        )
+    return _general_explanation(circuit, probabilities)
+
+
+def _teleportation_explanation(circuit: Circuit, result: SimulationResult) -> str:
+    """Generate explanation specific to quantum teleportation circuits."""
+    probabilities = result.final_probabilities
+    return (
+        "This circuit implements quantum teleportation of a qubit state across 3 qubits. "
+        "A Bell pair is created between qubits 1 and 2, then Alice performs a joint measurement "
+        "on qubits 0 and 1, and Bob applies corrections to qubit 2. "
+        "The original state is transferred without physically traveling through space."
+    )
 
 
 def circuit_facts(circuit: Circuit, requested_qubit: int | None = None) -> tuple[list[str], list[GroundedFact]]:
@@ -28,6 +92,10 @@ def circuit_facts(circuit: Circuit, requested_qubit: int | None = None) -> tuple
             f"step {step.step}: " + ", ".join(f"|{basis}>={probability:.3f}" for basis, probability in step.state.probabilities.items() if probability > 1e-10)
             for step in simulation.steps
         )),
+        GroundedFact(name="bell_state", value=_bell_state_explanation(circuit, simulation)),
+        GroundedFact(name="deutsch_jozsa", value=_deutsch_jozsa_explanation(circuit, simulation)),
+        GroundedFact(name="grovers", value=_grovers_explanation(circuit, simulation)),
+        GroundedFact(name="teleportation", value=_teleportation_explanation(circuit, simulation)),
     ]
 
     targets = [requested_qubit] if requested_qubit is not None else list(range(circuit.qubits))

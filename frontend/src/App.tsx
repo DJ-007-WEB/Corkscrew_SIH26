@@ -10,14 +10,16 @@ import QuantumTutor from "./QuantumTutor";
 import MyWorksPage from "./MyWorksPage";
 import AssessmentPage from "./AssessmentPage";
 import ContestPage from "./ContestPage";
+import HowToUsePage from "./HowToUsePage";
 
-type Tab = "home" | "builder" | "learn" | "waves" | "works" | "assessment" | "contests";
+type Tab = "home" | "builder" | "learn" | "waves" | "works" | "assessment" | "contests" | "howtouse";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "home", label: "Home" },
   { id: "builder", label: "Circuit Builder" },
   { id: "waves", label: "Visualizations" },
   { id: "learn", label: "Learning" },
+  { id: "howtouse", label: "How to Use" },
   { id: "works", label: "My Works" },
   { id: "assessment", label: "Assessment" },
   { id: "contests", label: "Contests · Roadmap" },
@@ -29,6 +31,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>("home");
   const [latestResult, setLatestResult] = useState<SimulationResult | null>(null);
   const [circuit, setCircuit] = useState<Circuit>({ qubits: 2, gates: [] });
+  const [presetCircuit, setPresetCircuit] = useState<Circuit | null>(null);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [token, setToken] = useState<string | null>(() => localStorage.getItem("quantum-token"));
   const [tutorOpen, setTutorOpen] = useState(false);
@@ -75,13 +78,14 @@ export default function App() {
 
       <div className="flex-1 min-h-0 overflow-hidden">
         <main className="h-full overflow-y-auto p-6 max-w-6xl mx-auto w-full">
-          {tab === "home" && <LandingPage onOpenBuilder={() => setTab("builder")} onOpenCode={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} />}
-          {tab === "builder" && <CircuitBuilder circuit={circuit} onCircuitChange={setCircuit} theme={theme} token={token} onRequireLogin={() => setTab("works")} />}
+          {tab === "home" && <LandingPage onOpenBuilder={(preset) => { if (preset) setPresetCircuit(preset); setTab("builder"); }} onOpenCode={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} onOpenHowToUse={() => setTab("howtouse")} />}
+          {tab === "builder" && <CircuitBuilder circuit={circuit} onCircuitChange={setCircuit} presetCircuit={presetCircuit} onPresetClear={() => setPresetCircuit(null)} theme={theme} token={token} onRequireLogin={() => setTab("works")} />}
           {tab === "waves" && <VisualizationPage result={latestResult} />}
-          {tab === "learn" && (token ? <LearningPage onOpenBuilder={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("learn"); }} />)}
+          {tab === "learn" && (token ? <LearningPage onOpenBuilder={(preset) => { if (preset) setPresetCircuit(preset); setTab("builder"); }} onOpenVisualizations={() => setTab("waves")} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("learn"); }} />)}
           {tab === "works" && (token ? <MyWorksPage token={token} onOpenCircuit={(nextCircuit) => { setCircuit(nextCircuit); setTab("builder"); }} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("works"); }} />)}
           {tab === "assessment" && <AssessmentPage />}
           {tab === "contests" && <ContestPage />}
+          {tab === "howtouse" && <HowToUsePage onOpenLearn={() => setTab("learn")} />}
         </main>
       </div>
       <QuantumTutor circuit={circuit} isOpen={tutorOpen} onToggle={setTutorOpen} />

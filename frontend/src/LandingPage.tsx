@@ -2,6 +2,7 @@ type LandingPageProps = {
   onOpenBuilder: () => void;
   onOpenCode: () => void;
   onOpenVisualizations: () => void;
+  onOpenHowToUse?: () => void;
 };
 
 const LEARNING_PATH = [
@@ -67,6 +68,7 @@ export default function LandingPage({
   onOpenBuilder,
   onOpenCode,
   onOpenVisualizations,
+  onOpenHowToUse,
 }: LandingPageProps) {
   return (
     <div className="space-y-16 pb-12">
@@ -101,6 +103,12 @@ export default function LandingPage({
             >
               Explore visualizations
             </button>
+            {onOpenHowToUse && <button
+              onClick={onOpenHowToUse}
+              className="px-5 py-3 rounded-md border border-[var(--bp-border-strong)] text-[var(--bp-text-dim)] hover:border-[var(--bp-cyan)] hover:text-[var(--bp-cyan)] font-mono text-sm transition-colors"
+            >
+              How to Use
+            </button>}
           </div>
         </div>
 

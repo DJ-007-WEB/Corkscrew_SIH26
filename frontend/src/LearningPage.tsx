@@ -1,10 +1,25 @@
 import { useMemo, useState } from "react";
+import type { Circuit } from "./types";
+import YouTubeVideo from "./YouTubeVideo";
+import { fetchBellPreset, fetchDjPreset, fetchGroverPreset, fetchTeleportPreset } from "./presets";
+import type { BellVariant, DjOracle, TeleportPayload } from "./presets";
+
+const SELECT_CLASS = "bg-[var(--bp-bg)] border border-[var(--bp-border)] rounded px-2 py-1.5 text-xs outline-none focus:border-[var(--bp-cyan)]";
 
 type Lesson = {
   id: string;
   title: string;
   summary: string;
   sections: { heading: string; body: string; formula?: string; example?: string }[];
+};
+
+const PRESETS: Record<string, Circuit> = {
+  "bell-state": { qubits: 2, gates: [{ type: "H", targets: [0] }, { type: "CNOT", controls: [0], targets: [1] }] },
+  "deutsch-jozsa": { qubits: 2, gates: [{ type: "X", targets: [1] }, { type: "H", targets: [1] }, { type: "H", targets: [0] }, { type: "H", targets: [1] }, { type: "CNOT", controls: [0], targets: [1] }, { type: "Z", targets: [1] }, { type: "H", targets: [0] }, { type: "H", targets: [1] }] },
+  "grover": { qubits: 2, gates: [{ type: "H", targets: [0] }, { type: "H", targets: [1] }, { type: "H", targets: [1] }, { type: "CNOT", controls: [0], targets: [1] }, { type: "H", targets: [1] }, { type: "H", targets: [0] }, { type: "H", targets: [1] }, { type: "X", targets: [0] }, { type: "X", targets: [1] }, { type: "H", targets: [1] }, { type: "CNOT", controls: [0], targets: [1] }, { type: "H", targets: [1] }, { type: "X", targets: [0] }, { type: "X", targets: [1] }, { type: "H", targets: [0] }, { type: "H", targets: [1] }] },
+  "teleportation": { qubits: 3, gates: [{ type: "H", targets: [0] }, { type: "H", targets: [1] }, { type: "CNOT", controls: [1], targets: [2] }, { type: "CNOT", controls: [0], targets: [1] }, { type: "H", targets: [0] }] },
+  "superposition": { qubits: 1, gates: [{ type: "H", targets: [0] }] },
+  "circuits": { qubits: 2, gates: [{ type: "H", targets: [0] }, { type: "CNOT", controls: [0], targets: [1] }] },
 };
 
 const LESSONS: Lesson[] = [
@@ -49,6 +64,14 @@ const LESSONS: Lesson[] = [
     { heading: "Creating a Bell state", body: "Starting from |00⟩, apply H to the first qubit and CNOT with that qubit as control. The result is an entangled Bell state." , formula: "|00⟩ → H(q₀) → CNOT(q₀,q₁) → (|00⟩ + |11⟩)/√2" },
     { heading: "Why it matters", body: "Controlled gates are building blocks for entanglement, conditional logic and many quantum algorithms." },
   ] },
+  { id: "bell-state", title: "Bell State", summary: "Create and measure the most famous entangled state in quantum computing. This module guides you through building the Bell state, running the simulation, and understanding the resulting entanglement.", sections: [
+    { heading: "What is a Bell state?", body: "A Bell state is a maximally entangled quantum state of two qubits. The state (|00⟩ + |11⟩)/√2 means that measuring one qubit instantly determines the state of the other, regardless of distance. This is the simplest example of quantum entanglement.", formula: "(|00⟩ + |11⟩)/√2" },
+    { heading: "Circuit to create a Bell state", body: "To create the Bell state |Φ⁺⟩ = (|00⟩ + |11⟩)/√2: 1. Apply a Hadamard gate (H) to the first qubit (q[0]), putting it in superposition. 2. Apply a CNOT gate with q[0] as control and q[1] as target. The Hadamard creates superposition, and the CNOT entangles the qubits.", formula: "H(q[0]); CNOT(q[0] → q[1])" },
+    { heading: "Measurement outcomes", body: "When you measure both qubits of a Bell state, you will always get correlated results: either both 0 (|00⟩) or both 1 (|11⟩). You will never get opposite outcomes (|01⟩ or |10⟩). This correlation is the hallmark of entanglement.", formula: "P(00) = 1/2, P(11) = 1/2, P(01) = 0, P(10) = 0" },
+    { heading: "Try it yourself", body: "Open the Circuit Builder below, which already has the Bell state circuit pre-loaded. Click 'Run' to simulate, then explore the Bloch sphere, Q-Sphere, and Probability Timeline visualizations.", example: "Circuit: q[0] → H → CNOT(q[0] → q[1]); q[1] → Measure" },
+    { heading: "Expected outcome", body: "For |Φ+⟩ expect P(00) = 0.5 and P(11) = 0.5 with P(01) = P(10) = 0. The |Ψ⟩ variants instead give P(01) = P(10) = 0.5. If you see all four outcomes, the qubits are not maximally entangled — check the CNOT control/target order." },
+    { heading: "Common misconception", body: "Entanglement does not send messages faster than light. Measuring q[0] tells you q[1] instantly only because the pair shares one joint state; no controllable signal travels, and the outcome itself is random." },
+  ] },
   { id: "bloch", title: "How to Read the Bloch Sphere", summary: "Use a 3D picture to understand every pure single-qubit state.", sections: [
     { heading: "The geometry", body: "The Bloch sphere represents a single-qubit pure state as a point on the unit sphere. |0⟩ is at the north pole and |1⟩ at the south pole. Equatorial points represent equal-magnitude superpositions with different relative phases." },
     { heading: "Coordinates", body: "A common parameterization is |ψ⟩ = cos(θ/2)|0⟩ + e^{iφ} sin(θ/2)|1⟩. θ controls latitude and φ controls the azimuthal angle." , formula: "|ψ⟩ = cos(θ/2)|0⟩ + e^{iφ}sin(θ/2)|1⟩" },
@@ -66,11 +89,35 @@ const LESSONS: Lesson[] = [
     { heading: "Why unitary?", body: "Unitary transformations preserve vector norm, so total probability remains one. They are reversible: U† is the inverse operation." },
     { heading: "Composition", body: "A circuit is a sequence of transformations. Matrix multiplication represents that composition, with the rightmost operation acting first when states are written as column vectors." },
   ] },
-  { id: "algorithms", title: "Quantum Algorithms: The Big Picture", summary: "See how the fundamentals become useful algorithms.", sections: [
-     { heading: "Deutsch-Jozsa (theory roadmap)", body: "Uses quantum interference and an oracle to distinguish a promised class of Boolean functions with fewer queries than a deterministic classical strategy. This lesson is theory only and is not yet buildable in Circuit Builder." },
-     { heading: "Grover search (theory roadmap)", body: "Uses amplitude amplification to increase the probability of marked states, providing a quadratic query improvement for unstructured search. This lesson is theory only and is not yet buildable in Circuit Builder." },
-     { heading: "Quantum Fourier Transform (theory roadmap)", body: "Transforms amplitudes between computational and phase-like descriptions and is a core component of phase-estimation-based algorithms. This lesson is theory only and is not yet buildable in Circuit Builder." },
-     { heading: "Teleportation (theory roadmap)", body: "Uses shared entanglement, local operations and classical communication to transfer an unknown quantum state without physically sending the original qubit. This lesson is theory only and is not yet buildable in Circuit Builder." },
+{ id: "algorithms", title: "Quantum Algorithms: The Big Picture", summary: "See how the fundamentals become useful algorithms.", sections: [
+     { heading: "Deutsch-Jozsa", body: "Uses quantum interference and an oracle to distinguish constant vs balanced Boolean functions with one query. Open the dedicated Deutsch-Jozsa lesson to run the buildable circuit in Circuit Builder." },
+     { heading: "Grover search", body: "Uses amplitude amplification to increase the probability of marked states, providing a quadratic query improvement for unstructured search. Open the dedicated Grover lesson to run the buildable circuit in Circuit Builder." },
+     { heading: "Quantum Fourier Transform (theory roadmap)", body: "Transforms amplitudes between computational and phase-like descriptions and is a core component of phase-estimation-based algorithms. This topic is theory only for now." },
+     { heading: "Teleportation", body: "Uses shared entanglement, local operations and classical communication to transfer an unknown quantum state without physically sending the original qubit. Open the dedicated Teleportation lesson to run the buildable circuit in Circuit Builder." },
+   ] },
+  { id: "deutsch-jozsa", title: "Deutsch-Jozsa Algorithm", summary: "Determine if a function is constant or balanced using only one quantum query, versus potentially many classical queries.", sections: [
+    { heading: "What problem does it solve?", body: "The Deutsch-Jozsa algorithm determines whether a given Boolean function f(x) (where x ∈ {0,1}ⁿ) is constant (all outputs same) or balanced (half 0s, half 1s). Quantumly, this can be done with ONE query; classically may require up to 2ⁿ⁻¹+1 queries.", formula: "f: {0,1}ⁿ → {0,1}   (constant vs balanced)" },
+    { heading: "How the algorithm works", body: "1. Start with |0⟩ⁿ → Apply Hⁿ to all qubits → Create superposition 2. Apply the oracle U_f that maps |x⟩|b⟩ → |x⟩|b ⊕ f(x)⟩ 3. Apply Hⁿ to the first register 4. Measure all qubits - if all 0, function is constant; otherwise balanced", formula: "Hⁿ → U_f → Hⁿ → Measure" },
+    { heading: "Key insight", body: "The magic lies in interference. The oracle imprints f(x) as a phase (-1)^{f(x)} on the superposition. After Hⁿ, constant functions collapse to |0⟩ⁿ while balanced functions have zero amplitude on |0⟩ⁿ.", formula: "Phase kickback: |x⟩ → (-1)^{f(x)}|x⟩" },
+    { heading: "Try it yourself", body: "The circuit below demonstrates the Deutsch-Jozsa algorithm with 1 qubit (the original Deutsch problem). The oracle is already configured to be balanced. Run the simulation and observe the measurement outcomes.", example: "Circuit: q[0] → H → U_f (oracle) → H → Measure; result indicates 'balanced'" },
+    { heading: "Expected outcome", body: "Balanced oracle: the input register never measures all zeros (for n=1 expect q[0]=1). Constant oracle: the input register always measures all zeros. Try the n/oracle selectors to confirm both cases with a single query each." },
+    { heading: "Common misconception", body: "The speedup is about query count under a promise, not about evaluating f(x) for all x at once and reading every value. The final Hadamards interfere the phases so one measurement reveals a global property (constant vs balanced)." },
+  ] },
+  { id: "grover", title: "Grover's Search Algorithm", summary: "Amplify the probability of finding a marked state with quadratic speedup over classical search.", sections: [
+    { heading: "What problem does it solve?", body: "Grover's algorithm searches an unsorted database of N items in O(√N) queries, compared to O(N) classically. Given a black-box function f(x) that returns 1 for exactly one marked state, Grover's finds it with high probability.", formula: "O(√N) queries vs O(N) classical" },
+    { heading: "How the algorithm works", body: "1. Apply H to all qubits to create uniform superposition 2. Apply the oracle (phase flip the marked state) 3. Apply the diffusion operator (inversion about the mean) 4. Repeat steps 2-3 about √N times 5. Measure - the marked state has amplified probability", formula: "Oracle → Diffusion → Oracle → Diffusion → Measure" },
+    { heading: "Key insight", body: "The oracle marks the target by flipping its phase, and the diffusion operator amplifies it. Each iteration rotates the state vector closer to the target. After √N iterations, the target state has near-100% probability.", formula: "Amplitude amplification: α_target → √N · α_target" },
+    { heading: "Try it yourself", body: "Pick a target and round count, then load the circuit. One round amplifies the chosen target to probability 1.0; try 2 rounds on |11⟩ to see overshoot return toward uniform.", example: "Circuit: H⊗H → Oracle(target) → Diffusion → Measure; 1 round: P(target)=1.0" },
+    { heading: "Expected outcome", body: "One round on any 2-qubit target gives P(target) = 1.0 — a full quadratic win for N=4. Two rounds overshoot back toward uniform (0.25 each), which is why iteration count matters and more rounds are not always better." },
+    { heading: "Common misconception", body: "Grover gives a quadratic speedup (O(√N)), not exponential, and the oracle must still recognize the answer. It does not search without a check function, and optimal round count grows as √N." },
+  ] },
+  { id: "teleportation", title: "Quantum Teleportation", summary: "Transfer an unknown quantum state using shared entanglement and classical communication.", sections: [
+    { heading: "What problem does it solve?", body: "Quantum teleportation transfers an unknown qubit state from Alice to Bob without physically sending the qubit. It uses a shared entangled pair and 2 classical bits. The no-cloning theorem ensures the original state is destroyed during transfer.", formula: "|ψ⟩ → |ψ⟩_Bob (using Bell pair + 2 classical bits)" },
+    { heading: "How the protocol works", body: "1. Alice and Bob share a Bell pair (qubits 1 and 2) 2. Alice has the state to teleport (qubit 0) 3. Alice applies H and CNOT to qubits 0 and 1 4. Alice measures qubits 0 and 1 (2 classical bits) 5. Bob applies X and/or Z to qubit 2 based on Alice's measurement results", formula: "Bell pair → Alice measures → Bob corrects → State teleported" },
+    { heading: "Key insight", body: "The entanglement between qubits 1 and 2 creates a channel. Alice's measurement collapses Bob's qubit into a state related to the original, and the 2 classical bits tell Bob which correction to apply. No quantum information travels through space.", formula: "No FTL communication: 2 classical bits are required" },
+    { heading: "Try it yourself", body: "The circuit below demonstrates quantum teleportation with 3 qubits. Run the simulation and observe the measurement outcomes on all qubits.", example: "Circuit: 3 qubits → Bell pair(q1,q2) → Alice ops(q0,q1) → Measure(q0,q1) → Bob corrections(q2)" },
+    { heading: "Expected outcome", body: "Alice's two qubits measure each of 00/01/10/11 with 0.25 probability — try payloads |0⟩, |1⟩, |+⟩ and confirm the distribution shape is identical. The payload is not readable from Alice's bits alone; it is recovered only after Bob's X/Z corrections." },
+    { heading: "Common misconception", body: "Nothing quantum travels faster than light and nothing is cloned: the original q[0] state is destroyed by Alice's measurement, and Bob needs her 2 classical bits before he holds the teleported state." },
   ] },
   { id: "noise", title: "Noise, Decoherence & NISQ", summary: "Understand why real quantum hardware behaves differently from an ideal simulator.", sections: [
     { heading: "Noise", body: "Physical qubits interact with their environment and hardware imperfections. Gate errors, readout errors and unwanted interactions can change results." },
@@ -84,11 +131,40 @@ const LESSONS: Lesson[] = [
   ] },
 ];
 
-export default function LearningPage({ onOpenBuilder, onOpenVisualizations }: { onOpenBuilder: () => void; onOpenVisualizations: () => void }) {
+export default function LearningPage({ onOpenBuilder, onOpenVisualizations }: { onOpenBuilder: (preset?: Circuit) => void; onOpenVisualizations: () => void }) {
   const [selected, setSelected] = useState(0);
   const [query, setQuery] = useState("");
+  const [bellVariant, setBellVariant] = useState<BellVariant>("phi_plus");
+  const [djN, setDjN] = useState<1 | 2>(1);
+  const [djOracle, setDjOracle] = useState<DjOracle>("balanced");
+  const [groverTarget, setGroverTarget] = useState("11");
+  const [groverIterations, setGroverIterations] = useState<1 | 2>(1);
+  const [teleportPayload, setTeleportPayload] = useState<TeleportPayload>("plus");
+  const [presetLoading, setPresetLoading] = useState(false);
+  const [presetError, setPresetError] = useState<string | null>(null);
   const lesson = LESSONS[selected];
   const filtered = useMemo(() => LESSONS.filter((item) => `${item.title} ${item.summary}`.toLowerCase().includes(query.toLowerCase())), [query]);
+
+  async function openPreset(lessonId: string) {
+    if (!PRESETS[lessonId]) {
+      onOpenBuilder();
+      return;
+    }
+    setPresetLoading(true);
+    setPresetError(null);
+    try {
+      if (lessonId === "bell-state") onOpenBuilder(await fetchBellPreset(bellVariant));
+      else if (lessonId === "deutsch-jozsa") onOpenBuilder(await fetchDjPreset(djN, djOracle));
+      else if (lessonId === "grover") onOpenBuilder(await fetchGroverPreset(groverTarget, groverIterations));
+      else if (lessonId === "teleportation") onOpenBuilder(await fetchTeleportPreset(teleportPayload));
+      else onOpenBuilder(PRESETS[lessonId]);
+    } catch (err) {
+      setPresetError(err instanceof Error ? err.message : "Could not load preset");
+      onOpenBuilder(PRESETS[lessonId]);
+    } finally {
+      setPresetLoading(false);
+    }
+  }
 
   return (
     <div className="grid lg:grid-cols-[260px_minmax(0,1fr)] gap-5">
@@ -116,12 +192,29 @@ export default function LearningPage({ onOpenBuilder, onOpenVisualizations }: { 
               <p className="text-sm text-[var(--bp-text-dim)] leading-7 mt-2">{section.body}</p>
               {section.formula && <pre className="mt-3 overflow-auto rounded border border-[var(--bp-border)] bg-[var(--bp-ink)] p-4 text-xs font-mono text-[var(--bp-cyan)]">{section.formula}</pre>}
               {section.example && <div className="mt-3 rounded border border-[var(--bp-border)] bg-[var(--bp-panel-raised)] p-4 text-xs font-mono">{section.example}</div>}
+              {PRESETS[lesson.id] && (section.heading.toLowerCase().includes("try it") || section.heading.toLowerCase().includes("try it yourself")) && <div className="mt-3 flex flex-wrap items-center gap-2">
+                {lesson.id === "bell-state" && <label className="text-xs font-mono text-[var(--bp-text-dim)]">State <select value={bellVariant} onChange={(e) => setBellVariant(e.target.value as BellVariant)} className={SELECT_CLASS}><option value="phi_plus">|Φ+⟩ (00+11)</option><option value="phi_minus">|Φ-⟩ (00-11)</option><option value="psi_plus">|Ψ+⟩ (01+10)</option><option value="psi_minus">|Ψ-⟩ (01-10)</option></select></label>}
+                {lesson.id === "deutsch-jozsa" && <><label className="text-xs font-mono text-[var(--bp-text-dim)]">Inputs <select value={djN} onChange={(e) => setDjN(Number(e.target.value) as 1 | 2)} className={SELECT_CLASS}><option value={1}>n=1</option><option value={2}>n=2</option></select></label><label className="text-xs font-mono text-[var(--bp-text-dim)]">Oracle <select value={djOracle} onChange={(e) => setDjOracle(e.target.value as DjOracle)} className={SELECT_CLASS}><option value="balanced">balanced</option><option value="constant_zero">constant 0</option><option value="constant_one">constant 1</option></select></label></>}
+                {lesson.id === "grover" && <><label className="text-xs font-mono text-[var(--bp-text-dim)]">Target <select value={groverTarget} onChange={(e) => setGroverTarget(e.target.value)} className={SELECT_CLASS}><option value="00">|00⟩</option><option value="01">|01⟩</option><option value="10">|10⟩</option><option value="11">|11⟩</option></select></label><label className="text-xs font-mono text-[var(--bp-text-dim)]">Rounds <select value={groverIterations} onChange={(e) => setGroverIterations(Number(e.target.value) as 1 | 2)} className={SELECT_CLASS}><option value={1}>1</option><option value={2}>2</option></select></label></>}
+                {lesson.id === "teleportation" && <label className="text-xs font-mono text-[var(--bp-text-dim)]">Send <select value={teleportPayload} onChange={(e) => setTeleportPayload(e.target.value as TeleportPayload)} className={SELECT_CLASS}><option value="plus">|+⟩</option><option value="zero">|0⟩</option><option value="one">|1⟩</option></select></label>}
+                <button onClick={() => openPreset(lesson.id)} disabled={presetLoading} className="px-4 py-2 rounded bg-[var(--bp-cyan)] text-[#081527] text-xs font-mono font-semibold hover:opacity-90 disabled:opacity-40">{presetLoading ? "Loading…" : "Try it yourself →"}</button>
+                <button onClick={onOpenVisualizations} className="px-4 py-2 rounded border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)]">Open Visualizations</button>
+              </div>}
+              {presetError && (section.heading.toLowerCase().includes("try it") || section.heading.toLowerCase().includes("try it yourself")) && <p className="text-xs text-[var(--bp-coral)] mt-2">{presetError} — opened offline fallback.</p>}
             </section>)}
+
+            {(lesson.id === "superposition" || lesson.id === "circuits" || lesson.id === "qiskit") && <div className="mt-8 flex flex-wrap gap-2"><button onClick={() => onOpenBuilder(PRESETS[lesson.id])} className="px-4 py-2 rounded bg-[var(--bp-cyan)] text-[#081527] text-xs font-mono font-semibold">Open Circuit Builder →</button><button onClick={onOpenVisualizations} className="px-4 py-2 rounded border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)]">Open Visualizations</button></div>}
+
+            {lesson.id === "bell-state" && <div className="mt-8 space-y-4"><h3 className="font-display text-lg">Recommended videos</h3><YouTubeVideo videoId="rze__aY0e4s" title="Bell State explanation" /><YouTubeVideo videoId="9MOIBcYf9wk" title="Bell State Qiskit simulation (Short)" /></div>}
+
+            {lesson.id === "deutsch-jozsa" && <div className="mt-8 space-y-4"><h3 className="font-display text-lg">Recommended videos</h3><YouTubeVideo videoId="QcK0GK7DUh8" title="Deutsch-Jozsa algorithm explanation" /><YouTubeVideo videoId="pq2Okr_BO-Y" title="Deutsch-Jozsa circuit walkthrough" /></div>}
+
+            {lesson.id === "grover" && <div className="mt-8 space-y-4"><h3 className="font-display text-lg">Recommended videos</h3><YouTubeVideo videoId="RQWpF2Gb-gU" title="Grover's search algorithm explanation" /><YouTubeVideo videoId="0RPFWZj7Jm0" title="Grover's search circuit walkthrough" /></div>}
+
+            {lesson.id === "teleportation" && <div className="mt-8 space-y-4"><h3 className="font-display text-lg">Recommended videos</h3><YouTubeVideo videoId="jxqnzltpDdE" title="Quantum teleportation explanation" /><YouTubeVideo videoId="KsvNsY4cVvE" title="Quantum teleportation circuit walkthrough" /></div>}
+
+            <div className="mt-10 pt-5 border-t border-[var(--bp-border)] flex justify-between gap-3"><button disabled={selected === 0} onClick={() => setSelected(selected - 1)} className="px-4 py-2 rounded border border-[var(--bp-border)] text-xs font-mono disabled:opacity-30">← Previous</button><button disabled={selected === LESSONS.length - 1} onClick={() => setSelected(selected + 1)} className="px-4 py-2 rounded border border-[var(--bp-border)] text-xs font-mono disabled:opacity-30">Next →</button></div>
           </div>
-
-          {(lesson.id === "superposition" || lesson.id === "circuits" || lesson.id === "qiskit") && <div className="mt-8 flex flex-wrap gap-2"><button onClick={onOpenBuilder} className="px-4 py-2 rounded bg-[var(--bp-cyan)] text-[#081527] text-xs font-mono font-semibold">Open Circuit Builder →</button><button onClick={onOpenVisualizations} className="px-4 py-2 rounded border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)]">Open Visualizations</button></div>}
-
-          <div className="mt-10 pt-5 border-t border-[var(--bp-border)] flex justify-between gap-3"><button disabled={selected === 0} onClick={() => setSelected(selected - 1)} className="px-4 py-2 rounded border border-[var(--bp-border)] text-xs font-mono disabled:opacity-30">← Previous</button><button disabled={selected === LESSONS.length - 1} onClick={() => setSelected(selected + 1)} className="px-4 py-2 rounded border border-[var(--bp-border)] text-xs font-mono disabled:opacity-30">Next →</button></div>
         </section>
       </article>
     </div>

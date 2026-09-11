@@ -7,9 +7,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import backends, dns_fix  # noqa: F401
 from .auth import current_user, get_saved_works_collection, google_login
-from .circuit_builder import circuit_from_qiskit, circuit_to_qiskit, gate_catalog, validate_circuit
+from .circuit_builder import circuit_from_qiskit, circuit_to_qasm, circuit_to_qiskit, gate_catalog, validate_circuit
 from .circuit_diagnostics import diagnose_circuit
-from .quantum_engine import run_circuit
+from .quantum_engine import (
+    create_bell_circuit,
+    create_dj_circuit,
+    create_grovers_circuit,
+    create_teleportation_circuit,
+    run_circuit,
+)
 from .schemas import (
     BackendInfo,
     ChatRequest,
@@ -97,6 +103,14 @@ def circuit_to_code(circuit: Circuit):
         raise HTTPException(400, str(exc)) from exc
 
 
+@app.post("/api/circuits/to-qasm")
+def circuit_to_qasm_endpoint(circuit: Circuit):
+    try:
+        return {"qasm": circuit_to_qasm(circuit)}
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
 @app.get("/api/works", response_model=list[SavedWork])
 def list_saved_works(request: Request):
     user = current_user(request)
@@ -145,6 +159,38 @@ def simulate(request: SimulateRequest):
         raise HTTPException(503, str(exc)) from exc
     except (KeyError, ValueError, IndexError) as exc:
         raise HTTPException(400, f"invalid circuit: {exc}") from exc
+
+
+@app.get("/api/presets/bell", response_model=Circuit)
+def preset_bell(variant: str = "phi_plus"):
+    try:
+        return create_bell_circuit(2, variant)
+    except (KeyError, ValueError, IndexError) as exc:
+        raise HTTPException(400, f"invalid bell preset: {exc}") from exc
+
+
+@app.get("/api/presets/deutsch-jozsa", response_model=Circuit)
+def preset_dj(n: int = 1, oracle: str = "balanced"):
+    try:
+        return create_dj_circuit(n, oracle)
+    except (KeyError, ValueError, IndexError) as exc:
+        raise HTTPException(400, f"invalid deutsch-jozsa preset: {exc}") from exc
+
+
+@app.get("/api/presets/grover", response_model=Circuit)
+def preset_grover(target: str = "11", iterations: int = 1):
+    try:
+        return create_grovers_circuit(2, target, iterations)
+    except (KeyError, ValueError, IndexError) as exc:
+        raise HTTPException(400, f"invalid grover preset: {exc}") from exc
+
+
+@app.get("/api/presets/teleportation", response_model=Circuit)
+def preset_teleportation(payload: str = "plus"):
+    try:
+        return create_teleportation_circuit(payload)
+    except (KeyError, ValueError, IndexError) as exc:
+        raise HTTPException(400, f"invalid teleportation preset: {exc}") from exc
 
 
 @app.post("/api/tutor/chat", response_model=ChatResponse)

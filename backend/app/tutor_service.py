@@ -22,7 +22,8 @@ load_dotenv()
 _CIRCUIT_WORDS = (
     "circuit", "q[", "qubit", "gate", "bloch", "sphere", "probability",
     "state", "measure", "result", "timeline", "visual", "phase",
-    "amplitude", "histogram", "microscope", "cnot", "hadamard", "step"
+    "amplitude", "histogram", "microscope", "cnot", "hadamard", "step",
+    "entanglement", "bell", "constant", "balanced", "oracle", "deutsch", "grover", "teleport"
 )
 _SYSTEM_PROMPT = """You are QuantumLab AI, an expert, inspiring, and friendly Quantum Physics Professor & AI Tutor.
 Your mission is to guide students through quantum computing, circuit simulations, and quantum phenomena with clarity, deep physical intuition, and engaging conversational warmth — just like modern ChatGPT and Gemini.
@@ -244,6 +245,13 @@ def _fallback_answer(message: str, facts: list[GroundedFact], grounded: bool, fo
             return (
                 "Measurement collapses a superposition into one definite basis state |x⟩ with probability P(x) = |⟨x|ψ⟩|² (Born's rule)."
             )
+        if "bell" in text or "entangl" in text:
+            return (
+                "A Bell state is a maximally entangled state of two qubits. The state (|00⟩ + |11⟩)/√2 means "
+                "that measuring one qubit instantly determines the state of the other. When you measure both qubits, "
+                "you will always get correlated results: either both 0 (|00⟩) or both 1 (|11⟩). You will never get "
+                "opposite outcomes (|01⟩ or |10⟩). This correlation is the hallmark of entanglement."
+            )
 
     # 2. Grounded circuit questions with active circuit numbers
     if grounded and facts:
@@ -282,6 +290,33 @@ def _fallback_answer(message: str, facts: list[GroundedFact], grounded: bool, fo
         # Gate button / query
         if focus == "gate" or ("gate" in text and "bloch" not in text and "sphere" not in text and "timeline" not in text):
             return f"Qiskit verified gate sequence: {gates}. Final measurement probabilities: {probability}." + (f" Step-by-step timeline: {timeline}." if timeline else "")
+
+        # Bell state query
+        if focus == "bell" or "bell" in text or "entangl" in text:
+            bell_note = ""
+            if "probabilities" in text or "outcome" in text:
+                bell_note = f" Verified probabilities: {probability}."
+            bell_fact = next((fact for fact in facts if fact.name == "bell_state"), None)
+            bell_text = bell_fact.value if bell_fact else "Bell state analysis unavailable."
+            return f"Qiskit verified Bell state: {bell_text}{bell_note}"
+
+        # Deutsch-Jozsa query
+        if focus == "deutsch" or "deutsch" in text or "constant" in text or "balanced" in text or "oracle" in text:
+            dj_fact = next((fact for fact in facts if fact.name == "deutsch_jozsa"), None)
+            dj_text = dj_fact.value if dj_fact else "Deutsch-Jozsa analysis unavailable."
+            return f"Qiskit verified Deutsch-Jozsa result: {dj_text} Final measurement probabilities: {probability}."
+
+        # Grover's algorithm query
+        if focus == "grover" or "grover" in text or "amplitude" in text or "search" in text or "amplif" in text:
+            grover_fact = next((fact for fact in facts if fact.name == "grovers"), None)
+            grover_text = grover_fact.value if grover_fact else "Grover's algorithm analysis unavailable."
+            return f"Qiskit verified Grover's algorithm: {grover_text} Final measurement probabilities: {probability}."
+
+        # Quantum teleportation query
+        if focus == "teleport" or "teleport" in text or "teleportation" in text:
+            teleport_fact = next((fact for fact in facts if fact.name == "teleportation"), None)
+            teleport_text = teleport_fact.value if teleport_fact else "Teleportation analysis unavailable."
+            return f"Qiskit verified quantum teleportation: {teleport_text} Final measurement probabilities: {probability}."
 
         # Timeline button / query
         if focus == "timeline" or "timeline" in text or "step" in text:
