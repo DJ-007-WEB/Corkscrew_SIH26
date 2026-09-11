@@ -1,6 +1,6 @@
 import type { Circuit, Gate, GateType } from "./types";
 
-export function addSingleQubitGate(circuit: Circuit, type: Exclude<GateType, "CNOT">, qubit: number, column = circuit.gates.length): Circuit {
+export function addSingleQubitGate(circuit: Circuit, type: Exclude<GateType, "CNOT" | "CZ" | "SWAP">, qubit: number, column = circuit.gates.length): Circuit {
   const nextGate: Gate = { type, targets: [qubit] };
   return {
     ...circuit,

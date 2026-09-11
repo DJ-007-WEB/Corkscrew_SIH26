@@ -1,32 +1,13 @@
-"""Quantum simulation engine backed by Qiskit Aer statevector simulation."""
+"""Quantum simulation engine - runs a validated Circuit on whichever backend
+(Qiskit Aer, PennyLane, Cirq, or qBraid) the caller selects. See backends.py
+for the per-SDK circuit builders and the statevector-convention adapter that
+keeps basis-state labels identical no matter which backend produced them.
+"""
 
-from qiskit import QuantumCircuit
-from qiskit_aer import AerSimulator
+from . import backends
+from .schemas import Circuit, ComplexAmplitude, SimulationResult, SimulationStep, StateSnapshot
 
-from .schemas import Circuit, ComplexAmplitude, Gate, SimulationResult, SimulationStep, StateSnapshot
-
-
-_SIMULATOR = AerSimulator(method="statevector")
 _EPSILON = 1e-10
-
-
-def _build_qiskit_circuit(circuit: Circuit, gates: list[Gate] | None = None) -> QuantumCircuit:
-    qc = QuantumCircuit(circuit.qubits)
-
-    for gate in circuit.gates if gates is None else gates:
-        if gate.type == "CNOT":
-            qc.cx(gate.controls[0], gate.targets[0])
-        else:
-            getattr(qc, gate.type.lower())(gate.targets[0])
-
-    return qc
-
-
-def _run_statevector(qc: QuantumCircuit):
-    qc = qc.copy()
-    qc.save_statevector()
-    result = _SIMULATOR.run(qc).result()
-    return result.get_statevector(qc)
 
 
 def _state_snapshot(statevector, n: int) -> StateSnapshot:
@@ -81,9 +62,8 @@ def _general_explanation(circuit: Circuit, final_probabilities: dict[str, float]
     )
 
 
-def run_circuit(circuit: Circuit) -> SimulationResult:
-    initial_qc = QuantumCircuit(circuit.qubits)
-    initial_state = _run_statevector(initial_qc)
+def run_circuit(circuit: Circuit, backend_id: str = "qiskit_aer") -> SimulationResult:
+    initial_state = backends.run_statevector(backend_id, circuit, [])
     steps = [
         SimulationStep(
             step=0,
@@ -95,8 +75,7 @@ def run_circuit(circuit: Circuit) -> SimulationResult:
 
     for index in range(1, len(circuit.gates) + 1):
         prefix = circuit.gates[:index]
-        qc = _build_qiskit_circuit(circuit, prefix)
-        state = _run_statevector(qc)
+        state = backends.run_statevector(backend_id, circuit, prefix)
         steps.append(
             SimulationStep(
                 step=index,
@@ -113,5 +92,5 @@ def run_circuit(circuit: Circuit) -> SimulationResult:
         final_statevector=final_snapshot.statevector,
         final_probabilities=final_snapshot.probabilities,
         explanation=_general_explanation(circuit, final_snapshot.probabilities),
-        backend="qiskit-aer-statevector",
+        backend=backends.result_label(backend_id),
     )

@@ -6,14 +6,15 @@ code builder, simulator and results UI.
 from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
-GateType = Literal["H", "X", "Y", "Z", "CNOT"]
-GateFamily = Literal["basis", "pauli", "multi"]
+GateType = Literal["H", "X", "Y", "Z", "S", "T", "RX", "RY", "RZ", "CNOT", "CZ", "SWAP"]
+GateFamily = Literal["basis", "pauli", "phase", "rotation", "multi"]
 
 
 class Gate(BaseModel):
     type: GateType
     targets: list[int]
     controls: Optional[list[int]] = None
+    params: Optional[list[float]] = None
 
 
 class Circuit(BaseModel):
@@ -30,6 +31,33 @@ class GateDefinition(BaseModel):
 
 class CodeRequest(BaseModel):
     code: str = Field(min_length=1, max_length=20000)
+
+
+BackendId = Literal["qiskit_aer", "pennylane", "cirq"]  # "qbraid" disabled — see backends.py
+
+
+class SimulateRequest(Circuit):
+    backend: BackendId = "qiskit_aer"
+
+
+class BackendInfo(BaseModel):
+    id: str
+    label: str
+    description: str
+    available: bool
+    unavailable_reason: Optional[str] = None
+
+
+class CircuitIssue(BaseModel):
+    gate_index: Optional[int] = None
+    message: str
+    suggestion: str
+
+
+class CircuitDiagnosis(BaseModel):
+    valid: bool
+    issues: list[CircuitIssue]
+    fixed_circuit: Optional[Circuit] = None
 
 
 class SavedWorkRequest(BaseModel):

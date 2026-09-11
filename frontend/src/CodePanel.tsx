@@ -83,7 +83,7 @@ export default function CodePanel({ circuit, onCircuitChange, theme }: Props) {
 
       <div className="flex items-center justify-between gap-3 mt-3">
         <p className="text-[10px] text-[var(--bp-text-faint)] leading-relaxed">
-          Supported: QuantumCircuit, H, X, Y, Z and CNOT.
+          Supported: QuantumCircuit, H, X, Y, Z, S, T, RX, RY, RZ, CNOT, CZ and SWAP.
         </p>
         <button
           onClick={applyCode}

@@ -5,11 +5,24 @@ from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import dns_fix  # noqa: F401
+from . import backends, dns_fix  # noqa: F401
 from .auth import current_user, get_saved_works_collection, google_login
 from .circuit_builder import circuit_from_qiskit, circuit_to_qiskit, gate_catalog, validate_circuit
+from .circuit_diagnostics import diagnose_circuit
 from .quantum_engine import run_circuit
-from .schemas import ChatRequest, ChatResponse, Circuit, CodeRequest, GateDefinition, SavedWork, SavedWorkRequest, SimulationResult
+from .schemas import (
+    BackendInfo,
+    ChatRequest,
+    ChatResponse,
+    Circuit,
+    CircuitDiagnosis,
+    CodeRequest,
+    GateDefinition,
+    SavedWork,
+    SavedWorkRequest,
+    SimulateRequest,
+    SimulationResult,
+)
 from .tutor_service import answer as tutor_answer
 
 app = FastAPI(title="Quantum Learning Platform API")
@@ -48,12 +61,24 @@ def auth_me(request: Request):
     return {"user": current_user(request)}
 
 
+@app.get("/api/backends", response_model=list[BackendInfo])
+def backend_list():
+    return backends.backend_catalog()
+
+
 @app.post("/api/circuits/validate", response_model=Circuit)
 def validate(circuit: Circuit):
     try:
         return validate_circuit(circuit)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
+
+
+@app.post("/api/circuits/diagnose", response_model=CircuitDiagnosis)
+def diagnose(circuit: Circuit):
+    """Non-throwing companion to /validate: returns every problem found in
+    the circuit plus a suggested (and auto-applicable) fix for each."""
+    return diagnose_circuit(circuit)
 
 
 @app.post("/api/circuits/from-code", response_model=Circuit)
@@ -108,10 +133,16 @@ def save_work(payload: SavedWorkRequest, request: Request):
 
 
 @app.post("/api/simulate", response_model=SimulationResult)
-def simulate(circuit: Circuit):
+def simulate(request: SimulateRequest):
+    circuit = Circuit(qubits=request.qubits, gates=request.gates)
     try:
         validate_circuit(circuit)
-        return run_circuit(circuit)
+    except ValueError as exc:
+        raise HTTPException(400, f"invalid circuit: {exc}") from exc
+    try:
+        return run_circuit(circuit, request.backend)
+    except backends.BackendUnavailable as exc:
+        raise HTTPException(503, str(exc)) from exc
     except (KeyError, ValueError, IndexError) as exc:
         raise HTTPException(400, f"invalid circuit: {exc}") from exc
 

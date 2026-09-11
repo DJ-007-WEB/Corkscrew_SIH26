@@ -73,8 +73,8 @@ export default function App() {
         ))}
       </nav>
 
-      <div className="flex flex-1 min-h-0 overflow-hidden">
-        <main className="flex-1 min-w-0 overflow-y-auto p-6 max-w-6xl mx-auto w-full">
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <main className="h-full overflow-y-auto p-6 max-w-6xl mx-auto w-full">
           {tab === "home" && <LandingPage onOpenBuilder={() => setTab("builder")} onOpenCode={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} />}
           {tab === "builder" && <CircuitBuilder circuit={circuit} onCircuitChange={setCircuit} theme={theme} token={token} onRequireLogin={() => setTab("works")} />}
           {tab === "waves" && <VisualizationPage result={latestResult} />}
@@ -83,8 +83,8 @@ export default function App() {
           {tab === "assessment" && <AssessmentPage />}
           {tab === "contests" && <ContestPage />}
         </main>
-        <QuantumTutor circuit={circuit} isOpen={tutorOpen} onToggle={setTutorOpen} />
       </div>
+      <QuantumTutor circuit={circuit} isOpen={tutorOpen} onToggle={setTutorOpen} />
     </div>
   );
 

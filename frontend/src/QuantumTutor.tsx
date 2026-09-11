@@ -62,8 +62,8 @@ export default function QuantumTutor({ circuit, isOpen, onToggle }: Props) {
 
       {isOpen && (
         <aside
-          className="flex flex-col border-l border-[var(--bp-border-strong)] shadow-2xl overflow-hidden h-full"
-          style={{ background: "var(--bp-panel)", boxShadow: "-18px 0 45px rgba(8, 21, 39, 0.55), -2px 0 18px rgba(79, 216, 240, 0.10)", minWidth: "min(440px, 92vw)", maxWidth: "min(440px, 92vw)" }}
+          className="fixed inset-y-0 right-0 z-50 flex flex-col border-l border-[var(--bp-border-strong)] shadow-2xl overflow-hidden"
+          style={{ background: "var(--bp-panel)", boxShadow: "-18px 0 45px rgba(8, 21, 39, 0.55), -2px 0 18px rgba(79, 216, 240, 0.10)", width: "min(440px, 92vw)" }}
           role="dialog"
           aria-label="Quantum Tutor"
         >

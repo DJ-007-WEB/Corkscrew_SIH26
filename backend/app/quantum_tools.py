@@ -8,7 +8,8 @@ from math import atan2
 
 from qiskit.quantum_info import Statevector, partial_trace
 
-from .quantum_engine import _build_qiskit_circuit, run_circuit
+from .backends import _build_qiskit_circuit
+from .quantum_engine import run_circuit
 from .schemas import Circuit, GroundedFact
 
 

@@ -1,13 +1,14 @@
 // Shared Circuit IR contract. The backend is authoritative for gate definitions,
 // validation, code <-> circuit translation and simulation results.
 
-export type GateType = "H" | "X" | "Y" | "Z" | "CNOT";
-export type GateFamily = "basis" | "pauli" | "multi";
+export type GateType = "H" | "X" | "Y" | "Z" | "S" | "T" | "RX" | "RY" | "RZ" | "CNOT" | "CZ" | "SWAP";
+export type GateFamily = "basis" | "pauli" | "phase" | "rotation" | "multi";
 
 export interface Gate {
   type: GateType;
   targets: number[];
   controls?: number[];
+  params?: number[];
 }
 
 export interface Circuit {
@@ -24,6 +25,28 @@ export interface GateDefinition {
 
 export interface CodeRequest {
   code: string;
+}
+
+export type BackendId = "qiskit_aer" | "pennylane" | "cirq"; // "qbraid" disabled server-side, see backend/app/backends.py
+
+export interface BackendInfo {
+  id: BackendId;
+  label: string;
+  description: string;
+  available: boolean;
+  unavailable_reason?: string | null;
+}
+
+export interface CircuitIssue {
+  gate_index: number | null;
+  message: string;
+  suggestion: string;
+}
+
+export interface CircuitDiagnosis {
+  valid: boolean;
+  issues: CircuitIssue[];
+  fixed_circuit: Circuit | null;
 }
 
 export interface SavedWork {

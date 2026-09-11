@@ -5,16 +5,35 @@ import GatePalette from "./GatePalette";
 import CodePanel from "./CodePanel";
 import ResultsPanel from "./ResultsPanel";
 import { FAMILY_COLOR } from "./gates";
-import { circuitToCode, getGateDefinitions, saveWork, simulateCircuit, validateCircuit } from "./api";
+import { circuitToCode, diagnoseCircuit, getBackends, getGateDefinitions, saveWork, simulateCircuit, validateCircuit } from "./api";
 import { downloadCircuitPdf } from "./pdfExport";
 import { removeGate } from "./circuitBuilderLogic";
-import type { Circuit, Gate, GateDefinition, GateType, SimulationResult } from "./types";
+import type { BackendId, BackendInfo, Circuit, CircuitDiagnosis, Gate, GateDefinition, GateType, SimulationResult } from "./types";
 
 const MIN_QUBITS = 1;
 const MAX_QUBITS = 8;
 const COL_WIDTH = 72;
 const WIRE_HEIGHT = 56;
 const DRAG_TYPE = "application/x-corkscrew-gate";
+
+const CONTROLLED_TYPES: GateType[] = ["CNOT", "CZ"];
+const SWAP_TYPES: GateType[] = ["SWAP"];
+const ROTATION_TYPES: GateType[] = ["RX", "RY", "RZ"];
+const TWO_QUBIT_TYPES: GateType[] = [...CONTROLLED_TYPES, ...SWAP_TYPES];
+
+function formatAngle(radians: number): string {
+  const turns = radians / Math.PI;
+  if (Math.abs(turns) < 1e-9) return "0";
+  const rounded = Math.round(turns * 4) / 4; // snap to nearest quarter-turn for a friendly label
+  if (Math.abs(rounded - turns) < 1e-6 && rounded !== 0) {
+    const sign = rounded < 0 ? "-" : "";
+    const abs = Math.abs(rounded);
+    if (abs === 1) return `${sign}π`;
+    if (abs === 0.5) return `${sign}π/2`;
+    if (abs === 0.25) return `${sign}π/4`;
+  }
+  return radians.toFixed(2);
+}
 
 function familyColor(definitions: GateDefinition[], type: GateType) {
   const family = definitions.find((definition) => definition.type === type)?.family;
@@ -39,19 +58,32 @@ interface Props {
 export default function CircuitBuilder({ circuit, onCircuitChange, theme, token, onRequireLogin }: Props) {
   const [definitions, setDefinitions] = useState<GateDefinition[]>([]);
   const [armedGate, setArmedGate] = useState<GateType | null>(null);
-  const [pendingControl, setPendingControl] = useState<{ qubit: number; column: number } | null>(null);
+  const [pendingControl, setPendingControl] = useState<{ qubit: number; column: number; type: GateType } | null>(null);
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [activeGateIndex, setActiveGateIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingGates, setLoadingGates] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [backendCatalog, setBackendCatalog] = useState<BackendInfo[]>([]);
+  const [backendId, setBackendId] = useState<BackendId>("qiskit_aer");
+  const [diagnosis, setDiagnosis] = useState<CircuitDiagnosis | null>(null);
+  const [diagnosing, setDiagnosing] = useState(false);
 
   useEffect(() => {
     getGateDefinitions()
       .then(setDefinitions)
       .catch((err) => setError(err instanceof Error ? err.message : "Could not load gate catalog"))
       .finally(() => setLoadingGates(false));
+  }, []);
+
+  useEffect(() => {
+    getBackends()
+      .then(setBackendCatalog)
+      .catch((err) => {
+        setBackendCatalog([]);
+        console.error("Could not load backend catalog:", err);
+      });
   }, []);
 
   const maxColumn = circuit.gates.length;
@@ -63,31 +95,50 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
       gates: [...current.gates.slice(0, column), gate, ...current.gates.slice(column)],
     }));
     setResult(null);
+    setDiagnosis(null);
     setActiveGateIndex(null);
   }
 
   function placeGate(type: GateType, qubit: number, column: number) {
     setError(null);
     setResult(null);
+    setDiagnosis(null);
     setActiveGateIndex(null);
 
-    if (type === "CNOT") {
-      if (!pendingControl) {
-        setPendingControl({ qubit, column });
-        setArmedGate("CNOT");
+    if (TWO_QUBIT_TYPES.includes(type)) {
+      if (!pendingControl || pendingControl.type !== type) {
+        setPendingControl({ qubit, column, type });
+        setArmedGate(type);
         return;
       }
       if (pendingControl.column !== column) {
-        setError("Place the CNOT target in the same circuit column as its control.");
+        setError(`Place the second ${type} qubit in the same circuit column as the first.`);
         return;
       }
       if (pendingControl.qubit === qubit) {
         setPendingControl(null);
         return;
       }
-      insertGate({ type: "CNOT", controls: [pendingControl.qubit], targets: [qubit] }, column);
+      const gate: Gate = CONTROLLED_TYPES.includes(type)
+        ? { type, controls: [pendingControl.qubit], targets: [qubit] }
+        : { type: "SWAP", targets: [pendingControl.qubit, qubit] };
+      insertGate(gate, column);
       setPendingControl(null);
       setArmedGate(null);
+      return;
+    }
+
+    if (ROTATION_TYPES.includes(type)) {
+      const raw = window.prompt(`Angle for ${type} in radians (e.g. 1.5708 for π/2, 3.1416 for π):`, "1.5708");
+      setArmedGate(null);
+      setPendingControl(null);
+      if (raw === null) return; // cancelled
+      const angle = Number(raw);
+      if (!Number.isFinite(angle)) {
+        setError(`"${raw}" isn't a valid angle in radians. Try a number like 1.5708.`);
+        return;
+      }
+      insertGate({ type, targets: [qubit], params: [angle] }, column);
       return;
     }
 
@@ -112,6 +163,7 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
     setPendingControl(null);
     setArmedGate(null);
     setResult(null);
+    setDiagnosis(null);
     setActiveGateIndex(null);
   }
 
@@ -120,6 +172,7 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
     setPendingControl(null);
     setArmedGate(null);
     setResult(null);
+    setDiagnosis(null);
     setActiveGateIndex(null);
     setError(null);
   }
@@ -128,6 +181,7 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
     if (circuit.qubits < MAX_QUBITS) {
       onCircuitChange({ ...circuit, qubits: circuit.qubits + 1 });
       setResult(null);
+      setDiagnosis(null);
       setActiveGateIndex(null);
     }
   }
@@ -138,6 +192,7 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
     if (circuit.qubits > MIN_QUBITS && !inUse) {
       onCircuitChange({ ...circuit, qubits: circuit.qubits - 1 });
       setResult(null);
+      setDiagnosis(null);
       setActiveGateIndex(null);
     } else if (inUse) {
       setError(`q[${highest}] is used by a gate. Remove that gate before removing the qubit.`);
@@ -151,6 +206,7 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
       setPendingControl(null);
       setArmedGate(null);
       setResult(null);
+      setDiagnosis(null);
       setActiveGateIndex(null);
       setError(null);
     } catch (err) {
@@ -158,18 +214,36 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
     }
   }
 
+  async function applyFix() {
+    if (!diagnosis?.fixed_circuit) return;
+    onCircuitChange(diagnosis.fixed_circuit);
+    setDiagnosis(null);
+    setError(null);
+    setResult(null);
+  }
+
   async function run() {
     setLoading(true);
     setError(null);
+    setDiagnosis(null);
     setActiveGateIndex(null);
     try {
       const validated = await validateCircuit(circuit);
       onCircuitChange(validated);
-      const simulation = await simulateCircuit(validated);
+      const simulation = await simulateCircuit(validated, backendId);
       setResult(simulation);
       window.dispatchEvent(new CustomEvent("quantum:simulation", { detail: simulation }));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Simulation failed");
+      setDiagnosing(true);
+      try {
+        const report = await diagnoseCircuit(circuit);
+        if (!report.valid) setDiagnosis(report);
+      } catch {
+        // Diagnostics are a best-effort add-on — a failure here shouldn't hide the original error.
+      } finally {
+        setDiagnosing(false);
+      }
     } finally {
       setLoading(false);
     }
@@ -191,7 +265,7 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
   async function downloadPdf() {
     try {
       const code = await circuitToCode(circuit);
-      const reportResult = result ?? await simulateCircuit(circuit);
+      const reportResult = result ?? await simulateCircuit(circuit, backendId);
       downloadCircuitPdf(circuit, code, reportResult);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not download PDF report");
@@ -228,9 +302,31 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-text-dim)]">Circuit — {circuit.qubits} qubit{circuit.qubits > 1 ? "s" : ""}</p>
-              <p className="text-[10px] font-mono text-[var(--bp-text-faint)] mt-1">Drag a gate onto a wire. Drop CNOT on control, then target in the same column.</p>
+              <p className="text-[10px] font-mono text-[var(--bp-text-faint)] mt-1">Drag a gate onto a wire. Two-qubit gates (CNOT, CZ, SWAP) need two clicks in the same column; rotation gates ask for an angle.</p>
             </div>
-            <div className="flex gap-2 items-center">
+            <div className="flex gap-2 items-center flex-wrap justify-end">
+              <label className="flex items-center gap-1.5" title="Backend used to build and simulate this circuit">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--bp-text-faint)] hidden sm:inline">Backend</span>
+                <select
+                  value={backendId}
+                  onChange={(event) => { setBackendId(event.target.value as BackendId); setResult(null); setDiagnosis(null); }}
+                  className="bg-[var(--bp-panel-raised)] border border-[var(--bp-border-strong)] rounded px-2 py-1 text-[11px] font-mono text-[var(--bp-text-dim)] hover:border-[var(--bp-cyan)] focus:outline-none focus:border-[var(--bp-cyan)] max-w-[9.5rem]"
+                >
+                  {(backendCatalog.length > 0
+                    ? backendCatalog
+                    : [{ id: "qiskit_aer", label: "Qiskit Aer", description: "", available: true, unavailable_reason: null }]
+                  ).map((backend) => (
+                    <option
+                      key={backend.id}
+                      value={backend.id}
+                      disabled={!backend.available}
+                      title={backend.available ? undefined : backend.unavailable_reason ?? undefined}
+                    >
+                      {backend.label}{backend.available ? "" : " (unavailable)"}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <button onClick={removeQubit} className="w-6 h-6 rounded border border-[var(--bp-border-strong)] text-[var(--bp-text-dim)] text-sm hover:border-[var(--bp-cyan)] hover:text-[var(--bp-cyan)]">−</button>
               <button onClick={addQubit} className="w-6 h-6 rounded border border-[var(--bp-border-strong)] text-[var(--bp-text-dim)] text-sm hover:border-[var(--bp-cyan)] hover:text-[var(--bp-cyan)]">+</button>
               <button onClick={clearAll} className="text-xs font-mono text-[var(--bp-text-faint)] hover:text-[var(--bp-coral)] ml-2">clear</button>
@@ -255,25 +351,66 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
                       return (
                         <div key={`${qi}-${ci}`} onClick={() => { if (armedGate) placeGate(armedGate, qi, ci); else if (gate) removeColumn(ci); }} onDragOver={onCellDragOver} onDrop={(event) => onCellDrop(event, qi, ci)} title={isOpenSlot || !gate ? "Drop a gate here" : "Click to remove this gate"} className="absolute flex items-center justify-center rounded cursor-pointer transition-colors hover:bg-[var(--bp-cyan)]/5" style={{ left: 64 + ci * COL_WIDTH, top: 0, width: COL_WIDTH, height: WIRE_HEIGHT }}>
                           {pending && <span className="absolute w-8 h-8 rounded-md border border-dashed border-[var(--bp-violet)] opacity-70" />}
-                          {gate && gate.type === "CNOT" && gate.controls?.[0] === qi && <span className="block w-3 h-3 rounded-full transition-all duration-300" style={{ background: active ? "var(--bp-cyan)" : "var(--bp-violet)", boxShadow: active ? "0 0 14px var(--bp-cyan)" : "none" }} />}
+                          {gate && CONTROLLED_TYPES.includes(gate.type) && gate.controls?.[0] === qi && <span className="block w-3 h-3 rounded-full transition-all duration-300" style={{ background: active ? "var(--bp-cyan)" : "var(--bp-violet)", boxShadow: active ? "0 0 14px var(--bp-cyan)" : "none" }} />}
                           {gate && gate.type === "CNOT" && gate.targets[0] === qi && <span className="flex items-center justify-center w-7 h-7 rounded-full border-2 font-mono text-xs transition-all duration-300" style={{ borderColor: active ? "var(--bp-cyan)" : "var(--bp-violet)", color: active ? "var(--bp-cyan)" : "var(--bp-violet)", boxShadow: active ? "0 0 14px var(--bp-cyan)" : "none", transform: active ? "scale(1.08)" : "scale(1)" }}>⊕</span>}
-                          {gate && gate.type !== "CNOT" && gate.targets[0] === qi && <span className="flex items-center justify-center w-8 h-8 rounded-md font-mono text-xs font-semibold transition-all duration-300" style={{ border: `1.5px solid ${active ? "var(--bp-cyan)" : gateColor}`, color: active ? "var(--bp-cyan)" : gateColor, boxShadow: active ? "0 0 14px var(--bp-cyan)" : "none", transform: active ? "scale(1.08)" : "scale(1)" }}>{definitions.find((definition) => definition.type === gate.type)?.label ?? gate.type}</span>}
+                          {gate && gate.type === "CZ" && gate.targets[0] === qi && <span className="block w-3 h-3 rounded-full transition-all duration-300" style={{ background: active ? "var(--bp-cyan)" : "var(--bp-violet)", boxShadow: active ? "0 0 14px var(--bp-cyan)" : "none" }} />}
+                          {gate && gate.type === "SWAP" && gate.targets.includes(qi) && <span className="flex items-center justify-center w-7 h-7 font-mono text-sm transition-all duration-300" style={{ color: active ? "var(--bp-cyan)" : "var(--bp-violet)", textShadow: active ? "0 0 10px var(--bp-cyan)" : "none", transform: active ? "scale(1.15)" : "scale(1)" }}>✕</span>}
+                          {gate && !TWO_QUBIT_TYPES.includes(gate.type) && gate.targets[0] === qi && (
+                            <span className="flex flex-col items-center justify-center w-9 h-9 rounded-md font-mono transition-all duration-300 leading-none" style={{ border: `1.5px solid ${active ? "var(--bp-cyan)" : gateColor}`, color: active ? "var(--bp-cyan)" : gateColor, boxShadow: active ? "0 0 14px var(--bp-cyan)" : "none", transform: active ? "scale(1.08)" : "scale(1)" }}>
+                              <span className="text-xs font-semibold">{definitions.find((definition) => definition.type === gate.type)?.label ?? gate.type}</span>
+                              {ROTATION_TYPES.includes(gate.type) && gate.params?.[0] !== undefined && <span className="text-[8px] opacity-80">{formatAngle(gate.params[0])}</span>}
+                            </span>
+                          )}
                           {!gate && armedGate && <span className="w-8 h-8 rounded-md border border-dashed border-[var(--bp-cyan)] opacity-40" />}
                         </div>
                       );
                     })}
                   </div>
                 ))}
-                {circuit.gates.map((gate, ci) => gate.type === "CNOT" && gate.controls ? (
-                  <div key={`conn-${ci}`} className="absolute w-px pointer-events-none transition-all duration-300" style={{ left: 64 + ci * COL_WIDTH + COL_WIDTH / 2, top: Math.min(gate.controls[0], gate.targets[0]) * WIRE_HEIGHT + WIRE_HEIGHT / 2, height: Math.abs(gate.targets[0] - gate.controls[0]) * WIRE_HEIGHT, background: activeGateIndex === ci ? "var(--bp-cyan)" : "var(--bp-violet)", opacity: activeGateIndex === ci ? 1 : 0.75, boxShadow: activeGateIndex === ci ? "0 0 10px var(--bp-cyan)" : "none" }} />
-                ) : null)}
+                {circuit.gates.map((gate, ci) => {
+                  const pair = CONTROLLED_TYPES.includes(gate.type) && gate.controls
+                    ? [gate.controls[0], gate.targets[0]]
+                    : gate.type === "SWAP" && gate.targets.length === 2
+                    ? [gate.targets[0], gate.targets[1]]
+                    : null;
+                  if (!pair) return null;
+                  const [a, b] = pair;
+                  return (
+                    <div key={`conn-${ci}`} className="absolute w-px pointer-events-none transition-all duration-300" style={{ left: 64 + ci * COL_WIDTH + COL_WIDTH / 2, top: Math.min(a, b) * WIRE_HEIGHT + WIRE_HEIGHT / 2, height: Math.abs(a - b) * WIRE_HEIGHT, background: activeGateIndex === ci ? "var(--bp-cyan)" : "var(--bp-violet)", opacity: activeGateIndex === ci ? 1 : 0.75, boxShadow: activeGateIndex === ci ? "0 0 10px var(--bp-cyan)" : "none" }} />
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {pendingControl && <p className="text-xs font-mono text-[var(--bp-violet)] mt-2">Control set on q[{pendingControl.qubit}] — drop or click the target in the highlighted column.</p>}
+          {pendingControl && (
+            <p className="text-xs font-mono text-[var(--bp-violet)] mt-2">
+              {CONTROLLED_TYPES.includes(pendingControl.type) ? "Control" : "First qubit"} set on q[{pendingControl.qubit}] — drop or click the {CONTROLLED_TYPES.includes(pendingControl.type) ? "target" : "second qubit"} in the highlighted column.
+            </p>
+          )}
            <div className="mt-4 flex flex-wrap gap-2"><button onClick={run} disabled={loading || circuit.gates.length === 0} className="px-5 py-2 rounded-md font-mono text-sm font-medium transition-all disabled:opacity-40" style={{ background: "var(--bp-cyan)", color: "#081527", boxShadow: loading ? "none" : "0 0 16px var(--bp-cyan-dim)" }}>{loading ? "Running…" : "▶ Run circuit"}</button><button onClick={save} disabled={saving || circuit.gates.length === 0} className="px-4 py-2 rounded-md border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)] disabled:opacity-40">{saving ? "Saving…" : "Save"}</button><button onClick={download} disabled={circuit.gates.length === 0} className="px-4 py-2 rounded-md border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)] disabled:opacity-40">Download .py</button><button onClick={downloadPdf} disabled={circuit.gates.length === 0} className="px-4 py-2 rounded-md border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)] disabled:opacity-40">Download PDF</button></div>
           {error && <p className="text-sm text-[var(--bp-coral)] mt-2">{error}</p>}
+          {diagnosing && <p className="text-xs font-mono text-[var(--bp-text-faint)] mt-2">Checking the circuit for fixable issues…</p>}
+          {diagnosis && diagnosis.issues.length > 0 && (
+            <div className="mt-3 rounded-md border border-[var(--bp-coral)]/40 bg-[var(--bp-coral)]/5 p-3 space-y-2.5">
+              <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-coral)]">
+                This circuit is invalid — {diagnosis.issues.length} issue{diagnosis.issues.length > 1 ? "s" : ""} found
+              </p>
+              <ul className="space-y-2">
+                {diagnosis.issues.map((issue, index) => (
+                  <li key={index} className="text-xs leading-relaxed">
+                    <p className="text-[var(--bp-text)]">{issue.message}</p>
+                    <p className="text-[var(--bp-mint)] mt-0.5">→ {issue.suggestion}</p>
+                  </li>
+                ))}
+              </ul>
+              {diagnosis.fixed_circuit && (
+                <button onClick={applyFix} className="px-3 py-1.5 rounded-md border border-[var(--bp-mint)] text-[var(--bp-mint)] text-[11px] font-mono hover:bg-[var(--bp-mint)]/10">
+                  ✓ Apply suggested fix
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         <CodePanel circuit={circuit} onCircuitChange={handleCodeCircuit} theme={theme} />

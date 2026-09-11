@@ -44,7 +44,15 @@ export default function GatePalette({ definitions, armedGate, onArm }: Props) {
       </div>
       <p className="text-[11px] text-[var(--bp-text-faint)] mt-4 leading-snug">
         {armedGate
-          ? `Drag ${armedGate} onto a wire, or click a wire to place it${armedGate === "CNOT" ? " — control first, target second" : ""}.`
+          ? `Drag ${armedGate} onto a wire, or click a wire to place it${
+              armedGate === "CNOT" || armedGate === "CZ"
+                ? " — control first, target second"
+                : armedGate === "SWAP"
+                ? " — first qubit, then the second to swap with"
+                : ["RX", "RY", "RZ"].includes(armedGate)
+                ? " — you'll be asked for an angle in radians"
+                : ""
+            }.`
           : "Drag a gate onto a qubit wire to place it."}
       </p>
     </div>

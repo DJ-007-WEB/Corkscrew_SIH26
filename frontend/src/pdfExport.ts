@@ -25,10 +25,19 @@ function buildContent(circuit: Circuit, code: string, result: SimulationResult |
   }
   circuit.gates.forEach((gate, index) => {
     const x = startX + index * colWidth + colWidth / 2;
-    if (gate.type === "CNOT" && gate.controls) {
+    if (gate.controls?.length) {
       const controlY = 650 - gate.controls[0] * 28;
       const targetY = 650 - gate.targets[0] * 28;
-      commands.push("0.65 0.55 0.98 RG", "1.2 w", `${x} ${Math.min(controlY, targetY)} m ${x} ${Math.max(controlY, targetY)} l S`, `${x} ${controlY} 5 0 360 arc f`, `${x - 8} ${targetY - 8} m ${x + 8} ${targetY + 8} l S`, `${x - 8} ${targetY + 8} m ${x + 8} ${targetY - 8} l S`);
+      commands.push("0.65 0.55 0.98 RG", "1.2 w", `${x} ${Math.min(controlY, targetY)} m ${x} ${Math.max(controlY, targetY)} l S`, `${x} ${controlY} 5 0 360 arc f`);
+      if (gate.type === "CNOT") {
+        commands.push(`${x - 8} ${targetY - 8} m ${x + 8} ${targetY + 8} l S`, `${x - 8} ${targetY + 8} m ${x + 8} ${targetY - 8} l S`);
+      } else {
+        commands.push(`${x} ${targetY} 5 0 360 arc f`);
+      }
+    } else if (gate.type === "SWAP" && gate.targets.length === 2) {
+      const [yA, yB] = gate.targets.map((qubit) => 650 - qubit * 28);
+      commands.push("0.65 0.55 0.98 RG", "1.2 w", `${x} ${Math.min(yA, yB)} m ${x} ${Math.max(yA, yB)} l S`);
+      [yA, yB].forEach((y) => commands.push(`${x - 6} ${y - 6} m ${x + 6} ${y + 6} l S`, `${x - 6} ${y + 6} m ${x + 6} ${y - 6} l S`));
     } else {
       const y = 650 - gate.targets[0] * 28;
       commands.push("0.31 0.85 0.94 RG", "0.8 w", `${x - 12} ${y - 10} 24 20 re S`, "0.85 0.9 0.94 rg", text(x - 7, y - 3, gate.type, 8, true));

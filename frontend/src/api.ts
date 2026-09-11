@@ -1,4 +1,4 @@
-import type { ChatMessage, Circuit, CodeRequest, GateDefinition, SavedWork, SimulationResult, TutorResponse } from "./types";
+import type { BackendId, BackendInfo, ChatMessage, Circuit, CircuitDiagnosis, CodeRequest, GateDefinition, SavedWork, SimulationResult, TutorResponse } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -41,8 +41,20 @@ export async function circuitToCode(circuit: Circuit): Promise<string> {
   return result.code;
 }
 
-export function simulateCircuit(circuit: Circuit): Promise<SimulationResult> {
+export function getBackends(): Promise<BackendInfo[]> {
+  return request<BackendInfo[]>("/api/backends");
+}
+
+export function simulateCircuit(circuit: Circuit, backend: BackendId = "qiskit_aer"): Promise<SimulationResult> {
   return request<SimulationResult>("/api/simulate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...circuit, backend }),
+  });
+}
+
+export function diagnoseCircuit(circuit: Circuit): Promise<CircuitDiagnosis> {
+  return request<CircuitDiagnosis>("/api/circuits/diagnose", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(circuit),

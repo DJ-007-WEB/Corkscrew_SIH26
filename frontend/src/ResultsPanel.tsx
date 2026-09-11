@@ -3,7 +3,9 @@ import type { Gate, SimulationResult } from "./types";
 
 function gateLabel(gate: Gate | null) {
   if (!gate) return "Initial state";
-  if (gate.type === "CNOT") return `CNOT q[${gate.controls?.[0]}] → q[${gate.targets[0]}]`;
+  if (gate.controls?.length) return `${gate.type} q[${gate.controls[0]}] → q[${gate.targets[0]}]`;
+  if (gate.type === "SWAP") return `SWAP q[${gate.targets[0]}] ↔ q[${gate.targets[1]}]`;
+  if (gate.params?.length) return `${gate.type}(${gate.params[0].toFixed(2)}) q[${gate.targets[0]}]`;
   return `${gate.type} q[${gate.targets[0]}]`;
 }
 
@@ -13,9 +15,18 @@ function gateExplanation(gate: Gate | null, probabilities: Record<string, number
   const dominant = Object.entries(probabilities).sort(([, a], [, b]) => b - a)[0];
   if (gate.type === "H") return `Hadamard was applied to q[${gate.targets[0]}]. The simulated state now has ${active} measurable basis state${active === 1 ? "" : "s"}.`;
   if (gate.type === "CNOT") return `CNOT used q[${gate.controls?.[0]}] as the control and q[${gate.targets[0]}] as the target. The state shown is calculated from that controlled operation.`;
+  if (gate.type === "CZ") return `CZ used q[${gate.controls?.[0]}] as the control and q[${gate.targets[0]}] as the target, flipping the phase only when both qubits are |1⟩.`;
+  if (gate.type === "SWAP") return `SWAP exchanged the states of q[${gate.targets[0]}] and q[${gate.targets[1]}].`;
   if (gate.type === "X") return `Pauli-X was applied to q[${gate.targets[0]}], flipping its computational-basis component. The probabilities are calculated from the resulting state.`;
   if (gate.type === "Y") return `Pauli-Y was applied to q[${gate.targets[0]}]. It changes both basis and phase components of the qubit.`;
   if (gate.type === "Z") return `Pauli-Z was applied to q[${gate.targets[0]}]. It changes the phase of the |1⟩ component without changing measurement probabilities by itself.`;
+  if (gate.type === "S") return `S was applied to q[${gate.targets[0]}], adding a quarter-turn (π/2) phase to its |1⟩ component.`;
+  if (gate.type === "T") return `T was applied to q[${gate.targets[0]}], adding an eighth-turn (π/4) phase to its |1⟩ component.`;
+  if (gate.type === "RX" || gate.type === "RY" || gate.type === "RZ") {
+    const angle = gate.params?.[0] ?? 0;
+    const axis = gate.type[1];
+    return `${gate.type} rotated q[${gate.targets[0]}] by ${angle.toFixed(3)} radians about the ${axis} axis of the Bloch sphere.`;
+  }
   return dominant ? `After this operation, the most likely outcome is |${dominant[0]}⟩ at ${(dominant[1] * 100).toFixed(1)}%.` : "The state has been updated by the applied gate.";
 }
 
