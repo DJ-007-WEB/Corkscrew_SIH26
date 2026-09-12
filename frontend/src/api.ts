@@ -86,10 +86,25 @@ export function listSavedWorks(token: string): Promise<SavedWork[]> {
   return request<SavedWork[]>("/api/works", { headers: authHeaders(token) });
 }
 
-export function saveWork(token: string, code: string, title: string): Promise<SavedWork> {
+export function saveWork(token: string, code: string, title: string, description = ""): Promise<SavedWork> {
   return request<SavedWork>("/api/works", {
     method: "POST",
     headers: { ...authHeaders(token), "Content-Type": "application/json" },
-    body: JSON.stringify({ code, title }),
+    body: JSON.stringify({ code, title, description }),
+  });
+}
+
+export function updateWork(token: string, id: string, patch: { title?: string; description?: string }): Promise<SavedWork> {
+  return request<SavedWork>(`/api/works/${id}`, {
+    method: "PATCH",
+    headers: { ...authHeaders(token), "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+}
+
+export function deleteWork(token: string, id: string): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>(`/api/works/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
   });
 }

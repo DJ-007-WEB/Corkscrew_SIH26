@@ -55,9 +55,11 @@ interface Props {
   onRequireLogin: () => void;
   presetCircuit: Circuit | null;
   onPresetClear: () => void;
+  returnLabel?: string | null;
+  onReturn?: () => void;
 }
 
-export default function CircuitBuilder({ circuit, onCircuitChange, theme, token, onRequireLogin, presetCircuit, onPresetClear }: Props) {
+export default function CircuitBuilder({ circuit, onCircuitChange, theme, token, onRequireLogin, presetCircuit, onPresetClear, returnLabel, onReturn }: Props) {
   const [definitions, setDefinitions] = useState<GateDefinition[]>([]);
   const [armedGate, setArmedGate] = useState<GateType | null>(null);
   const [pendingControl, setPendingControl] = useState<{ qubit: number; column: number; type: GateType } | null>(null);
@@ -67,6 +69,10 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
   const [loadingGates, setLoadingGates] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [saveTitle, setSaveTitle] = useState("");
+  const [saveDescription, setSaveDescription] = useState("");
+  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [backendCatalog, setBackendCatalog] = useState<BackendInfo[]>([]);
   const [backendId, setBackendId] = useState<BackendId>("qiskit_aer");
   const [diagnosis, setDiagnosis] = useState<CircuitDiagnosis | null>(null);
@@ -310,11 +316,26 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
       onRequireLogin();
       return;
     }
+    setSaveTitle(`Circuit · ${new Date().toLocaleDateString()}`);
+    setSaveDescription("");
+    setSaveSuccess(null);
+    setShowSaveDialog(true);
+  }
+
+  async function confirmSave() {
+    if (!token) return;
+    const title = saveTitle.trim();
+    if (!title) {
+      setError("Give your circuit a name before saving.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
       const code = await circuitToCode(circuit);
-      await saveWork(token, code, `Circuit · ${new Date().toLocaleDateString()}`);
+      const saved = await saveWork(token, code, title, saveDescription.trim());
+      setSaveSuccess(`Saved as "${saved.title}". Find it in My Works.`);
+      setShowSaveDialog(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save circuit");
     } finally {
@@ -328,6 +349,12 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
 
   return (
     <div className="space-y-4">
+      {returnLabel && onReturn && (
+        <div className="flex flex-wrap items-center gap-3 rounded-md border border-[var(--bp-cyan)]/40 bg-[var(--bp-cyan-dim)] px-4 py-2.5">
+          <p className="text-xs font-mono text-[var(--bp-text)]">Trying it from <span className="text-[var(--bp-cyan)] font-semibold">{returnLabel}</span> — your lesson position is saved.</p>
+          <button onClick={onReturn} className="ml-auto px-3 py-1.5 rounded bg-[var(--bp-cyan)] text-[#081527] text-[11px] font-mono font-semibold hover:opacity-90">← Back to lesson</button>
+        </div>
+      )}
       <div className="flex flex-col xl:flex-row gap-4 items-start">
         <GatePalette definitions={definitions} armedGate={armedGate} onArm={setArmedGate} />
 
@@ -422,6 +449,18 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
             </p>
           )}
            <div className="mt-4 flex flex-wrap gap-2"><button onClick={run} disabled={loading || circuit.gates.length === 0} className="px-5 py-2 rounded-md font-mono text-sm font-medium transition-all disabled:opacity-40" style={{ background: "var(--bp-cyan)", color: "#081527", boxShadow: loading ? "none" : "0 0 16px var(--bp-cyan-dim)" }}>{loading ? "Running…" : "▶ Run circuit"}</button><button onClick={save} disabled={saving || circuit.gates.length === 0} className="px-4 py-2 rounded-md border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)] disabled:opacity-40">{saving ? "Saving…" : "Save"}</button><button onClick={download} disabled={circuit.gates.length === 0} className="px-4 py-2 rounded-md border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)] disabled:opacity-40">Download .py</button><button onClick={downloadQasm} disabled={circuit.gates.length === 0} className="px-4 py-2 rounded-md border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)] disabled:opacity-40">Download .qasm</button><button onClick={downloadPdf} disabled={circuit.gates.length === 0} className="px-4 py-2 rounded-md border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)] disabled:opacity-40">Download PDF</button></div>
+          {saveSuccess && <p className="text-xs font-mono text-[var(--bp-mint)] mt-2">{saveSuccess}</p>}
+          {showSaveDialog && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowSaveDialog(false)}>
+              <div className="bp-panel w-full max-w-md p-5" onClick={(e) => e.stopPropagation()}>
+                <h3 className="font-display text-lg">Save circuit to My Works</h3>
+                <p className="text-xs text-[var(--bp-text-dim)] mt-1">{circuit.qubits} qubit{circuit.qubits > 1 ? "s" : ""} · {circuit.gates.length} gate{circuit.gates.length !== 1 ? "s" : ""} — give it a name so you can find it later.</p>
+                <label className="block mt-4 text-xs font-mono uppercase tracking-wider text-[var(--bp-text-dim)]">Name *<input value={saveTitle} onChange={(e) => setSaveTitle(e.target.value)} maxLength={120} placeholder="e.g. Bell state demo" className="mt-1.5 w-full bg-[var(--bp-bg)] border border-[var(--bp-border)] rounded px-3 py-2 text-sm normal-case tracking-normal outline-none focus:border-[var(--bp-cyan)]" /></label>
+                <label className="block mt-3 text-xs font-mono uppercase tracking-wider text-[var(--bp-text-dim)]">Description <span className="normal-case tracking-normal">(optional)</span><textarea value={saveDescription} onChange={(e) => setSaveDescription(e.target.value)} maxLength={500} rows={3} placeholder="What does this circuit do? e.g. H + CNOT entanglement demo from the gates lesson" className="mt-1.5 w-full bg-[var(--bp-bg)] border border-[var(--bp-border)] rounded px-3 py-2 text-sm normal-case tracking-normal outline-none focus:border-[var(--bp-cyan)] resize-y" /></label>
+                <div className="mt-4 flex justify-end gap-2"><button onClick={() => setShowSaveDialog(false)} className="px-4 py-2 rounded border border-[var(--bp-border)] text-xs font-mono">Cancel</button><button onClick={confirmSave} disabled={saving || !saveTitle.trim()} className="px-4 py-2 rounded bg-[var(--bp-cyan)] text-[#081527] text-xs font-mono font-semibold disabled:opacity-40">{saving ? "Saving…" : "Save circuit"}</button></div>
+              </div>
+            </div>
+          )}
           {error && <p className="text-sm text-[var(--bp-coral)] mt-2">{error}</p>}
           {diagnosing && <p className="text-xs font-mono text-[var(--bp-text-faint)] mt-2">Checking the circuit for fixable issues…</p>}
           {diagnosis && diagnosis.issues.length > 0 && (

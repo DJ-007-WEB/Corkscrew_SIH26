@@ -19,6 +19,7 @@ const PRESETS: Record<string, Circuit> = {
   "grover": { qubits: 2, gates: [{ type: "H", targets: [0] }, { type: "H", targets: [1] }, { type: "H", targets: [1] }, { type: "CNOT", controls: [0], targets: [1] }, { type: "H", targets: [1] }, { type: "H", targets: [0] }, { type: "H", targets: [1] }, { type: "X", targets: [0] }, { type: "X", targets: [1] }, { type: "H", targets: [1] }, { type: "CNOT", controls: [0], targets: [1] }, { type: "H", targets: [1] }, { type: "X", targets: [0] }, { type: "X", targets: [1] }, { type: "H", targets: [0] }, { type: "H", targets: [1] }] },
   "teleportation": { qubits: 3, gates: [{ type: "H", targets: [0] }, { type: "H", targets: [1] }, { type: "CNOT", controls: [1], targets: [2] }, { type: "CNOT", controls: [0], targets: [1] }, { type: "H", targets: [0] }] },
   "superposition": { qubits: 1, gates: [{ type: "H", targets: [0] }] },
+  "gates": { qubits: 1, gates: [{ type: "H", targets: [0] }, { type: "S", targets: [0] }, { type: "T", targets: [0] }, { type: "RX", targets: [0], params: [Math.PI / 2] }, { type: "RZ", targets: [0], params: [Math.PI / 4] }] },
   "circuits": { qubits: 2, gates: [{ type: "H", targets: [0] }, { type: "CNOT", controls: [0], targets: [1] }] },
 };
 
@@ -42,11 +43,13 @@ const LESSONS: Lesson[] = [
     { heading: "Shots", body: "A simulator or quantum device is normally sampled repeatedly. A histogram of many shots estimates the underlying probability distribution." },
     { heading: "Measurement is not just reading a hidden bit", body: "A superposition is a quantum state, not a classical probability distribution. Operations before measurement can change amplitudes and therefore the distribution of outcomes." },
   ] },
-  { id: "gates", title: "Quantum Gates", summary: "Learn the core gates and how they transform qubits.", sections: [
+  { id: "gates", title: "Quantum Gates", summary: "Learn the core gates and how they transform qubits. Every gate below works in Circuit Builder — load the demo and run it.", sections: [
     { heading: "X, Y and Z", body: "The Pauli gates are fundamental single-qubit operations. X swaps |0⟩ and |1⟩. Y also swaps them while introducing phase factors. Z leaves |0⟩ unchanged and changes the phase of |1⟩." , formula: "X = [[0,1],[1,0]]    Y = [[0,-i],[i,0]]    Z = [[1,0],[0,-1]]" },
     { heading: "Hadamard H", body: "H maps computational-basis states to equal superpositions and is one of the most useful gates for creating interference." , formula: "H = 1/√2 [[1,1],[1,-1]]" },
-     { heading: "S and T (theory only)", body: "S and T are phase gates. They change relative phase without changing computational-basis probabilities immediately. Their phase changes can later become visible through interference. These gates are not yet buildable in Circuit Builder." },
-     { heading: "Rotation gates (theory only)", body: "Rx(θ), Ry(θ) and Rz(θ) rotate a single-qubit state around the corresponding Bloch-sphere axes. The angle parameter controls the rotation. These gates are not yet buildable in Circuit Builder." },
+    { heading: "S gate — quarter-turn phase (√Z)", body: "S leaves |0⟩ unchanged and multiplies |1⟩ by i (a +90° rotation about the Z axis of the Bloch sphere). It is called √Z because applying S twice equals Z. On its own it does not change computational-basis probabilities, but it changes relative phase, which becomes visible after interference — compare H → H against H → S → H.", formula: "S = [[1,0],[0,i]]    S·S = Z    S|+⟩ = (|0⟩ + i|1⟩)/√2" },
+    { heading: "T gate — eighth-turn phase (√S)", body: "T leaves |0⟩ unchanged and multiplies |1⟩ by e^{iπ/4} (a +45° rotation about the Z axis). Applying T twice equals S. T plus H plus CNOT is enough for universal quantum computation, which is why T matters for real algorithms even though its effect needs interference to be seen.", formula: "T = [[1,0],[0,e^{iπ/4}]]    T·T = S" },
+    { heading: "Rotation gates Rx(θ), Ry(θ), Rz(θ)", body: "Rx, Ry and Rz rotate a single-qubit state by the angle θ (in radians) around the X, Y or Z axis of the Bloch sphere. In Circuit Builder you type the angle when you drop the gate — try π/2 (1.5708) and π (3.1416) first. Useful identities: Rx(π) acts like X (up to global phase), Ry(π/2) maps |0⟩ to an equal superposition, and Rz(θ) is a continuous version of the S/T phase idea.", formula: "Rx(θ) = [[cos(θ/2), -i·sin(θ/2)],[-i·sin(θ/2), cos(θ/2)]]    Rz(θ) = [[e^{-iθ/2},0],[0,e^{iθ/2}]]" },
+    { heading: "Try it yourself", body: "Load the combined demo circuit: H puts the qubit in superposition, S and T add phase, then RX(π/2) and RZ(π/4) rotate the state. Run it, then open Visualizations to watch the Bloch vector and probabilities move at each step. Remove or change one gate and re-run to see what it contributed.", example: "Demo: |0⟩ → H → S → T → RX(π/2) → RZ(π/4) → Measure" },
   ] },
   { id: "circuits", title: "How to Read Quantum Circuits", summary: "Understand wires, gate order, controls, targets and circuit depth.", sections: [
     { heading: "Wires and registers", body: "Each horizontal wire represents a qubit. A collection of wires is a quantum register. Gates are applied in circuit order, conventionally from left to right." },
@@ -131,8 +134,8 @@ const LESSONS: Lesson[] = [
   ] },
 ];
 
-export default function LearningPage({ onOpenBuilder, onOpenVisualizations }: { onOpenBuilder: (preset?: Circuit) => void; onOpenVisualizations: () => void }) {
-  const [selected, setSelected] = useState(0);
+export default function LearningPage({ activeLessonId, onLessonChange, onOpenBuilder, onOpenVisualizations }: { activeLessonId?: string; onLessonChange?: (id: string) => void; onOpenBuilder: (preset?: Circuit, originLessonId?: string) => void; onOpenVisualizations: () => void }) {
+  const [uncontrolled, setUncontrolled] = useState(0);
   const [query, setQuery] = useState("");
   const [bellVariant, setBellVariant] = useState<BellVariant>("phi_plus");
   const [djN, setDjN] = useState<1 | 2>(1);
@@ -142,25 +145,31 @@ export default function LearningPage({ onOpenBuilder, onOpenVisualizations }: { 
   const [teleportPayload, setTeleportPayload] = useState<TeleportPayload>("plus");
   const [presetLoading, setPresetLoading] = useState(false);
   const [presetError, setPresetError] = useState<string | null>(null);
+  const controlledIndex = activeLessonId ? LESSONS.findIndex((l) => l.id === activeLessonId) : -1;
+  const selected = controlledIndex >= 0 ? controlledIndex : uncontrolled;
+  const setSelected = (index: number) => {
+    if (onLessonChange) onLessonChange(LESSONS[index].id);
+    else setUncontrolled(index);
+  };
   const lesson = LESSONS[selected];
   const filtered = useMemo(() => LESSONS.filter((item) => `${item.title} ${item.summary}`.toLowerCase().includes(query.toLowerCase())), [query]);
 
   async function openPreset(lessonId: string) {
     if (!PRESETS[lessonId]) {
-      onOpenBuilder();
+      onOpenBuilder(undefined, lessonId);
       return;
     }
     setPresetLoading(true);
     setPresetError(null);
     try {
-      if (lessonId === "bell-state") onOpenBuilder(await fetchBellPreset(bellVariant));
-      else if (lessonId === "deutsch-jozsa") onOpenBuilder(await fetchDjPreset(djN, djOracle));
-      else if (lessonId === "grover") onOpenBuilder(await fetchGroverPreset(groverTarget, groverIterations));
-      else if (lessonId === "teleportation") onOpenBuilder(await fetchTeleportPreset(teleportPayload));
-      else onOpenBuilder(PRESETS[lessonId]);
+      if (lessonId === "bell-state") onOpenBuilder(await fetchBellPreset(bellVariant), lessonId);
+      else if (lessonId === "deutsch-jozsa") onOpenBuilder(await fetchDjPreset(djN, djOracle), lessonId);
+      else if (lessonId === "grover") onOpenBuilder(await fetchGroverPreset(groverTarget, groverIterations), lessonId);
+      else if (lessonId === "teleportation") onOpenBuilder(await fetchTeleportPreset(teleportPayload), lessonId);
+      else onOpenBuilder(PRESETS[lessonId], lessonId);
     } catch (err) {
       setPresetError(err instanceof Error ? err.message : "Could not load preset");
-      onOpenBuilder(PRESETS[lessonId]);
+      onOpenBuilder(PRESETS[lessonId], lessonId);
     } finally {
       setPresetLoading(false);
     }
@@ -203,7 +212,7 @@ export default function LearningPage({ onOpenBuilder, onOpenVisualizations }: { 
               {presetError && (section.heading.toLowerCase().includes("try it") || section.heading.toLowerCase().includes("try it yourself")) && <p className="text-xs text-[var(--bp-coral)] mt-2">{presetError} — opened offline fallback.</p>}
             </section>)}
 
-            {(lesson.id === "superposition" || lesson.id === "circuits" || lesson.id === "qiskit") && <div className="mt-8 flex flex-wrap gap-2"><button onClick={() => onOpenBuilder(PRESETS[lesson.id])} className="px-4 py-2 rounded bg-[var(--bp-cyan)] text-[#081527] text-xs font-mono font-semibold">Open Circuit Builder →</button><button onClick={onOpenVisualizations} className="px-4 py-2 rounded border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)]">Open Visualizations</button></div>}
+            {(lesson.id === "superposition" || lesson.id === "circuits" || lesson.id === "qiskit") && <div className="mt-8 flex flex-wrap gap-2"><button onClick={() => onOpenBuilder(PRESETS[lesson.id], lesson.id)} className="px-4 py-2 rounded bg-[var(--bp-cyan)] text-[#081527] text-xs font-mono font-semibold">Open Circuit Builder →</button><button onClick={onOpenVisualizations} className="px-4 py-2 rounded border border-[var(--bp-border-strong)] text-xs font-mono hover:border-[var(--bp-cyan)]">Open Visualizations</button></div>}
 
             {lesson.id === "bell-state" && <div className="mt-8 space-y-4"><h3 className="font-display text-lg">Recommended videos</h3><YouTubeVideo videoId="rze__aY0e4s" title="Bell State explanation" /><YouTubeVideo videoId="9MOIBcYf9wk" title="Bell State Qiskit simulation (Short)" /></div>}
 

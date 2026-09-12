@@ -63,11 +63,13 @@ class CircuitDiagnosis(BaseModel):
 class SavedWorkRequest(BaseModel):
     code: str = Field(min_length=1, max_length=20000)
     title: str = Field(default="Untitled circuit", min_length=1, max_length=120)
+    description: str = Field(default="", max_length=500)
 
 
 class SavedWork(BaseModel):
     id: str
     title: str
+    description: str = ""
     code: str
     created_at: str
     updated_at: str

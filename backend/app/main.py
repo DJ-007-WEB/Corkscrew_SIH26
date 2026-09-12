@@ -122,6 +122,7 @@ def list_saved_works(request: Request):
         {
             "id": str(work["_id"]),
             "title": work["title"],
+            "description": work.get("description", ""),
             "code": work["code"],
             "created_at": work["created_at"].isoformat(),
             "updated_at": work["updated_at"].isoformat(),
@@ -141,9 +142,52 @@ def save_work(payload: SavedWorkRequest, request: Request):
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
     now = datetime.now(timezone.utc)
-    document = {"user_id": user["sub"], "title": payload.title.strip(), "code": code, "created_at": now, "updated_at": now}
+    document = {"user_id": user["sub"], "title": payload.title.strip(), "description": payload.description.strip(), "code": code, "created_at": now, "updated_at": now}
     result = collection.insert_one(document)
-    return {"id": str(result.inserted_id), "title": document["title"], "code": code, "created_at": now.isoformat(), "updated_at": now.isoformat()}
+    return {"id": str(result.inserted_id), "title": document["title"], "description": document["description"], "code": code, "created_at": now.isoformat(), "updated_at": now.isoformat()}
+
+
+@app.patch("/api/works/{work_id}", response_model=SavedWork)
+def rename_work(work_id: str, payload: dict, request: Request):
+    from bson import ObjectId
+
+    user = current_user(request)
+    collection = get_saved_works_collection()
+    if collection is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    try:
+        oid = ObjectId(work_id)
+    except Exception as exc:
+        raise HTTPException(400, "Invalid work id") from exc
+    update: dict = {"updated_at": datetime.now(timezone.utc)}
+    if "title" in payload and isinstance(payload["title"], str) and payload["title"].strip():
+        update["title"] = payload["title"].strip()[:120]
+    if "description" in payload and isinstance(payload["description"], str):
+        update["description"] = payload["description"].strip()[:500]
+    if len(update) == 1:
+        raise HTTPException(400, "Nothing to update")
+    result = collection.find_one_and_update({"_id": oid, "user_id": user["sub"]}, {"$set": update}, return_document=True)
+    if result is None:
+        raise HTTPException(404, "Saved work not found")
+    return {"id": str(result["_id"]), "title": result["title"], "description": result.get("description", ""), "code": result["code"], "created_at": result["created_at"].isoformat(), "updated_at": result["updated_at"].isoformat()}
+
+
+@app.delete("/api/works/{work_id}")
+def delete_work(work_id: str, request: Request):
+    from bson import ObjectId
+
+    user = current_user(request)
+    collection = get_saved_works_collection()
+    if collection is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    try:
+        oid = ObjectId(work_id)
+    except Exception as exc:
+        raise HTTPException(400, "Invalid work id") from exc
+    result = collection.delete_one({"_id": oid, "user_id": user["sub"]})
+    if result.deleted_count == 0:
+        raise HTTPException(404, "Saved work not found")
+    return {"ok": True}
 
 
 @app.post("/api/simulate", response_model=SimulationResult)

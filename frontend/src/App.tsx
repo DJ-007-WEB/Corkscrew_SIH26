@@ -35,6 +35,8 @@ export default function App() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [token, setToken] = useState<string | null>(() => localStorage.getItem("quantum-token"));
   const [tutorOpen, setTutorOpen] = useState(false);
+  const [activeLessonId, setActiveLessonId] = useState<string>(() => localStorage.getItem("quantum-lesson") ?? "intro");
+  const [builderOrigin, setBuilderOrigin] = useState<string | null>(null);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -54,6 +56,38 @@ export default function App() {
     setToken(null);
     setTab("home");
   }
+
+  function handleLessonChange(id: string) {
+    setActiveLessonId(id);
+    localStorage.setItem("quantum-lesson", id);
+  }
+
+  function openBuilderFromLesson(preset: Circuit | undefined, lessonId?: string) {
+    if (preset) setPresetCircuit(preset);
+    setBuilderOrigin(lessonId ?? null);
+    setTab("builder");
+  }
+
+  const LESSON_TITLES: Record<string, string> = {
+    intro: "Introduction to Quantum Computing",
+    qubits: "Bits, Qubits & Quantum States",
+    superposition: "Superposition & Interference",
+    measurement: "Measurement & Probability",
+    gates: "Quantum Gates",
+    circuits: "How to Read Quantum Circuits",
+    multiqubit: "Multiple Qubits & Tensor Products",
+    controlled: "CNOT & Controlled Gates",
+    "bell-state": "Bell State",
+    bloch: "How to Read the Bloch Sphere",
+    qsphere: "How to Read the Q-Sphere",
+    unitary: "Matrices, Unitaries & Reversibility",
+    algorithms: "Quantum Algorithms: The Big Picture",
+    "deutsch-jozsa": "Deutsch-Jozsa Algorithm",
+    grover: "Grover's Search Algorithm",
+    teleportation: "Quantum Teleportation",
+    noise: "Noise, Decoherence & NISQ",
+    qiskit: "Getting Started with Qiskit",
+  };
 
   const content = (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -78,10 +112,10 @@ export default function App() {
 
       <div className="flex-1 min-h-0 overflow-hidden">
         <main className="h-full overflow-y-auto p-6 max-w-6xl mx-auto w-full">
-          {tab === "home" && <LandingPage onOpenBuilder={(preset) => { if (preset) setPresetCircuit(preset); setTab("builder"); }} onOpenCode={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} onOpenHowToUse={() => setTab("howtouse")} />}
-          {tab === "builder" && <CircuitBuilder circuit={circuit} onCircuitChange={setCircuit} presetCircuit={presetCircuit} onPresetClear={() => setPresetCircuit(null)} theme={theme} token={token} onRequireLogin={() => setTab("works")} />}
+          {tab === "home" && <LandingPage onOpenBuilder={(preset) => { if (preset) setPresetCircuit(preset); setBuilderOrigin(null); setTab("builder"); }} onOpenCode={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} onOpenHowToUse={() => setTab("howtouse")} />}
+          {tab === "builder" && <CircuitBuilder circuit={circuit} onCircuitChange={setCircuit} presetCircuit={presetCircuit} onPresetClear={() => setPresetCircuit(null)} theme={theme} token={token} onRequireLogin={() => setTab("works")} returnLabel={builderOrigin ? LESSON_TITLES[builderOrigin] ?? builderOrigin : null} onReturn={builderOrigin ? () => setTab("learn") : undefined} />}
           {tab === "waves" && <VisualizationPage result={latestResult} />}
-          {tab === "learn" && (token ? <LearningPage onOpenBuilder={(preset) => { if (preset) setPresetCircuit(preset); setTab("builder"); }} onOpenVisualizations={() => setTab("waves")} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("learn"); }} />)}
+          {tab === "learn" && (token ? <LearningPage activeLessonId={activeLessonId} onLessonChange={handleLessonChange} onOpenBuilder={openBuilderFromLesson} onOpenVisualizations={() => setTab("waves")} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("learn"); }} />)}
           {tab === "works" && (token ? <MyWorksPage token={token} onOpenCircuit={(nextCircuit) => { setCircuit(nextCircuit); setTab("builder"); }} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("works"); }} />)}
           {tab === "assessment" && <AssessmentPage />}
           {tab === "contests" && <ContestPage />}

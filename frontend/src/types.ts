@@ -52,6 +52,7 @@ export interface CircuitDiagnosis {
 export interface SavedWork {
   id: string;
   title: string;
+  description: string;
   code: string;
   created_at: string;
   updated_at: string;
