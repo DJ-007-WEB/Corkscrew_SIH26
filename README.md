@@ -165,6 +165,7 @@ Corkscrew_SIH26/
 │   └── run.py                  # Uvicorn entrypoint
 │
 ├── frontend/
+|   ├──modules                  # all the module and quizzes content included its difficulty level and question-concept mapping
 │   ├── src/
 │   │   ├── App.tsx             # Root container with centralized floating Quantum Tutor
 │   │   ├── QuantumTutor.tsx    # Centralized floating AI chatbot drawer component
