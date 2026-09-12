@@ -1,0 +1,517 @@
+{
+  "MODULE": "Module 5 — Measurement, Probabilities & Basic Protocols",
+  "MODULE_GOAL": "Deepen understanding of measurement and use it in simple protocols.",
+  "MODULE_PREREQUISITES": [
+    "Qubit",
+    "Quantum state",
+    "Probability amplitudes",
+    "Superposition",
+    "Two-qubit states and tensor product",
+    "Two-qubit gates (CNOT, CZ)",
+    "Entanglement and Bell states"
+  ],
+  "SOURCE_REFERENCES": [
+    "[Microsoft Learn — Quantum: Explore superposition, https://learn.microsoft.com/en-us/training/modules/explore-superposition/1-introduction]",
+    "[Qiskit Textbook, Chapter on Measurement and Quantum Protocols]",
+    "[Nielsen & Chuang, Quantum Computation and Quantum Information, Ch. 1-2, Superdense Coding & Teleportation sections]",
+    "[ACM/IEEE CS2023 Q-AR Knowledge Unit – Measurement, Statistics & Protocols]"
+  ],
+
+  "CONCEPTS": [
+
+    {
+      "SUBTOPIC_ID": "5.1",
+      "CONCEPT": "Measurement in Different Bases (Conceptual)",
+      "MODULE": "Module 5 — Measurement, Probabilities & Basic Protocols",
+      "CONCEPT_ID": "C_MEASUREMENT_BASES",
+      "PREREQUISITES": [
+        "Qubit",
+        "Superposition",
+        "Probability amplitudes",
+        "H gate"
+      ],
+      "DIFFICULTY_LEVEL": "Intermediate",
+      "LEARNING_OBJECTIVES": [
+        "Distinguish between the Z-basis (computational basis) and the X-basis for measurement.",
+        "Explain why applying an H gate immediately before a standard measurement effectively measures in the X-basis.",
+        "Compute measurement probabilities for a given state in either the Z-basis or the X-basis.",
+        "Predict when a state gives a deterministic outcome vs. a random outcome depending on the chosen measurement basis."
+      ],
+      "SKILLS_TAGGED": [
+        "S_BASIS_MEASUREMENT_PREDICT",
+        "S_H_BEFORE_MEASURE_EFFECT"
+      ],
+      "CORE_EXPLANATION": "Measurement is not a single fixed operation — it depends on which 'question' (basis) you ask a qubit. The most common choice, the Z-basis (computational basis), asks 'are you |0⟩ or |1⟩?' and its outcome probabilities are |α|² and |β|² for a state |ψ⟩=α|0⟩+β|1⟩. An equally valid choice is the X-basis, which asks 'are you |+⟩ or |-⟩?' where |+⟩=(|0⟩+|1⟩)/√2 and |-⟩=(|0⟩-|1⟩)/√2. Crucially, a state that gives a perfectly random 50/50 result in one basis can give a perfectly certain result in the other: |+⟩ measured in the Z-basis is 50/50, but measured in the X-basis it always reads '+'. Physically switching which basis you measure in is done by rotating the qubit before a standard Z-basis measurement. Since the H gate satisfies H|0⟩=|+⟩ and H|1⟩=|-⟩ (and H is its own inverse), applying H immediately before a normal measurement converts a Z-basis readout into an effective X-basis readout — if H|ψ⟩ collapses to |0⟩ upon Z-measurement, this really means |ψ⟩ was closer to |+⟩. This idea — that 'measurement basis' is a choice, not a fixed property of the hardware — is central to protocols like the Bell-inequality tests, quantum key distribution (e.g., BB84), and superdense coding/teleportation covered later in this module, all of which rely on comparing measurements taken in different, deliberately mismatched bases.",
+      "MATHEMATICAL_REPRESENTATION": "State: |ψ⟩ = α|0⟩ + β|1⟩,  |α|²+|β|²=1\n\nZ-basis measurement probabilities:\nP(0) = |α|²,  P(1) = |β|²\n\nX-basis: |+⟩ = (|0⟩+|1⟩)/√2,  |-⟩ = (|0⟩-|1⟩)/√2\nX-basis measurement probabilities:\nP(+) = |⟨+|ψ⟩|² = |(α+β)/√2|²\nP(-) = |⟨-|ψ⟩|² = |(α-β)/√2|²\n\nEquivalence: measuring |ψ⟩ in the X-basis ≡ applying H to |ψ⟩ then measuring in the Z-basis,\nsince H|0⟩=|+⟩, H|1⟩=|-⟩, and H²=I.",
+      "INTUITION_ANALOGY": "Imagine a coin balanced on its edge, spinning. Asking 'heads or tails?' (Z-basis) gives one kind of random answer. But you could instead ask a completely different question, like 'is the coin spinning clockwise or counterclockwise?' (X-basis) — a question that might have a perfectly definite answer even while the heads/tails question is totally random. The qubit is similar: the same physical object can have a certain answer to one question and a random answer to a different, equally valid question, and an H gate is like re-orienting your viewpoint before you ask.",
+      "EXAMPLES": [
+        {
+          "Example_1": {
+            "DESCRIPTION": "Measuring |+⟩ directly in the Z-basis gives a random 50/50 result.",
+            "CIRCUIT": ["q0: |+⟩ ──[measure Z]──"],
+            "STATEVECTOR": {
+              "state": [0.7071, 0.7071]
+            },
+            "EXPECTED_SIMULATION": "Qiskit Aer statevector: [0.707+0j, 0.707+0j]\nMeasurement histogram ~ 50% |0⟩, 50% |1⟩ over many shots."
+          }
+        },
+        {
+          "Example_2": {
+            "DESCRIPTION": "Measuring |+⟩ in the X-basis (apply H, then measure Z) gives a deterministic result.",
+            "CIRCUIT": ["q0: |+⟩ ──H──[measure Z]──"],
+            "STATEVECTOR": {
+              "before_H": [0.7071, 0.7071],
+              "after_H": [1, 0]
+            },
+            "EXPECTED_SIMULATION": "Qiskit Aer statevector after H: [1+0j, 0+0j]\nMeasurement histogram: 100% |0⟩ over many shots (interpreted as outcome '+' in the X-basis)."
+          }
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Bloch sphere with Z-axis and X-axis both drawn, showing the same state vector projected onto each axis.",
+        "Two side-by-side probability bar charts: Z-basis outcomes vs. X-basis outcomes for the same state.",
+        "Before/after Bloch sphere showing H rotating the measurement axis (or equivalently, rotating the state before a fixed Z measurement)."
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "Choosing a measurement basis is not 'cheating' or classical post-processing — it is a physically different measurement (a different set of detectors/settings), not a relabeling of the same data.",
+        "A state does not have a single 'true' outcome waiting to be revealed independent of basis — the very concept of 'outcome' is defined relative to the chosen basis.",
+        "Applying H before measurement does not change the qubit's underlying state permanently in a way that matters afterward if it's about to be measured — the H+measure combination is simply how an X-basis measurement is implemented in circuits restricted to Z-basis detectors."
+      ],
+      "RELATED_CONCEPTS": [
+        "Superposition",
+        "H gate",
+        "Bloch sphere",
+        "Probability amplitudes",
+        "Measurement"
+      ],
+      "ASSESSMENT_IDS": ["Q_BASIS_01", "Q_BASIS_02", "Q_BASIS_03", "Q_BASIS_04", "Q_BASIS_05"],
+      "MCQS": [
+        {
+          "ID": "Q_BASIS_01",
+          "QUESTION": "What outcome probabilities does measuring |+⟩=(|0⟩+|1⟩)/√2 in the Z-basis give?",
+          "OPTIONS": ["100% |0⟩", "100% |1⟩", "50% |0⟩, 50% |1⟩", "Cannot be determined"],
+          "CORRECT_ANSWER": "50% |0⟩, 50% |1⟩",
+          "DIFFICULTY_LEVEL": "Beginner",
+          "RELATED_TOPICS": ["C_MEASUREMENT_BASES"]
+        },
+        {
+          "ID": "Q_BASIS_02",
+          "QUESTION": "How is an X-basis measurement typically implemented on hardware that natively only measures in the Z-basis?",
+          "OPTIONS": [
+            "Apply an H gate, then perform a standard Z-basis measurement",
+            "Apply a CNOT gate, then measure",
+            "Measure twice in a row",
+            "It cannot be implemented without special X-basis detectors"
+          ],
+          "CORRECT_ANSWER": "Apply an H gate, then perform a standard Z-basis measurement",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_MEASUREMENT_BASES"]
+        },
+        {
+          "ID": "Q_BASIS_03",
+          "QUESTION": "If |ψ⟩=|0⟩ is measured in the X-basis, what is P(+) and P(-)?",
+          "OPTIONS": ["P(+)=1, P(-)=0", "P(+)=0, P(-)=1", "P(+)=0.5, P(-)=0.5", "P(+)=0.25, P(-)=0.75"],
+          "CORRECT_ANSWER": "P(+)=0.5, P(-)=0.5",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_MEASUREMENT_BASES"]
+        },
+        {
+          "ID": "Q_BASIS_04",
+          "QUESTION": "Why does H|1⟩ = |-⟩ = (|0⟩-|1⟩)/√2 rather than |+⟩?",
+          "OPTIONS": [
+            "Because H introduces a relative minus sign specifically when acting on |1⟩, due to its matrix definition",
+            "Because |1⟩ cannot be transformed by H",
+            "Because H always outputs |-⟩ regardless of input",
+            "Because measurement always adds a minus sign"
+          ],
+          "CORRECT_ANSWER": "Because H introduces a relative minus sign specifically when acting on |1⟩, due to its matrix definition",
+          "DIFFICULTY_LEVEL": "Advanced",
+          "RELATED_TOPICS": ["C_MEASUREMENT_BASES"]
+        },
+        {
+          "ID": "Q_BASIS_05",
+          "QUESTION": "A state gives a random 50/50 result in the Z-basis. What can you conclude about its result in the X-basis?",
+          "OPTIONS": [
+            "It must also be exactly 50/50",
+            "It could be deterministic, 50/50, or anything in between — the Z-basis result alone doesn't determine the X-basis result",
+            "It must be deterministic",
+            "X-basis measurement is impossible for this state"
+          ],
+          "CORRECT_ANSWER": "It could be deterministic, 50/50, or anything in between — the Z-basis result alone doesn't determine the X-basis result",
+          "DIFFICULTY_LEVEL": "Advanced",
+          "RELATED_TOPICS": ["C_MEASUREMENT_BASES"]
+        }
+      ]
+    },
+
+    {
+      "SUBTOPIC_ID": "5.2",
+      "CONCEPT": "Repeated Shots and Histograms",
+      "MODULE": "Module 5 — Measurement, Probabilities & Basic Protocols",
+      "CONCEPT_ID": "C_REPEATED_SHOTS_HISTOGRAMS",
+      "PREREQUISITES": [
+        "Probability amplitudes",
+        "Measurement",
+        "Measurement in different bases"
+      ],
+      "DIFFICULTY_LEVEL": "Intermediate",
+      "LEARNING_OBJECTIVES": [
+        "Explain why a single measurement shot cannot reveal a qubit's amplitudes, only one random bit of information.",
+        "Interpret a simulator's measurement histogram as an estimate of the true underlying probabilities.",
+        "Understand that observed frequencies fluctuate around theoretical probabilities due to statistical (shot) noise.",
+        "Estimate how measurement precision improves (or doesn't) as the number of shots increases."
+      ],
+      "SKILLS_TAGGED": [
+        "S_HISTOGRAM_INTERPRET",
+        "S_OUTCOME_DISTRIBUTION_PREDICT"
+      ],
+      "CORE_EXPLANATION": "A single measurement of a qubit gives exactly one classical bit and destroys the superposition — you learn nothing about the actual values of α and β from one shot, only a sample drawn according to |α|² and |β|². To estimate the underlying probabilities, quantum programs prepare the identical state repeatedly (many 'shots') and measure each copy, then build a histogram of how often each outcome occurred. If the true probability of outcome 0 is p, running N shots gives an observed frequency that fluctuates around p with a statistical spread (standard error) of approximately √(p(1-p)/N) — this is ordinary sampling statistics, exactly like flipping a biased coin many times. With few shots (e.g., 10), the histogram may look quite different from the true probabilities purely by chance; with many shots (e.g., 10,000), the histogram converges closely to the true distribution, though it converges slowly — halving the statistical error requires quadrupling the number of shots, since error shrinks as 1/√N. This is a key practical concept when reading simulator or real-hardware output: a histogram showing '48% |0⟩, 52% |1⟩' from 100 shots is fully consistent with a true underlying 50/50 distribution, and should not be over-interpreted as evidence of bias without considering the sample size and expected statistical variation.",
+      "MATHEMATICAL_REPRESENTATION": "True probability of outcome 0: p = |α|²\nObserved frequency after N shots: p̂ = (count of outcome 0) / N\n\nStandard error of the estimate:\nσ = √( p(1-p) / N )\n\nExample: p=0.5, N=100 → σ ≈ 0.05 (±5 percentage points is typical fluctuation)\np=0.5, N=10,000 → σ ≈ 0.005 (±0.5 percentage points)",
+      "INTUITION_ANALOGY": "This is exactly like flipping a fair coin. Flip it 10 times and you might get 7 heads, 3 tails — that doesn't mean the coin is biased, it's just normal small-sample noise. Flip it 10,000 times and you'll almost certainly land very close to 50/50. Quantum measurement histograms behave the same way: each 'shot' is one coin flip governed by the qubit's amplitudes, and you need many flips before the histogram reliably reflects the true underlying probabilities.",
+      "EXAMPLES": [
+        {
+          "Example_1": {
+            "DESCRIPTION": "|+⟩ measured with only 10 shots may show an uneven histogram purely from statistical noise.",
+            "CIRCUIT": ["q0: |0⟩ ──H──[measure]×10 shots"],
+            "STATEVECTOR": {
+              "state": [0.7071, 0.7071]
+            },
+            "EXPECTED_SIMULATION": "Example run: histogram = {'0': 7, '1': 3} out of 10 shots.\nThis is a plausible fluctuation around the true 50/50 distribution — NOT evidence the gate or qubit is faulty; the expected standard error at N=10 is ≈16 percentage points."
+          }
+        },
+        {
+          "Example_2": {
+            "DESCRIPTION": "The same |+⟩ state measured with 10,000 shots converges much closer to the true 50/50 split.",
+            "CIRCUIT": ["q0: |0⟩ ──H──[measure]×10000 shots"],
+            "STATEVECTOR": {
+              "state": [0.7071, 0.7071]
+            },
+            "EXPECTED_SIMULATION": "Example run: histogram = {'0': 5031, '1': 4969} out of 10,000 shots (≈50.3%/49.7%).\nExpected standard error at N=10,000 is ≈0.5 percentage points, matching the observed near-even split."
+          }
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Bar chart histogram of measurement counts, with error bars representing the statistical standard error.",
+        "Side-by-side histograms at N=10, N=100, N=10,000 shots for the same state, showing convergence toward the true distribution.",
+        "Line plot of standard error vs. number of shots (1/√N decay curve)."
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "A single shot's outcome is not 'the value of the qubit' — it is one random sample; the qubit's actual description (α, β) is never directly observable from any number of measurements of a single unknown state (see no-cloning discussions).",
+        "An uneven histogram with few shots does not automatically indicate a biased gate, coherence error, or noisy hardware — it may be entirely explained by ordinary statistical (shot) noise.",
+        "Doubling the number of shots does NOT halve the statistical error — because error scales as 1/√N, you must quadruple the shot count to halve the error."
+      ],
+      "RELATED_CONCEPTS": [
+        "Measurement",
+        "Probability amplitudes",
+        "Superposition",
+        "Statistical sampling"
+      ],
+      "ASSESSMENT_IDS": ["Q_HIST_01", "Q_HIST_02", "Q_HIST_03", "Q_HIST_04", "Q_HIST_05"],
+      "MCQS": [
+        {
+          "ID": "Q_HIST_01",
+          "QUESTION": "What does a single measurement shot of a qubit in superposition tell you?",
+          "OPTIONS": [
+            "The exact values of α and β",
+            "One random classical bit, sampled according to the probabilities |α|², |β|²",
+            "Nothing at all — the result is meaningless",
+            "The qubit's phase only"
+          ],
+          "CORRECT_ANSWER": "One random classical bit, sampled according to the probabilities |α|², |β|²",
+          "DIFFICULTY_LEVEL": "Beginner",
+          "RELATED_TOPICS": ["C_REPEATED_SHOTS_HISTOGRAMS"]
+        },
+        {
+          "ID": "Q_HIST_02",
+          "QUESTION": "A |+⟩ state is measured 100 times and gives 58 outcomes of '0' and 42 of '1'. What is the best interpretation?",
+          "OPTIONS": [
+            "The qubit is definitely biased toward |0⟩",
+            "This is a plausible statistical fluctuation around the true 50/50 distribution",
+            "The simulator has a bug",
+            "The H gate was applied incorrectly"
+          ],
+          "CORRECT_ANSWER": "This is a plausible statistical fluctuation around the true 50/50 distribution",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_REPEATED_SHOTS_HISTOGRAMS"]
+        },
+        {
+          "ID": "Q_HIST_03",
+          "QUESTION": "How does the standard error of an estimated probability scale with the number of shots N?",
+          "OPTIONS": ["Proportional to N", "Proportional to 1/N", "Proportional to 1/√N", "It doesn't depend on N"],
+          "CORRECT_ANSWER": "Proportional to 1/√N",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_REPEATED_SHOTS_HISTOGRAMS"]
+        },
+        {
+          "ID": "Q_HIST_04",
+          "QUESTION": "To halve the statistical error in an estimated measurement probability, how many times more shots are needed?",
+          "OPTIONS": ["2 times", "4 times", "8 times", "No more shots are needed"],
+          "CORRECT_ANSWER": "4 times",
+          "DIFFICULTY_LEVEL": "Advanced",
+          "RELATED_TOPICS": ["C_REPEATED_SHOTS_HISTOGRAMS"]
+        },
+        {
+          "ID": "Q_HIST_05",
+          "QUESTION": "Why must a quantum state typically be prepared and measured many times (shots) rather than measured once and reused?",
+          "OPTIONS": [
+            "Because measurement destroys the superposition, so a fresh copy must be prepared for each new sample",
+            "Because qubits wear out after one use",
+            "Because classical computers cannot process a single measurement",
+            "Because H gates can only be applied once per qubit"
+          ],
+          "CORRECT_ANSWER": "Because measurement destroys the superposition, so a fresh copy must be prepared for each new sample",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_REPEATED_SHOTS_HISTOGRAMS", "C_MEASUREMENT_BASES"]
+        }
+      ]
+    },
+
+    {
+      "SUBTOPIC_ID": "5.3",
+      "CONCEPT": "Simple Protocols: Superdense Coding and Teleportation",
+      "MODULE": "Module 5 — Measurement, Probabilities & Basic Protocols",
+      "CONCEPT_ID": "C_BASIC_PROTOCOLS",
+      "PREREQUISITES": [
+        "Entanglement and Bell states",
+        "Two-qubit gates (CNOT, CZ)",
+        "Measurement in different bases",
+        "Repeated shots and histograms"
+      ],
+      "DIFFICULTY_LEVEL": "Advanced",
+      "LEARNING_OBJECTIVES": [
+        "Explain, at a conceptual level, how superdense coding lets one qubit carry two classical bits using pre-shared entanglement.",
+        "Explain, at a high level, how quantum teleportation transfers an unknown quantum state using entanglement plus two classical bits.",
+        "Identify what resources each protocol requires (entangled pair, quantum channel, classical channel) and what each transmits.",
+        "Explain why teleportation does not violate the no-cloning theorem or allow faster-than-light communication."
+      ],
+      "SKILLS_TAGGED": [
+        "S_SUPERDENSE_CODING_EXPLAIN",
+        "S_TELEPORTATION_EXPLAIN"
+      ],
+      "CORE_EXPLANATION": "Superdense coding and teleportation are 'mirror image' protocols that both exploit a pre-shared entangled Bell pair, but they move different things. In superdense coding, Alice and Bob each hold one qubit of a Bell pair. Alice wants to send Bob 2 classical bits using only 1 qubit of quantum communication: depending on her 2 bits, she applies one of four operations (I, X, Z, or XZ) to her own qubit, then physically sends that single qubit to Bob. Because her operation changes which of the four Bell states the pair is now in, Bob — once he has both qubits — can apply CNOT then H and measure to perfectly distinguish all four Bell states, recovering both of Alice's original bits. In teleportation, the roles reverse: Alice wants to send an unknown qubit state |ψ⟩ (not classical bits) to Bob, without a direct quantum channel for |ψ⟩ itself. Using a shared Bell pair, Alice entangles |ψ⟩ with her half of the pair (via CNOT then H), then measures both her qubits, obtaining 2 random classical bits. She sends these 2 bits to Bob over an ordinary classical channel. Depending on the bits received, Bob applies one of I, X, Z, or XZ to his half of the pair, which exactly recreates |ψ⟩ on his qubit. Crucially, Alice's original qubit is destroyed by her measurement (satisfying the no-cloning theorem — no copy ever exists), and Bob cannot recover |ψ⟩ until the classical bits physically arrive, so no faster-than-light signaling occurs. In short: superdense coding sends 2 classical bits using 1 qubit + entanglement; teleportation sends 1 qubit's worth of quantum information using 2 classical bits + entanglement.",
+      "MATHEMATICAL_REPRESENTATION": "Superdense coding — Alice's encoding on her half of |Φ+⟩=(|00⟩+|11⟩)/√2:\n00 → I  (state stays |Φ+⟩)\n01 → X  (state becomes |Ψ+⟩)\n10 → Z  (state becomes |Φ-⟩)\n11 → XZ (state becomes |Ψ-⟩)\nBob applies CNOT then H to distinguish all four perfectly.\n\nTeleportation — Alice has unknown |ψ⟩=α|0⟩+β|1⟩ and half of a Bell pair with Bob:\n1. Alice applies CNOT(ψ→her Bell qubit), then H to ψ.\n2. Alice measures both her qubits → gets classical bits (m1, m2).\n3. Alice sends (m1, m2) to Bob classically.\n4. Bob applies correction based on (m1,m2): 00→I, 01→X, 10→Z, 11→XZ (correction pairing depends on chosen convention).\n5. Bob's qubit is now exactly α|0⟩+β|1⟩ = |ψ⟩.",
+      "INTUITION_ANALOGY": "Superdense coding is like Alice and Bob each keeping one half of a pair of magic linked coins made in advance; Alice can flip her coin in one of four secret ways and mail just that one coin to Bob, who — because he already has the matching coin — can read off 2 bits of information from the pair together, more than the 1 bit a single ordinary coin could carry. Teleportation is like a fax machine for quantum states: Alice doesn't physically move her original document (qubit) to Bob; instead, she uses the shared magic coins to extract a description (2 classical bits) that only makes sense combined with Bob's linked coin, and once Bob applies the matching adjustment, an exact copy appears at his end — while Alice's original document is scanned to bits and destroyed in the process (it isn't cloned, it's converted).",
+      "EXAMPLES": [
+        {
+          "Example_1": {
+            "DESCRIPTION": "Superdense coding: Alice wants to send bits '10', so she applies Z to her half of the shared |Φ+⟩ pair, then sends her qubit to Bob.",
+            "CIRCUIT": [
+              "Shared: |Φ+⟩=(|00⟩+|11⟩)/√2 (Alice=q0, Bob=q1)",
+              "Alice: q0 ──Z── (sends q0 to Bob)",
+              "Bob (after receiving q0): q0,q1 ──CNOT(q0→q1)──H(q0)──[measure both]──"
+            ],
+            "STATEVECTOR": {
+              "before_Z": [0.7071, 0, 0, 0.7071],
+              "after_Z": [0.7071, 0, 0, -0.7071]
+            },
+            "EXPECTED_SIMULATION": "After Bob's CNOT+H, the two-qubit statevector collapses deterministically to |10⟩.\nMeasurement histogram: 100% '10' over many shots — Bob reads out exactly the bits '10' that Alice intended to send."
+          }
+        },
+        {
+          "Example_2": {
+            "DESCRIPTION": "Teleportation (high-level trace): Alice teleports |ψ⟩=α|0⟩+β|1⟩ to Bob using a shared Bell pair and 2 classical bits.",
+            "CIRCUIT": [
+              "Alice's qubit: |ψ⟩ ──●──H──[measure]──",
+              "Alice's Bell half: |0⟩(part of pair) ──X──────[measure]──",
+              "Bob's Bell half: |0⟩(part of pair) ────────────(apply correction based on 2 classical bits)──"
+            ],
+            "STATEVECTOR": {
+              "note": "After Alice's measurement, Bob's single qubit is in one of {α|0⟩+β|1⟩, α|1⟩+β|0⟩, α|0⟩-β|1⟩, α|1⟩-β|0⟩} depending on Alice's 2-bit result; the correct Pauli correction (I, X, Z, or XZ) always restores exactly α|0⟩+β|1⟩."
+            },
+            "EXPECTED_SIMULATION": "After Bob applies the correction indicated by Alice's classical bits, Bob's qubit statevector matches |ψ⟩=[α, β] exactly (up to global phase), regardless of which of the 4 random measurement outcomes Alice obtained."
+          }
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Side-by-side flow diagrams: superdense coding (1 qubit sent, 2 classical bits recovered) vs teleportation (2 classical bits sent, 1 qubit's state recovered).",
+        "Circuit diagram for the teleportation protocol with clearly labeled quantum wires (solid lines) and classical wires (double lines) carrying the measurement bits to the correction gates.",
+        "Table mapping Alice's 2-bit choice/measurement result to the corresponding Bell state or correction operation."
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "Teleportation does not physically move atoms or the qubit hardware itself — it transfers the quantum STATE/information; the original physical qubit's state is destroyed by measurement.",
+        "Teleportation is not faster-than-light communication — Bob cannot reconstruct |ψ⟩ until the 2 classical bits physically arrive (bounded by the speed of light or slower), so no signal is transmitted faster than light.",
+        "Teleportation does not violate the no-cloning theorem — at no point do two identical copies of |ψ⟩ exist simultaneously; Alice's original is destroyed exactly when Bob's copy becomes reconstructible.",
+        "Superdense coding does not send 2 bits without ever using entanglement in advance — the entangled pair must be distributed and shared beforehand; only the final 1-qubit transmission happens 'on demand.'"
+      ],
+      "RELATED_CONCEPTS": [
+        "Entanglement and Bell states",
+        "CNOT gate",
+        "Measurement",
+        "No-cloning theorem",
+        "Classical communication channel"
+      ],
+      "ASSESSMENT_IDS": ["Q_PROTO_01", "Q_PROTO_02", "Q_PROTO_03", "Q_PROTO_04", "Q_PROTO_05"],
+      "MCQS": [
+        {
+          "ID": "Q_PROTO_01",
+          "QUESTION": "In superdense coding, how many classical bits can Alice send to Bob by transmitting just 1 qubit (given a pre-shared Bell pair)?",
+          "OPTIONS": ["1 bit", "2 bits", "4 bits", "An unlimited number of bits"],
+          "CORRECT_ANSWER": "2 bits",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_BASIC_PROTOCOLS"]
+        },
+        {
+          "ID": "Q_PROTO_02",
+          "QUESTION": "In quantum teleportation, what does Alice send to Bob over the classical channel?",
+          "OPTIONS": [
+            "The unknown qubit itself",
+            "Two classical bits resulting from her measurement",
+            "A full description of α and β",
+            "Nothing — teleportation requires no classical communication"
+          ],
+          "CORRECT_ANSWER": "Two classical bits resulting from her measurement",
+          "DIFFICULTY_LEVEL": "Beginner",
+          "RELATED_TOPICS": ["C_BASIC_PROTOCOLS"]
+        },
+        {
+          "ID": "Q_PROTO_03",
+          "QUESTION": "Why does quantum teleportation NOT violate the no-cloning theorem?",
+          "OPTIONS": [
+            "Because no-cloning only applies to entangled states",
+            "Because Alice's original qubit's state is destroyed by measurement exactly as Bob's copy becomes reconstructible — two full copies never coexist",
+            "Because teleportation only works on classical bits, not quantum states",
+            "Because no-cloning has been experimentally disproven"
+          ],
+          "CORRECT_ANSWER": "Because Alice's original qubit's state is destroyed by measurement exactly as Bob's copy becomes reconstructible — two full copies never coexist",
+          "DIFFICULTY_LEVEL": "Advanced",
+          "RELATED_TOPICS": ["C_BASIC_PROTOCOLS"]
+        },
+        {
+          "ID": "Q_PROTO_04",
+          "QUESTION": "What operation does Bob apply to recover |ψ⟩ in teleportation if Alice's measurement result is '11'?",
+          "OPTIONS": ["I (nothing)", "X only", "Z only", "XZ (both X and Z)"],
+          "CORRECT_ANSWER": "XZ (both X and Z)",
+          "DIFFICULTY_LEVEL": "Advanced",
+          "RELATED_TOPICS": ["C_BASIC_PROTOCOLS"]
+        },
+        {
+          "ID": "Q_PROTO_05",
+          "QUESTION": "Which resource is required by BOTH superdense coding and teleportation before the protocol begins?",
+          "OPTIONS": [
+            "A classical supercomputer",
+            "A pre-shared entangled Bell pair distributed between Alice and Bob",
+            "Three or more qubits per party",
+            "A measurement in the X-basis only"
+          ],
+          "CORRECT_ANSWER": "A pre-shared entangled Bell pair distributed between Alice and Bob",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_BASIC_PROTOCOLS", "C_MEASUREMENT_BASES"]
+        }
+      ]
+    }
+  ],
+
+  "FINAL_MODULE_ASSESSMENT": {
+    "ASSESSMENT_IDS": [
+      "Q_MOD5_FINAL_01", "Q_MOD5_FINAL_02", "Q_MOD5_FINAL_03", "Q_MOD5_FINAL_04", "Q_MOD5_FINAL_05",
+      "Q_MOD5_FINAL_06", "Q_MOD5_FINAL_07", "Q_MOD5_FINAL_08", "Q_MOD5_FINAL_09", "Q_MOD5_FINAL_10"
+    ],
+    "QUESTIONS": [
+      {
+        "ID": "Q_MOD5_FINAL_01",
+        "QUESTION": "A qubit in state |−⟩=(|0⟩−|1⟩)/√2 is measured in the X-basis. What is the outcome?",
+        "OPTIONS": ["Deterministically '−'", "Deterministically '+'", "50/50 between '+' and '−'", "Always |1⟩"],
+        "CORRECT_ANSWER": "Deterministically '−'",
+        "DIFFICULTY_LEVEL": "Intermediate",
+        "RELATED_TOPICS": ["C_MEASUREMENT_BASES"]
+      },
+      {
+        "ID": "Q_MOD5_FINAL_02",
+        "QUESTION": "A circuit prepares |0⟩, applies H, and measures 200 times, getting 96 zeros and 104 ones. Is this consistent with the expected 50/50 distribution?",
+        "OPTIONS": [
+          "No, the deviation proves a hardware fault",
+          "Yes, this is well within the expected statistical fluctuation for N=200",
+          "No, because exactly 100/100 is always required",
+          "Cannot be assessed without re-running the circuit"
+        ],
+        "CORRECT_ANSWER": "Yes, this is well within the expected statistical fluctuation for N=200",
+        "DIFFICULTY_LEVEL": "Intermediate",
+        "RELATED_TOPICS": ["C_REPEATED_SHOTS_HISTOGRAMS"]
+      },
+      {
+        "ID": "Q_MOD5_FINAL_03",
+        "QUESTION": "Which best distinguishes what superdense coding transmits versus what teleportation transmits?",
+        "OPTIONS": [
+          "Both transmit only classical bits",
+          "Superdense coding transmits 2 classical bits via 1 qubit; teleportation transmits 1 qubit's quantum state via 2 classical bits",
+          "Both transmit full quantum states",
+          "Superdense coding requires no entanglement, unlike teleportation"
+        ],
+        "CORRECT_ANSWER": "Superdense coding transmits 2 classical bits via 1 qubit; teleportation transmits 1 qubit's quantum state via 2 classical bits",
+        "DIFFICULTY_LEVEL": "Advanced",
+        "RELATED_TOPICS": ["C_BASIC_PROTOCOLS"]
+      },
+      {
+        "ID": "Q_MOD5_FINAL_04",
+        "QUESTION": "In the standard error formula σ = √(p(1−p)/N), what happens to σ if N is increased from 100 to 400 (holding p fixed)?",
+        "OPTIONS": ["σ is halved", "σ is quartered", "σ doubles", "σ is unchanged"],
+        "CORRECT_ANSWER": "σ is halved",
+        "DIFFICULTY_LEVEL": "Advanced",
+        "RELATED_TOPICS": ["C_REPEATED_SHOTS_HISTOGRAMS"]
+      },
+      {
+        "ID": "Q_MOD5_FINAL_05",
+        "QUESTION": "Why can't Bob reconstruct the teleported state the instant Alice measures her qubits, even though the entangled correlation is established immediately?",
+        "OPTIONS": [
+          "Because Bob's qubit decays instantly",
+          "Because Bob still needs the 2 classical bits, which cannot travel faster than light, to know which correction to apply",
+          "Because Alice must also apply a correction",
+          "Because teleportation does not use entanglement at all"
+        ],
+        "CORRECT_ANSWER": "Because Bob still needs the 2 classical bits, which cannot travel faster than light, to know which correction to apply",
+        "DIFFICULTY_LEVEL": "Advanced",
+        "RELATED_TOPICS": ["C_BASIC_PROTOCOLS", "C_MEASUREMENT_BASES"]
+      },
+      {
+        "ID": "Q_MOD5_FINAL_06",
+        "QUESTION": "A state gives P(0)=0.81, P(1)=0.19 in the Z-basis. Roughly what fraction of 400 shots would you expect to read '0'?",
+        "OPTIONS": ["~19%", "~50%", "~81%", "~100%"],
+        "CORRECT_ANSWER": "~81%",
+        "DIFFICULTY_LEVEL": "Beginner",
+        "RELATED_TOPICS": ["C_REPEATED_SHOTS_HISTOGRAMS"]
+      },
+      {
+        "ID": "Q_MOD5_FINAL_07",
+        "QUESTION": "Which gate sequence correctly implements an X-basis measurement using only Z-basis detectors?",
+        "OPTIONS": ["Apply X, then measure", "Apply H, then measure", "Apply Z, then measure", "Measure directly, no gate needed"],
+        "CORRECT_ANSWER": "Apply H, then measure",
+        "DIFFICULTY_LEVEL": "Beginner",
+        "RELATED_TOPICS": ["C_MEASUREMENT_BASES"]
+      },
+      {
+        "ID": "Q_MOD5_FINAL_08",
+        "QUESTION": "In superdense coding, if Alice wants to send the bits '01', which operation does she apply to her half of the Bell pair before sending it?",
+        "OPTIONS": ["I (identity)", "X", "Z", "XZ"],
+        "CORRECT_ANSWER": "X",
+        "DIFFICULTY_LEVEL": "Intermediate",
+        "RELATED_TOPICS": ["C_BASIC_PROTOCOLS"]
+      },
+      {
+        "ID": "Q_MOD5_FINAL_09",
+        "QUESTION": "A student runs a circuit for only 5 shots and sees an exact 3:2 split, then concludes the true probability must be exactly 0.6. What is the flaw in this reasoning?",
+        "OPTIONS": [
+          "There is no flaw — 5 shots is always sufficient",
+          "With only 5 shots, the statistical uncertainty is very large, so this result is also fully consistent with many other true probabilities, including 0.5",
+          "5 shots is too many to interpret",
+          "Quantum measurement never has statistical uncertainty"
+        ],
+        "CORRECT_ANSWER": "With only 5 shots, the statistical uncertainty is very large, so this result is also fully consistent with many other true probabilities, including 0.5",
+        "DIFFICULTY_LEVEL": "Advanced",
+        "RELATED_TOPICS": ["C_REPEATED_SHOTS_HISTOGRAMS"]
+      },
+      {
+        "ID": "Q_MOD5_FINAL_10",
+        "QUESTION": "Which statement correctly combines ideas from measurement bases and teleportation?",
+        "OPTIONS": [
+          "Alice's measurement step in teleportation is performed in a rotated (Bell) basis on her two qubits, which is why her result is 2 random classical bits rather than a deterministic outcome",
+          "Teleportation never involves any measurement",
+          "Alice must measure in the X-basis specifically, or teleportation fails",
+          "The choice of measurement basis has no effect on teleportation's outcome"
+        ],
+        "CORRECT_ANSWER": "Alice's measurement step in teleportation is performed in a rotated (Bell) basis on her two qubits, which is why her result is 2 random classical bits rather than a deterministic outcome",
+        "DIFFICULTY_LEVEL": "Advanced",
+        "RELATED_TOPICS": ["C_BASIC_PROTOCOLS", "C_MEASUREMENT_BASES"]
+      }
+    ]
+  }
+}

@@ -1,0 +1,789 @@
+{
+  "MODULE": "Module 6 — Introductory Quantum Algorithms",
+  "MODULE_GOAL": "Show \"quantum advantage\" with small, understandable algorithms.",
+  "MODULE_PREREQUISITES": [
+    "Qubit",
+    "Quantum state",
+    "Probability amplitudes",
+    "Superposition",
+    "Two-qubit states and tensor product",
+    "Two-qubit gates (CNOT, CZ)",
+    "Entanglement and Bell states",
+    "Measurement in different bases"
+  ],
+  "SOURCE_REFERENCES": [
+    "[Microsoft Learn — Quantum: Explore superposition, https://learn.microsoft.com/en-us/training/modules/explore-superposition/1-introduction]",
+    "[Qiskit Textbook, Chapters on Quantum Query Algorithms, Grover's Algorithm, and QFT]",
+    "[Nielsen & Chuang, Quantum Computation and Quantum Information, Ch. 1, 5, and 6]",
+    "[ACM/IEEE CS2023 Q-AR Knowledge Unit – Introductory Quantum Algorithms]"
+  ],
+
+  "CONCEPTS": [
+
+    {
+      "SUBTOPIC_ID": "6.1",
+      "CONCEPT": "Quantum Parallelism & Oracles (Conceptual)",
+      "MODULE": "Module 6 — Introductory Quantum Algorithms",
+      "CONCEPT_ID": "C_QUANTUM_PARALLELISM_ORACLES",
+      "PREREQUISITES": [
+        "Superposition",
+        "Two-qubit gates (CNOT, CZ)",
+        "Measurement in different bases"
+      ],
+      "DIFFICULTY_LEVEL": "Intermediate",
+      "LEARNING_OBJECTIVES": [
+        "Explain how applying H to every qubit of |0...0⟩ creates an equal superposition over all possible inputs.",
+        "Define a quantum oracle Uf and describe both the bit-flip and phase-flip (phase kickback) conventions.",
+        "Explain why quantum parallelism alone (superposition + oracle) does not immediately give useful information without an extraction trick like interference.",
+        "Distinguish 'evaluating f on all inputs at once' from 'reading out all f(x) values,' which is impossible in one measurement."
+      ],
+      "SKILLS_TAGGED": [
+        "S_QUANTUM_PARALLELISM_EXPLAIN",
+        "S_ORACLE_CONSTRUCTION"
+      ],
+      "CORE_EXPLANATION": "Quantum parallelism is the observation that applying a Hadamard gate to every qubit of the all-zero state |0⟩^⊗n produces an equal superposition of all 2^n possible n-bit strings, each with amplitude 1/√(2^n). If we then apply a quantum circuit implementing a function f (called an oracle, Uf), the resulting state technically encodes f(x) for every x simultaneously, since the oracle acts linearly on the whole superposition at once. However, this is not the free lunch it may sound like: a direct measurement immediately collapses the superposition to just ONE random x and its f(x), destroying all the other information — exactly as many bits of useful data as a classical computer would get from one lookup. The real power of quantum algorithms comes from designing circuits so that, after the oracle is applied, interference between the amplitudes of all these parallel computations concentrates probability onto answers that reveal a GLOBAL property of f (such as 'is f constant?' or 'what hidden pattern does f encode?'), while destructively cancelling out the amplitudes of unhelpful measurement outcomes. Oracles are typically defined in two equivalent forms: the bit-flip oracle Uf: |x⟩|y⟩ → |x⟩|y⊕f(x)⟩, using an extra 'answer' qubit; or, when that answer qubit is prepared in the state |-⟩=(|0⟩-|1⟩)/√2, the same oracle acts as a phase oracle: Uf|x⟩|-⟩ = (-1)^f(x)|x⟩|-⟩, a trick called 'phase kickback' that lets f(x) modify the phase of |x⟩ directly, without needing to read out an extra qubit. Phase kickback is the workhorse behind nearly every algorithm in this module.",
+      "MATHEMATICAL_REPRESENTATION": "Equal superposition via Hadamards:\nH^⊗n |0⟩^⊗n = (1/√(2^n)) Σ_x |x⟩,  sum over all x ∈ {0,1}^n\n\nBit-flip oracle:\nUf |x⟩|y⟩ = |x⟩|y ⊕ f(x)⟩\n\nPhase oracle (via phase kickback, ancilla prepared in |-⟩):\nUf |x⟩|-⟩ = (-1)^f(x) |x⟩|-⟩\n\nApplying oracle to full superposition:\nUf ( (1/√(2^n)) Σ_x |x⟩ ) |-⟩ = (1/√(2^n)) Σ_x (-1)^f(x) |x⟩ |-⟩",
+      "INTUITION_ANALOGY": "Imagine mailing one letter that magically gets opened and answered simultaneously at every house on a street, but you're only allowed to check ONE mailbox afterward — you'd learn just one house's answer, no better than knocking on one door yourself. Quantum algorithms are clever not because they check every mailbox for free, but because they arrange for all the answers to interfere like overlapping ripples in a pond, so that when you finally look, the pattern of ripples (not any single answer) tells you something true about the whole street at once — e.g., 'all houses gave the same answer' — without ever reading each one individually.",
+      "EXAMPLES": [
+        {
+          "Example_1": {
+            "DESCRIPTION": "Creating an equal superposition over 2 qubits using H⊗H, ready for an oracle to act on.",
+            "CIRCUIT": ["q0: |0⟩ ──H──", "q1: |0⟩ ──H──"],
+            "STATEVECTOR": {
+              "before": [1, 0, 0, 0],
+              "after": [0.5, 0.5, 0.5, 0.5]
+            },
+            "EXPECTED_SIMULATION": "Qiskit Aer statevector: [0.5+0j, 0.5+0j, 0.5+0j, 0.5+0j]\nMeasurement histogram (if measured now, destroying parallelism) ~ 25% each of '00','01','10','11'."
+          }
+        },
+        {
+          "Example_2": {
+            "DESCRIPTION": "Phase kickback: oracle for f(x)=x (identity function, n=1) applied with ancilla in |-⟩ flips the phase of |1⟩ only.",
+            "CIRCUIT": ["q0 (input): |+⟩ ──●──", "q1 (ancilla): |-⟩ ──X──"],
+            "STATEVECTOR": {
+              "before": [0.7071, 0, 0.7071, 0],
+              "after_phase_kickback": [0.7071, 0, -0.7071, 0]
+            },
+            "EXPECTED_SIMULATION": "The ancilla qubit's state |-⟩ is unchanged, but the input qubit's amplitude for |1⟩ picks up a factor of -1, effectively turning |+⟩ into |-⟩ on the input qubit — this phase change is what subsequent H gates can convert into a measurable signal."
+          }
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Diagram of H⊗H⊗...⊗H fanning |0...0⟩ into all 2^n basis states with equal-height bars.",
+        "Circuit diagram of a bit-flip oracle box Uf acting on input register + ancilla, alongside the equivalent phase-oracle picture.",
+        "Interference diagram showing amplitudes with matching phases adding constructively and mismatched phases cancelling."
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "Quantum parallelism does NOT let you read out all 2^n values of f(x) from one query — measurement still only yields one outcome; the parallelism is inside the un-measured amplitudes.",
+        "An oracle 'knowing' f does not mean the algorithm knows f in advance — the oracle is a black box the algorithm queries, and the goal is to learn a property of f using as few queries as possible.",
+        "Phase kickback is not magic — it is a direct algebraic consequence of applying a bit-flip oracle to an ancilla prepared in an eigenstate (|-⟩) of the flip operation."
+      ],
+      "RELATED_CONCEPTS": [
+        "Superposition",
+        "H gate",
+        "Phase kickback",
+        "Interference",
+        "Oracle/black-box function"
+      ],
+      "ASSESSMENT_IDS": ["Q_ORACLE_01", "Q_ORACLE_02", "Q_ORACLE_03", "Q_ORACLE_04", "Q_ORACLE_05"],
+      "MCQS": [
+        {
+          "ID": "Q_ORACLE_01",
+          "QUESTION": "What state results from applying H to each of n qubits initialized to |0⟩?",
+          "OPTIONS": [
+            "A single random basis state",
+            "An equal superposition of all 2^n basis states, each with amplitude 1/√(2^n)",
+            "The all-ones state |1⟩^⊗n",
+            "A maximally entangled state"
+          ],
+          "CORRECT_ANSWER": "An equal superposition of all 2^n basis states, each with amplitude 1/√(2^n)",
+          "DIFFICULTY_LEVEL": "Beginner",
+          "RELATED_TOPICS": ["C_QUANTUM_PARALLELISM_ORACLES"]
+        },
+        {
+          "ID": "Q_ORACLE_02",
+          "QUESTION": "Why can't you simply read out all values of f(x) after applying an oracle to a superposition of all inputs?",
+          "OPTIONS": [
+            "Oracles cannot act on superpositions",
+            "Measurement collapses the superposition to a single random outcome, revealing only one x and its f(x)",
+            "Oracles always output 0",
+            "Superposition states cannot contain function values"
+          ],
+          "CORRECT_ANSWER": "Measurement collapses the superposition to a single random outcome, revealing only one x and its f(x)",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_QUANTUM_PARALLELISM_ORACLES"]
+        },
+        {
+          "ID": "Q_ORACLE_03",
+          "QUESTION": "In the phase kickback trick, what must the ancilla qubit be prepared in for the bit-flip oracle to act as a phase oracle?",
+          "OPTIONS": ["|0⟩", "|1⟩", "|+⟩", "|-⟩"],
+          "CORRECT_ANSWER": "|-⟩",
+          "DIFFICULTY_LEVEL": "Advanced",
+          "RELATED_TOPICS": ["C_QUANTUM_PARALLELISM_ORACLES"]
+        },
+        {
+          "ID": "Q_ORACLE_04",
+          "QUESTION": "What is the effect of the phase oracle Uf on |x⟩ (with ancilla already absorbed) when f(x)=1?",
+          "OPTIONS": ["|x⟩ is unchanged", "|x⟩ is multiplied by -1", "|x⟩ is flipped to |x̄⟩", "|x⟩ is measured immediately"],
+          "CORRECT_ANSWER": "|x⟩ is multiplied by -1",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_QUANTUM_PARALLELISM_ORACLES"]
+        },
+        {
+          "ID": "Q_ORACLE_05",
+          "QUESTION": "What is generally required to convert 'the oracle was applied to a superposition' into a useful measurable answer about a global property of f?",
+          "OPTIONS": [
+            "Nothing further is needed — measure immediately",
+            "Additional gates (like Hadamards) that create interference, concentrating probability on informative outcomes",
+            "Running the oracle exponentially many times",
+            "Applying the oracle to a mixed state instead of a pure state"
+          ],
+          "CORRECT_ANSWER": "Additional gates (like Hadamards) that create interference, concentrating probability on informative outcomes",
+          "DIFFICULTY_LEVEL": "Advanced",
+          "RELATED_TOPICS": ["C_QUANTUM_PARALLELISM_ORACLES"]
+        }
+      ]
+    },
+
+    {
+      "SUBTOPIC_ID": "6.2",
+      "CONCEPT": "Deutsch–Jozsa Algorithm (Simplified)",
+      "MODULE": "Module 6 — Introductory Quantum Algorithms",
+      "CONCEPT_ID": "C_DEUTSCH_JOZSA",
+      "PREREQUISITES": [
+        "Quantum parallelism & oracles",
+        "Superposition",
+        "Interference"
+      ],
+      "DIFFICULTY_LEVEL": "Advanced",
+      "LEARNING_OBJECTIVES": [
+        "State the Deutsch–Jozsa problem: determine whether a promised-constant-or-balanced function f is constant or balanced.",
+        "Describe the quantum circuit (H gates, oracle, H gates, measurement) that solves this in a single query.",
+        "Explain why measuring all-zeros implies f is constant, and any other result implies f is balanced.",
+        "Contrast the single-query quantum solution with the classical worst case of up to 2^(n-1)+1 queries."
+      ],
+      "SKILLS_TAGGED": [
+        "S_DEUTSCH_JOZSA_TRACE",
+        "S_QUANTUM_CLASSICAL_QUERY_COMPARE"
+      ],
+      "CORE_EXPLANATION": "The Deutsch–Jozsa problem gives you black-box access to a function f: {0,1}^n → {0,1}, with a promise that f is either CONSTANT (same output for every input) or BALANCED (outputs 0 for exactly half the inputs and 1 for the other half). Classically, in the worst case you might need to query more than half of all 2^n inputs (2^(n-1)+1 queries) before you can be certain which case holds — if you're unlucky, many consecutive queries could return the same value even for a balanced function. The Deutsch–Jozsa algorithm solves this with just ONE oracle query, using the phase-kickback oracle from quantum parallelism. The circuit prepares n input qubits in |0⟩ and one ancilla in |1⟩, applies H to everything, applies the oracle (which phase-kicks each |x⟩ by (-1)^f(x)), applies H again to the n input qubits, and measures them. The key mathematical fact is that after the second layer of Hadamards, the amplitude of measuring the all-zero string |0⟩^⊗n equals the average of (-1)^f(x) over all x. If f is constant, this average is exactly ±1, so the all-zero outcome occurs with probability 1 — guaranteed. If f is balanced, positive and negative terms cancel exactly, making the amplitude of |0⟩^⊗n exactly zero — so you are GUARANTEED to see some nonzero string instead. This clean either/or separation (not just a probability shift) is what makes Deutsch–Jozsa a clean, deterministic demonstration of quantum advantage, even though the problem itself has limited practical use.",
+      "MATHEMATICAL_REPRESENTATION": "Circuit: |0⟩^⊗n |1⟩ → H^⊗(n+1) → Uf (phase kickback) → H^⊗n (on input register) → measure input register\n\nAmplitude of measuring all-zeros on the input register:\namplitude(0...0) = (1/2^n) Σ_x (-1)^f(x)\n\nIf f constant: |amplitude(0...0)| = 1  → P(measure 0...0) = 1\nIf f balanced: amplitude(0...0) = 0  → P(measure 0...0) = 0 (guaranteed to see a nonzero string)\n\nClassical worst case: up to 2^(n-1)+1 queries needed for certainty.\nQuantum: exactly 1 query needed for certainty.",
+      "INTUITION_ANALOGY": "Imagine n coin-flippers each flip a coin according to secret rule f, and you want to know if the rule always gives the same result (constant) or gives heads exactly half the time in a very specific balanced pattern. Instead of asking each flipper one at a time, Deutsch–Jozsa is like sending one synchronized wave through all of them at once: if the rule is constant, every flipper's response reinforces the wave and you get one loud, clear signal back ('all zeros'); if the rule is balanced, exactly half the responses are perfectly out of phase with the other half, and the wave completely cancels out to silence — a totally different, unmistakable signal, obtained from a single synchronized pass rather than checking flippers individually.",
+      "EXAMPLES": [
+        {
+          "Example_1": {
+            "DESCRIPTION": "Deutsch's algorithm (n=1 case): f(x)=0 for all x (constant). Circuit: q0=|0⟩, q1=|1⟩, H both, oracle does nothing (f=0 means no phase flip), H on q0, measure.",
+            "CIRCUIT": ["q0: |0⟩ ──H────(no-op oracle)──H──[measure]", "q1: |1⟩ ──H────(no-op oracle)──────────"],
+            "STATEVECTOR": {
+              "after_first_H": [0.5, -0.5, 0.5, -0.5],
+              "after_oracle": [0.5, -0.5, 0.5, -0.5],
+              "after_second_H_on_q0": [1, 0, 0, 0]
+            },
+            "EXPECTED_SIMULATION": "Qiskit Aer measurement on q0: 100% outcome '0' over many shots → correctly identifies f as CONSTANT."
+          }
+        },
+        {
+          "Example_2": {
+            "DESCRIPTION": "Deutsch's algorithm (n=1 case): f(x)=x (balanced, since f(0)=0, f(1)=1). Oracle applies a phase flip on |1⟩ via CNOT-based phase kickback.",
+            "CIRCUIT": ["q0: |0⟩ ──H────●────H──[measure]", "q1: |1⟩ ──H────X─────────────"],
+            "STATEVECTOR": {
+              "after_first_H": [0.5, -0.5, 0.5, -0.5],
+              "after_oracle_phase_kickback": [0.5, -0.5, -0.5, 0.5],
+              "after_second_H_on_q0": [0, 1, 0, 0]
+            },
+            "EXPECTED_SIMULATION": "Qiskit Aer measurement on q0: 100% outcome '1' over many shots → correctly identifies f as BALANCED, using only one oracle query."
+          }
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Full circuit diagram: H layer → oracle box → H layer → measurement, with the two possible final outcomes (all-zero vs. nonzero) highlighted.",
+        "Bar chart comparing worst-case classical query count (2^(n-1)+1) vs. quantum query count (1) as n grows.",
+        "Amplitude diagram showing constructive interference at |0...0⟩ for constant f, and complete cancellation for balanced f."
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "Deutsch–Jozsa does not tell you the actual output value of f, or which specific inputs give 0 vs 1 — it only reveals the GLOBAL property (constant vs balanced), and only because of the problem's special promise.",
+        "The algorithm's guaranteed (not just probable) success relies entirely on the promise that f is either exactly constant or exactly balanced; if f could be something in between, the clean 0-vs-nonzero separation would not hold.",
+        "'One query' means one call to the oracle circuit Uf, not one gate — the oracle itself may be a nontrivial circuit, but it is only invoked once regardless of n."
+      ],
+      "RELATED_CONCEPTS": [
+        "Quantum parallelism & oracles",
+        "Phase kickback",
+        "Interference",
+        "Query complexity"
+      ],
+      "ASSESSMENT_IDS": ["Q_DJ_01", "Q_DJ_02", "Q_DJ_03", "Q_DJ_04", "Q_DJ_05"],
+      "MCQS": [
+        {
+          "ID": "Q_DJ_01",
+          "QUESTION": "What promise does the Deutsch–Jozsa problem make about the function f?",
+          "OPTIONS": [
+            "f is either constant or balanced, nothing in between",
+            "f is always linear",
+            "f outputs a random value each time it is queried",
+            "f is guaranteed to be balanced"
+          ],
+          "CORRECT_ANSWER": "f is either constant or balanced, nothing in between",
+          "DIFFICULTY_LEVEL": "Beginner",
+          "RELATED_TOPICS": ["C_DEUTSCH_JOZSA"]
+        },
+        {
+          "ID": "Q_DJ_02",
+          "QUESTION": "In Deutsch–Jozsa, what does measuring the all-zero string |0...0⟩ on the input register indicate?",
+          "OPTIONS": ["f is balanced", "f is constant", "The oracle failed", "n must be even"],
+          "CORRECT_ANSWER": "f is constant",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_DEUTSCH_JOZSA"]
+        },
+        {
+          "ID": "Q_DJ_03",
+          "QUESTION": "How many oracle queries does the quantum Deutsch–Jozsa algorithm require to determine constant vs. balanced with certainty?",
+          "OPTIONS": ["1", "n", "2^(n-1)+1", "2^n"],
+          "CORRECT_ANSWER": "1",
+          "DIFFICULTY_LEVEL": "Beginner",
+          "RELATED_TOPICS": ["C_DEUTSCH_JOZSA"]
+        },
+        {
+          "ID": "Q_DJ_04",
+          "QUESTION": "Why is the amplitude of measuring |0...0⟩ exactly zero when f is balanced, rather than just small?",
+          "OPTIONS": [
+            "Because balanced functions always output 0",
+            "Because the positive and negative (-1)^f(x) terms in the sum cancel exactly due to the equal split of 0s and 1s",
+            "Because the oracle malfunctions for balanced functions",
+            "Because measurement is inherently noisy"
+          ],
+          "CORRECT_ANSWER": "Because the positive and negative (-1)^f(x) terms in the sum cancel exactly due to the equal split of 0s and 1s",
+          "DIFFICULTY_LEVEL": "Advanced",
+          "RELATED_TOPICS": ["C_DEUTSCH_JOZSA", "C_QUANTUM_PARALLELISM_ORACLES"]
+        },
+        {
+          "ID": "Q_DJ_05",
+          "QUESTION": "What is the worst-case number of queries a classical (deterministic) algorithm might need to distinguish constant from balanced f for certain?",
+          "OPTIONS": ["1", "2", "2^(n-1)+1", "n²"],
+          "CORRECT_ANSWER": "2^(n-1)+1",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_DEUTSCH_JOZSA"]
+        }
+      ]
+    },
+
+    {
+      "SUBTOPIC_ID": "6.3",
+      "CONCEPT": "Bernstein–Vazirani Algorithm",
+      "MODULE": "Module 6 — Introductory Quantum Algorithms",
+      "CONCEPT_ID": "C_BERNSTEIN_VAZIRANI",
+      "PREREQUISITES": [
+        "Deutsch–Jozsa algorithm",
+        "Quantum parallelism & oracles"
+      ],
+      "DIFFICULTY_LEVEL": "Advanced",
+      "LEARNING_OBJECTIVES": [
+        "State the Bernstein–Vazirani problem: find a hidden bit string s given oracle access to f(x)=s·x mod 2.",
+        "Explain why the same H–oracle–H circuit structure as Deutsch–Jozsa directly reveals s upon measurement.",
+        "Contrast the single quantum query with the n classical queries needed to determine all n bits of s.",
+        "Trace through a small example (e.g., n=2 or n=3) to recover a specific hidden string s."
+      ],
+      "SKILLS_TAGGED": [
+        "S_BERNSTEIN_VAZIRANI_TRACE",
+        "S_QUANTUM_CLASSICAL_QUERY_COMPARE"
+      ],
+      "CORE_EXPLANATION": "Bernstein–Vazirani reuses the exact circuit structure from Deutsch–Jozsa but asks a different question: given oracle access to a function f(x) = s·x mod 2 (the bitwise dot product of the input x with a fixed, hidden n-bit string s, mod 2), find s itself. Classically, the best you can do is query the oracle n times, each time plugging in an input that isolates exactly one bit of s (e.g., x=100...0, then x=010...0, and so on), reading off one bit of s per query. The quantum algorithm needs only ONE query: prepare n input qubits as |0⟩ and an ancilla as |1⟩, apply H to everything, apply the oracle Uf (which, via phase kickback, multiplies |x⟩ by (-1)^(s·x)), apply H again to the input register, and measure — the result is exactly s, with 100% certainty. This works because the second layer of Hadamards transforms the phase pattern (-1)^(s·x) precisely into the basis state |s⟩ (this is a special case of the same interference math behind the Quantum Fourier Transform and Deutsch–Jozsa: applying H^⊗n twice with a linear phase function in between acts like a Fourier transform that picks out the frequency s). Bernstein–Vazirani is often taught as a clean, satisfying illustration that Deutsch–Jozsa's 'interference trick' isn't a one-off gimmick — the same machinery can extract an entire hidden n-bit answer, not just a single yes/no property, from just one query.",
+      "MATHEMATICAL_REPRESENTATION": "Hidden string: s ∈ {0,1}^n,  f(x) = s·x mod 2 = Σ_i s_i x_i mod 2\n\nCircuit: |0⟩^⊗n |1⟩ → H^⊗(n+1) → Uf (phase kickback: |x⟩ → (-1)^(s·x)|x⟩) → H^⊗n → measure\n\nKey identity: H^⊗n ( (1/√(2^n)) Σ_x (-1)^(s·x) |x⟩ ) = |s⟩  (exactly, with probability 1)\n\nClassical queries needed: n (one per bit of s)\nQuantum queries needed: 1",
+      "INTUITION_ANALOGY": "Imagine a secret n-digit combination lock (the string s) hidden inside a machine that, when you insert a guess x, tells you only whether your guess 'matches an odd or even number of correct positions' (that's what s·x mod 2 computes) — not which positions. Classically, cracking the whole combination takes n careful, separate probes, one isolating each digit. Bernstein–Vazirani is like inserting one specially prepared 'superposed key' that tries every guess at once, and thanks to interference, the machine hands back the full combination directly, in a single insertion.",
+      "EXAMPLES": [
+        {
+          "Example_1": {
+            "DESCRIPTION": "n=2, hidden string s=11. Oracle implements f(x)=x0⊕x1 via two CNOTs into the ancilla, both controlled by q0 and q1 respectively.",
+            "CIRCUIT": [
+              "q0: |0⟩ ──H──●───────H──[measure]",
+              "q1: |0⟩ ──H──┼───●───H──[measure]",
+              "anc:|1⟩ ──H──X───X──────────────"
+            ],
+            "STATEVECTOR": {
+              "note": "After the oracle's phase kickback, the input register carries phase (-1)^(x0+x1 mod 2) on every basis state |x0 x1⟩; the second H⊗H layer converts this phase pattern exactly into the basis state |11⟩."
+            },
+            "EXPECTED_SIMULATION": "Qiskit Aer measurement on q0,q1: 100% outcome '11' over many shots → correctly recovers hidden string s=11 in a single query."
+          }
+        },
+        {
+          "Example_2": {
+            "DESCRIPTION": "n=2, hidden string s=10 (only q0 contributes). Oracle implements f(x)=x0 via a single CNOT from q0 into the ancilla.",
+            "CIRCUIT": [
+              "q0: |0⟩ ──H──●───H──[measure]",
+              "q1: |0⟩ ──H──┼───H──[measure]",
+              "anc:|1⟩ ──H──X──────────────"
+            ],
+            "STATEVECTOR": {
+              "note": "Phase (-1)^(x0) applied regardless of x1; H⊗H maps this pattern exactly to |10⟩."
+            },
+            "EXPECTED_SIMULATION": "Qiskit Aer measurement on q0,q1: 100% outcome '10' over many shots → correctly recovers hidden string s=10."
+          }
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Circuit diagram showing the oracle as multiple CNOTs, one per bit of s where s_i=1, all targeting the shared ancilla.",
+        "Bar chart comparing n classical queries vs. 1 quantum query as n grows.",
+        "Side-by-side comparison table: Deutsch–Jozsa (property: constant/balanced) vs. Bernstein–Vazirani (full hidden string) using the identical circuit skeleton."
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "Bernstein–Vazirani is not just 'Deutsch–Jozsa with more outputs' by coincidence — it uses literally the same circuit template, only the oracle's internal function differs, showing how general the H-oracle-H pattern is.",
+        "The measured result is not merely correlated with s — it equals s exactly and deterministically, with no residual probability of a wrong readout (assuming ideal, noiseless gates).",
+        "Increasing n does not increase the number of oracle queries needed for the quantum algorithm — it remains exactly 1 regardless of how long the hidden string is; only the number of qubits grows."
+      ],
+      "RELATED_CONCEPTS": [
+        "Deutsch–Jozsa algorithm",
+        "Phase kickback",
+        "Quantum parallelism & oracles",
+        "Quantum Fourier Transform"
+      ],
+      "ASSESSMENT_IDS": ["Q_BV_01", "Q_BV_02", "Q_BV_03", "Q_BV_04", "Q_BV_05"],
+      "MCQS": [
+        {
+          "ID": "Q_BV_01",
+          "QUESTION": "In Bernstein–Vazirani, what does measuring the input register after the circuit directly yield?",
+          "OPTIONS": [
+            "A random guess at s",
+            "The exact hidden string s, with certainty",
+            "Only whether f is constant or balanced",
+            "The value of f(0...0) only"
+          ],
+          "CORRECT_ANSWER": "The exact hidden string s, with certainty",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_BERNSTEIN_VAZIRANI"]
+        },
+        {
+          "ID": "Q_BV_02",
+          "QUESTION": "How many classical oracle queries are generally needed to determine all n bits of s?",
+          "OPTIONS": ["1", "n", "2^n", "n²"],
+          "CORRECT_ANSWER": "n",
+          "DIFFICULTY_LEVEL": "Beginner",
+          "RELATED_TOPICS": ["C_BERNSTEIN_VAZIRANI"]
+        },
+        {
+          "ID": "Q_BV_03",
+          "QUESTION": "What is the circuit structure similarity between Deutsch–Jozsa and Bernstein–Vazirani?",
+          "OPTIONS": [
+            "They use completely different circuits",
+            "Both use the identical H → oracle (phase kickback) → H → measure structure, differing only in the oracle's function",
+            "Bernstein–Vazirani requires no oracle at all",
+            "Deutsch–Jozsa requires twice as many qubits"
+          ],
+          "CORRECT_ANSWER": "Both use the identical H → oracle (phase kickback) → H → measure structure, differing only in the oracle's function",
+          "DIFFICULTY_LEVEL": "Advanced",
+          "RELATED_TOPICS": ["C_BERNSTEIN_VAZIRANI", "C_DEUTSCH_JOZSA"]
+        },
+        {
+          "ID": "Q_BV_04",
+          "QUESTION": "For hidden string s=10 (n=2), which oracle CNOT wiring is correct?",
+          "OPTIONS": [
+            "CNOT from q0 to ancilla only",
+            "CNOT from q1 to ancilla only",
+            "CNOTs from both q0 and q1 to ancilla",
+            "No CNOTs are needed"
+          ],
+          "CORRECT_ANSWER": "CNOT from q0 to ancilla only",
+          "DIFFICULTY_LEVEL": "Advanced",
+          "RELATED_TOPICS": ["C_BERNSTEIN_VAZIRANI"]
+        },
+        {
+          "ID": "Q_BV_05",
+          "QUESTION": "What mathematical operation performed by f(x)=s·x mod 2 is being computed?",
+          "OPTIONS": [
+            "The sum of all bits of x",
+            "The bitwise dot product of x and the hidden string s, modulo 2",
+            "The bitwise NOT of x",
+            "The product of x0 and x1 only"
+          ],
+          "CORRECT_ANSWER": "The bitwise dot product of x and the hidden string s, modulo 2",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_BERNSTEIN_VAZIRANI"]
+        }
+      ]
+    },
+
+    {
+      "SUBTOPIC_ID": "6.4",
+      "CONCEPT": "Grover's Search Algorithm (2–3 Qubit Example)",
+      "MODULE": "Module 6 — Introductory Quantum Algorithms",
+      "CONCEPT_ID": "C_GROVER_SEARCH",
+      "PREREQUISITES": [
+        "Quantum parallelism & oracles",
+        "Interference",
+        "Superposition"
+      ],
+      "DIFFICULTY_LEVEL": "Advanced",
+      "LEARNING_OBJECTIVES": [
+        "Explain the high-level idea of Grover's algorithm and why it gives a quadratic (not exponential) speedup.",
+        "Describe the two repeated steps: the oracle (phase flip on the marked item) and the diffusion operator (inversion about the average).",
+        "Trace a small Grover iteration on 2 qubits (N=4 items, 1 marked item) step by step.",
+        "State the approximate number of iterations needed, ~(π/4)√N, and why over-iterating can reduce success probability."
+      ],
+      "SKILLS_TAGGED": [
+        "S_GROVER_HIGH_LEVEL_EXPLAIN",
+        "S_GROVER_TRACE_SMALL_EXAMPLE"
+      ],
+      "CORE_EXPLANATION": "Grover's algorithm searches an unsorted database of N=2^n items for one marked item, using a black-box oracle that recognizes the marked item when queried. Classically, finding the marked item requires checking items one by one, taking O(N) queries on average. Grover's algorithm finds it using only O(√N) oracle queries — a quadratic speedup, which is provably optimal for this problem (no quantum algorithm can do better than √N for unstructured search). The algorithm starts by putting all n qubits into an equal superposition over all N basis states using Hadamards, so every item starts with equal amplitude 1/√N. It then repeats two steps: (1) the ORACLE flips the phase (multiplies amplitude by -1) of the marked item's basis state only, leaving all others unchanged, and (2) the DIFFUSION operator reflects every amplitude about the average amplitude of all N states ('inversion about the mean'). Because the marked item's amplitude was just flipped negative, this reflection makes it swing further positive than the others, boosting its probability of being measured while slightly shrinking the others. Repeating this oracle+diffusion pair roughly (π/4)√N times rotates the state vector until the marked item's amplitude is close to 1 and measurement returns it with near-certainty. Iterating too many or too few times overshoots or undershoots this optimal rotation, actually decreasing the success probability — Grover's algorithm requires knowing (or estimating) the right number of iterations in advance.",
+      "MATHEMATICAL_REPRESENTATION": "N = 2^n items, 1 marked item |w⟩\nInitial state: |s⟩ = H^⊗n|0⟩^⊗n = (1/√N) Σ_x |x⟩\n\nOracle: Uf|x⟩ = -|x⟩ if x=w, else |x⟩ (i.e., Uf = I - 2|w⟩⟨w|)\n\nDiffusion operator: D = 2|s⟩⟨s| - I  (inversion about the average amplitude)\n\nGrover iteration: G = D · Uf\nOptimal number of iterations: k ≈ (π/4)√N\n\nFor N=4 (n=2 qubits), 1 marked item: exactly k=1 iteration gives P(measure marked item) = 1 (perfect success).",
+      "INTUITION_ANALOGY": "Picture N-1 dancers all standing at the same height, plus one 'marked' dancer secretly given a trapdoor that briefly drops them below the floor (the oracle's phase flip) whenever the group performs a certain move. Then everyone does a coordinated 'bounce toward the group's average height' move (the diffusion step) — because the marked dancer dipped below while everyone else stayed level, this bounce sends the marked dancer shooting noticeably higher than the rest. Repeat the drop-and-bounce combo about √N times, and the marked dancer ends up towering above everyone else, making them trivially easy to spot (measure) — far fewer repetitions than checking each dancer individually.",
+      "EXAMPLES": [
+        {
+          "Example_1": {
+            "DESCRIPTION": "Grover's algorithm on 2 qubits (N=4), searching for marked item |11⟩, using exactly 1 iteration.",
+            "CIRCUIT": [
+              "q0: |0⟩ ──H──[Oracle: phase-flip |11⟩]──[Diffusion]──[measure]",
+              "q1: |0⟩ ──H──[Oracle: phase-flip |11⟩]──[Diffusion]──[measure]"
+            ],
+            "STATEVECTOR": {
+              "after_H": [0.5, 0.5, 0.5, 0.5],
+              "after_oracle": [0.5, 0.5, 0.5, -0.5],
+              "after_diffusion": [0, 0, 0, 1]
+            },
+            "EXPECTED_SIMULATION": "Qiskit Aer statevector after 1 Grover iteration: [0+0j, 0+0j, 0+0j, 1+0j]\nMeasurement histogram: 100% outcome '11' over many shots — the marked item is found with certainty after exactly 1 iteration, versus a classical average of ~2.25 lookups for N=4."
+          }
+        },
+        {
+          "Example_2": {
+            "DESCRIPTION": "Effect of over-iterating: applying a second Grover iteration when only 1 was optimal for N=4.",
+            "CIRCUIT": ["q0,q1: (continuing from |11⟩) ──[Oracle]──[Diffusion]──[measure]"],
+            "STATEVECTOR": {
+              "note": "For N=4, applying a second full Grover iteration rotates the state back past the marked item, actually decreasing the success probability for finding |11⟩ compared to stopping after 1 iteration."
+            },
+            "EXPECTED_SIMULATION": "This illustrates why Grover's algorithm needs the iteration count tuned to ~(π/4)√N — for small N like 4, that value is exactly 1, and continuing further is counterproductive."
+          }
+        }
+      ],
+      "VISUALIZATIONS": [
+        "2D geometric picture: state vector rotating by a fixed angle toward |w⟩ with each Grover iteration, in the plane spanned by |w⟩ and the uniform superposition over non-marked items.",
+        "Bar chart showing amplitude of marked vs. unmarked items growing/shrinking across iterations 0, 1, 2, 3.",
+        "Line plot: success probability vs. number of iterations, showing the oscillating (not monotonic) behavior and the optimal peak near (π/4)√N."
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "Grover's algorithm gives a QUADRATIC speedup (O(√N) vs O(N)), not an exponential one — it does not turn an exponential-time problem into a polynomial-time one, unlike, say, Shor's algorithm for factoring.",
+        "Running more Grover iterations is not always better — success probability oscillates, and overshooting the optimal iteration count (π/4)√N actually reduces the chance of measuring the marked item.",
+        "The diffusion operator does not 'know' which item is marked — it performs the same fixed reflection about the average every time; the marked item stands out only because the oracle already flipped its sign beforehand."
+      ],
+      "RELATED_CONCEPTS": [
+        "Quantum parallelism & oracles",
+        "Interference",
+        "Amplitude amplification",
+        "Query complexity"
+      ],
+      "ASSESSMENT_IDS": ["Q_GROVER_01", "Q_GROVER_02", "Q_GROVER_03", "Q_GROVER_04", "Q_GROVER_05"],
+      "MCQS": [
+        {
+          "ID": "Q_GROVER_01",
+          "QUESTION": "What kind of speedup does Grover's algorithm provide over classical unstructured search?",
+          "OPTIONS": ["Exponential speedup", "Quadratic speedup (O(√N) vs O(N))", "No speedup", "Cubic speedup"],
+          "CORRECT_ANSWER": "Quadratic speedup (O(√N) vs O(N))",
+          "DIFFICULTY_LEVEL": "Beginner",
+          "RELATED_TOPICS": ["C_GROVER_SEARCH"]
+        },
+        {
+          "ID": "Q_GROVER_02",
+          "QUESTION": "What are the two operations repeated in each Grover iteration?",
+          "OPTIONS": [
+            "Oracle (phase flip on marked item) and diffusion (inversion about the average)",
+            "Two consecutive H gates",
+            "A CNOT followed by a SWAP",
+            "Measurement followed by re-initialization"
+          ],
+          "CORRECT_ANSWER": "Oracle (phase flip on marked item) and diffusion (inversion about the average)",
+          "DIFFICULTY_LEVEL": "Beginner",
+          "RELATED_TOPICS": ["C_GROVER_SEARCH"]
+        },
+        {
+          "ID": "Q_GROVER_03",
+          "QUESTION": "For N=4 (2 qubits) with exactly 1 marked item, how many Grover iterations are needed for a 100% success probability?",
+          "OPTIONS": ["0", "1", "2", "4"],
+          "CORRECT_ANSWER": "1",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_GROVER_SEARCH"]
+        },
+        {
+          "ID": "Q_GROVER_04",
+          "QUESTION": "What happens if you apply MORE Grover iterations than the optimal ~(π/4)√N?",
+          "OPTIONS": [
+            "Success probability keeps increasing indefinitely",
+            "Success probability can decrease, since the state vector overshoots the marked item",
+            "Nothing changes after the optimal point",
+            "The oracle stops working"
+          ],
+          "CORRECT_ANSWER": "Success probability can decrease, since the state vector overshoots the marked item",
+          "DIFFICULTY_LEVEL": "Advanced",
+          "RELATED_TOPICS": ["C_GROVER_SEARCH"]
+        },
+        {
+          "ID": "Q_GROVER_05",
+          "QUESTION": "What does the diffusion operator D = 2|s⟩⟨s| - I do geometrically?",
+          "OPTIONS": [
+            "Measures the state immediately",
+            "Reflects every amplitude about the average amplitude of the current superposition",
+            "Randomly permutes all amplitudes",
+            "Applies a bit-flip to every qubit"
+          ],
+          "CORRECT_ANSWER": "Reflects every amplitude about the average amplitude of the current superposition",
+          "DIFFICULTY_LEVEL": "Advanced",
+          "RELATED_TOPICS": ["C_GROVER_SEARCH"]
+        }
+      ]
+    },
+
+    {
+      "SUBTOPIC_ID": "6.5",
+      "CONCEPT": "Quantum Fourier Transform (QFT) — Intuition and Small Example",
+      "MODULE": "Module 6 — Introductory Quantum Algorithms",
+      "CONCEPT_ID": "C_QFT",
+      "PREREQUISITES": [
+        "Superposition",
+        "Bernstein–Vazirani algorithm",
+        "Complex probability amplitudes and phase"
+      ],
+      "DIFFICULTY_LEVEL": "Advanced",
+      "LEARNING_OBJECTIVES": [
+        "Describe the QFT as the quantum analog of the classical discrete Fourier transform, converting between 'computational basis' and 'phase/frequency basis' representations.",
+        "Write the QFT's action on computational basis states using complex roots of unity.",
+        "Trace a small QFT example on 2 qubits.",
+        "Describe, at a high level, the role of QFT in Shor's algorithm for period-finding and integer factorization."
+      ],
+      "SKILLS_TAGGED": [
+        "S_QFT_HIGH_LEVEL_EXPLAIN",
+        "S_QFT_SHOR_ROLE_DESCRIBE"
+      ],
+      "CORE_EXPLANATION": "The Quantum Fourier Transform (QFT) is the quantum circuit analog of the classical Discrete Fourier Transform (DFT): it takes a state encoding amplitudes over N=2^n computational basis states and re-expresses that same information in terms of 'frequencies' — new basis states built from complex phases (roots of unity) rather than plain 0s and 1s. Concretely, the QFT maps each basis state |x⟩ to an equal-magnitude superposition of all N basis states |y⟩, each weighted by a phase e^(2πi·xy/N) that depends on both x and y. What makes this valuable in quantum algorithms is that computing this transform on a quantum computer takes only O(n²) gates (using controlled-phase gates and Hadamards, plus a final qubit-reversal), compared to the classical Fast Fourier Transform's O(N log N) = O(n·2^n) — an exponential advantage in transform 'speed' when the data is already in quantum superposition. QFT's headline application is inside Shor's algorithm for integer factorization: after preparing a superposition and applying modular exponentiation to create a periodic pattern in the amplitudes (with period r related to the number being factored), the QFT is applied to convert that hidden PERIODICITY into a directly measurable peak in the frequency basis — essentially, QFT lets the algorithm 'read off' a repeating pattern's period from interference, the same way Bernstein–Vazirani's Hadamard sandwich read off a hidden linear pattern. Once the period r is measured (via QFT + classical post-processing like continued fractions), classical number theory quickly recovers the number's factors. QFT is thus the key subroutine responsible for Shor's algorithm's exponential speedup over the best known classical factoring algorithms.",
+      "MATHEMATICAL_REPRESENTATION": "QFT on n qubits (N=2^n):\nQFT|x⟩ = (1/√N) Σ_{y=0}^{N-1} e^(2πi·xy/N) |y⟩\n\nFor n=2 (N=4), QFT|x⟩ = (1/2) Σ_y i^(xy) |y⟩ , since e^(2πi/4)=i\n\nExample: QFT|0⟩ = (1/2)(|00⟩+|01⟩+|10⟩+|11⟩)  (equal superposition, all phases = 1)\n\nCircuit gate count: O(n²) (Hadamards + controlled phase rotations R_k = diag(1, e^(2πi/2^k)) + final qubit reversal)\nClassical FFT gate count (for comparison, on the same 2^n data points): O(n·2^n)",
+      "INTUITION_ANALOGY": "Think of a musical chord (a computational basis state) versus its individual notes and frequencies (the Fourier/phase basis) — the classical Fourier transform is the tool sound engineers use to switch between 'what does the waveform look like over time' and 'what frequencies make it up.' The QFT does the analogous switch for a qubit register: it converts between 'which specific bit pattern' and 'what periodic phase pattern' description of the same amplitudes. Just as spotting a repeating rhythm is much easier by looking at its frequency spectrum than by staring at a long waveform, quantum algorithms like Shor's use the QFT to turn a hidden REPEATING pattern buried in amplitudes into a sharp, easy-to-measure spike in the frequency basis.",
+      "EXAMPLES": [
+        {
+          "Example_1": {
+            "DESCRIPTION": "QFT on 2 qubits applied to |00⟩ produces an equal, all-phases-equal-to-1 superposition (equivalent to H⊗H in this specific case).",
+            "CIRCUIT": ["q0: |0⟩ ──[QFT]──", "q1: |0⟩ ──[QFT]──"],
+            "STATEVECTOR": {
+              "before": [1, 0, 0, 0],
+              "after": [0.5, 0.5, 0.5, 0.5]
+            },
+            "EXPECTED_SIMULATION": "Qiskit Aer statevector: [0.5+0j, 0.5+0j, 0.5+0j, 0.5+0j]\nMeasurement histogram ~ 25% each of '00','01','10','11' — identical to applying H to each qubit, since QFT|0...0⟩ always gives the uniform superposition."
+          }
+        },
+        {
+          "Example_2": {
+            "DESCRIPTION": "QFT on 2 qubits applied to |01⟩ (x=1) produces a superposition with distinct phases i^y for each y, unlike the |00⟩ case.",
+            "CIRCUIT": ["q0,q1: |01⟩ ──[QFT]──"],
+            "STATEVECTOR": {
+              "before": [0, 1, 0, 0],
+              "after": [0.5, "0.5i", -0.5, "-0.5i"]
+            },
+            "EXPECTED_SIMULATION": "Qiskit Aer statevector: [0.5+0j, 0+0.5j, -0.5+0j, 0-0.5j]\nMeasurement histogram ~ 25% each outcome, but the PHASES differ from the |00⟩ case — these phases are exactly what let a subsequent inverse-QFT or interference step recover which x was originally encoded, which is how period-finding in Shor's algorithm works."
+          }
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Side-by-side classical waveform vs frequency-spectrum diagram, paired with a computational-basis vs QFT-basis qubit diagram as the quantum analogy.",
+        "Circuit diagram of the standard QFT construction: H gates interleaved with controlled phase rotation gates, followed by a swap network reversing qubit order.",
+        "Diagram of Shor's algorithm pipeline: modular exponentiation creates periodicity → QFT converts period to a measurable peak → classical continued-fractions extracts the period → factors computed classically."
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "The QFT does not factor numbers by itself — in Shor's algorithm, it only extracts the PERIOD of a function; classical post-processing (continued fractions, gcd computation) is still needed to get the actual factors.",
+        "QFT's O(n²) gate count refers to the QUANTUM CIRCUIT SIZE, not to reading out all N Fourier coefficients classically — you still only get one measurement sample per run, same as any other quantum circuit; the exponential speedup applies to how the transform itself is computed inside superposition, not to how much classical information you can extract per shot.",
+        "QFT is not the same operation as applying H to every qubit, except in the special case of transforming |0...0⟩ — for other input basis states, QFT produces basis-state-dependent relative phases that plain independent H gates would not reproduce."
+      ],
+      "RELATED_CONCEPTS": [
+        "Superposition",
+        "Interference",
+        "Bernstein–Vazirani algorithm",
+        "Shor's algorithm",
+        "Complex phase / roots of unity"
+      ],
+      "ASSESSMENT_IDS": ["Q_QFT_01", "Q_QFT_02", "Q_QFT_03", "Q_QFT_04", "Q_QFT_05"],
+      "MCQS": [
+        {
+          "ID": "Q_QFT_01",
+          "QUESTION": "What is the Quantum Fourier Transform (QFT) analogous to, classically?",
+          "OPTIONS": [
+            "The classical Discrete Fourier Transform (DFT)",
+            "Binary search",
+            "A classical random number generator",
+            "The bubble sort algorithm"
+          ],
+          "CORRECT_ANSWER": "The classical Discrete Fourier Transform (DFT)",
+          "DIFFICULTY_LEVEL": "Beginner",
+          "RELATED_TOPICS": ["C_QFT"]
+        },
+        {
+          "ID": "Q_QFT_02",
+          "QUESTION": "What is the quantum gate count (circuit size) required to implement the QFT on n qubits?",
+          "OPTIONS": ["O(n)", "O(n²)", "O(2^n)", "O(n·2^n)"],
+          "CORRECT_ANSWER": "O(n²)",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_QFT"]
+        },
+        {
+          "ID": "Q_QFT_03",
+          "QUESTION": "What role does the QFT play in Shor's algorithm at a high level?",
+          "OPTIONS": [
+            "It directly outputs the prime factors of the number",
+            "It converts a hidden periodicity in the amplitudes (created by modular exponentiation) into a measurable peak in the frequency basis, from which the period is extracted",
+            "It replaces the need for any classical post-processing",
+            "It marks a specific item for amplitude amplification, as in Grover's algorithm"
+          ],
+          "CORRECT_ANSWER": "It converts a hidden periodicity in the amplitudes (created by modular exponentiation) into a measurable peak in the frequency basis, from which the period is extracted",
+          "DIFFICULTY_LEVEL": "Advanced",
+          "RELATED_TOPICS": ["C_QFT"]
+        },
+        {
+          "ID": "Q_QFT_04",
+          "QUESTION": "What does QFT|0...0⟩ produce, for any number of qubits?",
+          "OPTIONS": [
+            "The original |0...0⟩ state, unchanged",
+            "A single random basis state",
+            "An equal superposition over all basis states, with all phases equal (same as applying H to every qubit)",
+            "A maximally entangled Bell-like state"
+          ],
+          "CORRECT_ANSWER": "An equal superposition over all basis states, with all phases equal (same as applying H to every qubit)",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_QFT"]
+        },
+        {
+          "ID": "Q_QFT_05",
+          "QUESTION": "For a general nonzero basis state |x⟩ (x≠0), how does QFT|x⟩ generally differ from applying H to each qubit independently?",
+          "OPTIONS": [
+            "There is no difference for any input state",
+            "QFT|x⟩ introduces basis-state-dependent relative phases (roots of unity) that independent H gates do not reproduce",
+            "QFT always outputs |x⟩ unchanged",
+            "QFT collapses the state to a single classical bit"
+          ],
+          "CORRECT_ANSWER": "QFT|x⟩ introduces basis-state-dependent relative phases (roots of unity) that independent H gates do not reproduce",
+          "DIFFICULTY_LEVEL": "Advanced",
+          "RELATED_TOPICS": ["C_QFT"]
+        }
+      ]
+    }
+  ],
+
+  "FINAL_MODULE_ASSESSMENT": {
+    "ASSESSMENT_IDS": [
+      "Q_MOD6_FINAL_01", "Q_MOD6_FINAL_02", "Q_MOD6_FINAL_03", "Q_MOD6_FINAL_04", "Q_MOD6_FINAL_05",
+      "Q_MOD6_FINAL_06", "Q_MOD6_FINAL_07", "Q_MOD6_FINAL_08", "Q_MOD6_FINAL_09", "Q_MOD6_FINAL_10"
+    ],
+    "QUESTIONS": [
+      {
+        "ID": "Q_MOD6_FINAL_01",
+        "QUESTION": "Which two algorithms in this module share the exact same H → oracle → H → measure circuit skeleton, differing only in the oracle's function and what the measurement result represents?",
+        "OPTIONS": [
+          "Grover's algorithm and QFT",
+          "Deutsch–Jozsa and Bernstein–Vazirani",
+          "Grover's algorithm and Bernstein–Vazirani",
+          "QFT and Deutsch–Jozsa"
+        ],
+        "CORRECT_ANSWER": "Deutsch–Jozsa and Bernstein–Vazirani",
+        "DIFFICULTY_LEVEL": "Intermediate",
+        "RELATED_TOPICS": ["C_DEUTSCH_JOZSA", "C_BERNSTEIN_VAZIRANI"]
+      },
+      {
+        "ID": "Q_MOD6_FINAL_02",
+        "QUESTION": "For an unsorted database of N=16 items with 1 marked item, approximately how many Grover iterations are optimal?",
+        "OPTIONS": ["~1", "~π/4 × 4 ≈ 3", "~16", "~256"],
+        "CORRECT_ANSWER": "~π/4 × 4 ≈ 3",
+        "DIFFICULTY_LEVEL": "Advanced",
+        "RELATED_TOPICS": ["C_GROVER_SEARCH"]
+      },
+      {
+        "ID": "Q_MOD6_FINAL_03",
+        "QUESTION": "What is the essential technique that allows a bit-flip oracle to act as a phase-flip oracle, used across Deutsch–Jozsa, Bernstein–Vazirani, and Grover's algorithm?",
+        "OPTIONS": ["Amplitude amplification", "Phase kickback (ancilla prepared in |-⟩)", "Quantum teleportation", "The QFT"],
+        "CORRECT_ANSWER": "Phase kickback (ancilla prepared in |-⟩)",
+        "DIFFICULTY_LEVEL": "Advanced",
+        "RELATED_TOPICS": ["C_QUANTUM_PARALLELISM_ORACLES", "C_DEUTSCH_JOZSA", "C_GROVER_SEARCH"]
+      },
+      {
+        "ID": "Q_MOD6_FINAL_04",
+        "QUESTION": "Which statement correctly contrasts the type of speedup offered by Grover's algorithm versus the type associated with QFT-based algorithms like Shor's?",
+        "OPTIONS": [
+          "Both offer only quadratic speedups",
+          "Grover's gives a quadratic speedup for unstructured search; QFT-based Shor's algorithm gives an exponential speedup for factoring",
+          "Grover's gives an exponential speedup; Shor's gives a quadratic speedup",
+          "Neither algorithm offers any speedup over classical methods"
+        ],
+        "CORRECT_ANSWER": "Grover's gives a quadratic speedup for unstructured search; QFT-based Shor's algorithm gives an exponential speedup for factoring",
+        "DIFFICULTY_LEVEL": "Advanced",
+        "RELATED_TOPICS": ["C_GROVER_SEARCH", "C_QFT"]
+      },
+      {
+        "ID": "Q_MOD6_FINAL_05",
+        "QUESTION": "In quantum parallelism, why is it wrong to say 'a quantum computer computes f(x) for all x and gives you the whole table for free'?",
+        "OPTIONS": [
+          "Because oracles can only be queried classically",
+          "Because measurement collapses the superposition to a single outcome, so extracting the full table is not possible from one run",
+          "Because f(x) cannot be computed on a quantum computer at all",
+          "Because superposition only works for constant functions"
+        ],
+        "CORRECT_ANSWER": "Because measurement collapses the superposition to a single outcome, so extracting the full table is not possible from one run",
+        "DIFFICULTY_LEVEL": "Intermediate",
+        "RELATED_TOPICS": ["C_QUANTUM_PARALLELISM_ORACLES"]
+      },
+      {
+        "ID": "Q_MOD6_FINAL_06",
+        "QUESTION": "In Bernstein–Vazirani with n=3 and hidden string s=101, which qubits should the oracle's CNOTs connect to the ancilla?",
+        "OPTIONS": [
+          "q0 and q1 only",
+          "q0 and q2 only",
+          "q1 and q2 only",
+          "All three qubits q0, q1, q2"
+        ],
+        "CORRECT_ANSWER": "q0 and q2 only",
+        "DIFFICULTY_LEVEL": "Advanced",
+        "RELATED_TOPICS": ["C_BERNSTEIN_VAZIRANI"]
+      },
+      {
+        "ID": "Q_MOD6_FINAL_07",
+        "QUESTION": "What does the Grover diffusion operator do to the amplitude of an item that is currently BELOW the average amplitude (such as an item just phase-flipped by the oracle)?",
+        "OPTIONS": [
+          "It leaves the amplitude unchanged",
+          "It reflects the amplitude about the average, increasing it toward (and potentially above) the average",
+          "It sets the amplitude to exactly zero",
+          "It measures the qubit immediately"
+        ],
+        "CORRECT_ANSWER": "It reflects the amplitude about the average, increasing it toward (and potentially above) the average",
+        "DIFFICULTY_LEVEL": "Advanced",
+        "RELATED_TOPICS": ["C_GROVER_SEARCH"]
+      },
+      {
+        "ID": "Q_MOD6_FINAL_08",
+        "QUESTION": "Why is the Deutsch–Jozsa result described as 'deterministic' quantum advantage rather than merely 'probabilistic'?",
+        "OPTIONS": [
+          "Because the algorithm sometimes fails and needs to be repeated",
+          "Because the amplitude of |0...0⟩ is EXACTLY 1 for constant f and EXACTLY 0 for balanced f — there's no partial-probability gray zone",
+          "Because it uses classical randomness instead of quantum superposition",
+          "Because Deutsch–Jozsa never actually measures anything"
+        ],
+        "CORRECT_ANSWER": "Because the amplitude of |0...0⟩ is EXACTLY 1 for constant f and EXACTLY 0 for balanced f — there's no partial-probability gray zone",
+        "DIFFICULTY_LEVEL": "Advanced",
+        "RELATED_TOPICS": ["C_DEUTSCH_JOZSA"]
+      },
+      {
+        "ID": "Q_MOD6_FINAL_09",
+        "QUESTION": "Which of the following best explains why QFT is useful for period-finding, connecting it conceptually to interference-based algorithms like Deutsch–Jozsa?",
+        "OPTIONS": [
+          "QFT physically slows down the qubits so periods can be observed directly",
+          "Like Deutsch–Jozsa's Hadamard sandwich, QFT uses interference to concentrate amplitude onto outcomes that reveal a global pattern (here, a period) rather than requiring many individual queries",
+          "QFT works by trying every possible period classically and checking each one",
+          "QFT and Deutsch–Jozsa are unrelated techniques that happen to both use qubits"
+        ],
+        "CORRECT_ANSWER": "Like Deutsch–Jozsa's Hadamard sandwich, QFT uses interference to concentrate amplitude onto outcomes that reveal a global pattern (here, a period) rather than requiring many individual queries",
+        "DIFFICULTY_LEVEL": "Advanced",
+        "RELATED_TOPICS": ["C_QFT", "C_DEUTSCH_JOZSA", "C_QUANTUM_PARALLELISM_ORACLES"]
+      },
+      {
+        "ID": "Q_MOD6_FINAL_10",
+        "QUESTION": "A student claims: 'Grover's algorithm and Deutsch–Jozsa both work by trying every possible answer in parallel and just reading off the correct one directly.' What is the flaw in this claim?",
+        "OPTIONS": [
+          "There is no flaw — this is exactly correct for both algorithms",
+          "Both algorithms rely on interference (oracle + extra gates like diffusion or Hadamards) to shape amplitudes toward the correct answer — simply 'trying everything' via superposition alone, without this shaping step, would give a random, unhelpful measurement",
+          "Grover's algorithm does not use superposition at all",
+          "Deutsch–Jozsa does not use an oracle"
+        ],
+        "CORRECT_ANSWER": "Both algorithms rely on interference (oracle + extra gates like diffusion or Hadamards) to shape amplitudes toward the correct answer — simply 'trying everything' via superposition alone, without this shaping step, would give a random, unhelpful measurement",
+        "DIFFICULTY_LEVEL": "Advanced",
+        "RELATED_TOPICS": ["C_GROVER_SEARCH", "C_DEUTSCH_JOZSA", "C_QUANTUM_PARALLELISM_ORACLES"]
+      }
+    ]
+  }
+}

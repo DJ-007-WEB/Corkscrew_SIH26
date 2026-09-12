@@ -1,8 +1,10 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { Circuit } from "./types";
 import YouTubeVideo from "./YouTubeVideo";
 import { fetchBellPreset, fetchDjPreset, fetchGroverPreset, fetchTeleportPreset } from "./presets";
 import type { BellVariant, DjOracle, TeleportPayload } from "./presets";
+import ModuleRoadmap from "./ModuleRoadmap";
+import { learningModules } from "./moduleData";
 
 const SELECT_CLASS = "bg-[var(--bp-bg)] border border-[var(--bp-border)] rounded px-2 py-1.5 text-xs outline-none focus:border-[var(--bp-cyan)]";
 
@@ -11,6 +13,7 @@ type Lesson = {
   title: string;
   summary: string;
   sections: { heading: string; body: string; formula?: string; example?: string }[];
+  moduleTitle?: string;
 };
 
 const PRESETS: Record<string, Circuit> = {
@@ -23,7 +26,7 @@ const PRESETS: Record<string, Circuit> = {
   "circuits": { qubits: 2, gates: [{ type: "H", targets: [0] }, { type: "CNOT", controls: [0], targets: [1] }] },
 };
 
-const LESSONS: Lesson[] = [
+const BASE_LESSONS: Lesson[] = [
   { id: "intro", title: "Introduction to Quantum Computing", summary: "What quantum computing is, what makes it different, and where qubits fit in.", sections: [
     { heading: "What is quantum computing?", body: "Quantum computing uses physical systems that obey quantum mechanics to represent information and perform transformations. A quantum computer is not simply a faster classical computer; it uses superposition, interference and entanglement as computational resources." },
     { heading: "Why learn quantum computing?", body: "The most important skill at this stage is learning to reason about quantum states and circuits. Once those foundations are clear, algorithms and quantum software become much easier to understand." },
@@ -134,9 +137,27 @@ const LESSONS: Lesson[] = [
   ] },
 ];
 
+const LESSONS: Lesson[] = [
+  ...BASE_LESSONS,
+  ...learningModules.flatMap((module) => module.topics.map((topic) => ({
+    id: `${module.id}-${topic.id}`,
+    title: `${topic.id} · ${topic.title}`,
+    summary: topic.summary,
+    moduleTitle: module.title,
+    sections: [
+      { heading: "Learning objectives", body: topic.objectives.map((objective, index) => `${index + 1}. ${objective}`).join("\n") },
+      ...(topic.formula ? [{ heading: "Mathematical representation", body: "Use this as a reference while working through the concept.", formula: topic.formula }] : []),
+      ...(topic.intuition ? [{ heading: "Intuition", body: topic.intuition }] : []),
+      ...(topic.examples.length ? [{ heading: "Worked examples", body: "Examples and expected simulation behaviour.", example: topic.examples.join("\n\n") }] : []),
+      ...(topic.visualizations.length ? [{ heading: "What to visualize", body: topic.visualizations.map((item, index) => `${index + 1}. ${item}`).join("\n") }] : []),
+      ...(topic.misconceptions.length ? [{ heading: "Common misconceptions", body: topic.misconceptions.map((item, index) => `${index + 1}. ${item}`).join("\n") }] : []),
+    ],
+  }))),
+];
+
 export default function LearningPage({ activeLessonId, onLessonChange, onOpenBuilder, onOpenVisualizations }: { activeLessonId?: string; onLessonChange?: (id: string) => void; onOpenBuilder: (preset?: Circuit, originLessonId?: string) => void; onOpenVisualizations: () => void }) {
-  const [uncontrolled, setUncontrolled] = useState(0);
-  const [query, setQuery] = useState("");
+  const [uncontrolled, setUncontrolled] = useState(BASE_LESSONS.length);
+  const [expandedModuleId, setExpandedModuleId] = useState<string | null>(learningModules[0].id);
   const [bellVariant, setBellVariant] = useState<BellVariant>("phi_plus");
   const [djN, setDjN] = useState<1 | 2>(1);
   const [djOracle, setDjOracle] = useState<DjOracle>("balanced");
@@ -152,7 +173,6 @@ export default function LearningPage({ activeLessonId, onLessonChange, onOpenBui
     else setUncontrolled(index);
   };
   const lesson = LESSONS[selected];
-  const filtered = useMemo(() => LESSONS.filter((item) => `${item.title} ${item.summary}`.toLowerCase().includes(query.toLowerCase())), [query]);
 
   async function openPreset(lessonId: string) {
     if (!PRESETS[lessonId]) {
@@ -176,31 +196,20 @@ export default function LearningPage({ activeLessonId, onLessonChange, onOpenBui
   }
 
   return (
-    <div className="grid lg:grid-cols-[260px_minmax(0,1fr)] gap-5">
-      <aside className="bp-panel p-4 lg:sticky lg:top-5 lg:self-start max-h-[calc(100vh-120px)] overflow-auto bp-scrollbar">
-        <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-cyan)]">Course</p>
-        <h2 className="font-display text-lg mt-1">Quantum Fundamentals</h2>
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search lessons..." className="mt-4 w-full bg-[var(--bp-bg)] border border-[var(--bp-border)] rounded px-3 py-2 text-xs outline-none focus:border-[var(--bp-cyan)]" />
-        <div className="mt-4 space-y-1">
-          {filtered.map((item) => {
-            const index = LESSONS.indexOf(item);
-            return <button key={item.id} onClick={() => setSelected(index)} className={`w-full text-left rounded px-3 py-2.5 text-xs transition-colors ${selected === index ? "bg-[var(--bp-cyan-dim)] text-[var(--bp-cyan)] border border-[var(--bp-cyan)]/40" : "text-[var(--bp-text-dim)] hover:text-[var(--bp-text)] hover:bg-[var(--bp-panel-raised)]"}`}><span className="font-mono mr-2">{String(index + 1).padStart(2, "0")}</span>{item.title}</button>;
-          })}
-        </div>
-      </aside>
-
+    <div className="grid lg:grid-cols-[minmax(0,1fr)_300px] gap-5">
       <article className="min-w-0">
         <section className="bp-panel p-6 sm:p-8">
           <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-cyan)]">Lesson {String(selected + 1).padStart(2, "0")} / {LESSONS.length}</p>
+          {lesson.moduleTitle && <p className="mt-2 text-xs font-mono text-[var(--bp-amber)]">{lesson.moduleTitle}</p>}
           <h1 className="font-display text-3xl sm:text-4xl mt-2">{lesson.title}</h1>
-          <p className="text-sm text-[var(--bp-text-dim)] mt-3 max-w-3xl leading-relaxed">{lesson.summary}</p>
+          <p className="whitespace-pre-line text-sm text-[var(--bp-text-dim)] mt-3 max-w-3xl leading-relaxed">{lesson.summary}</p>
 
           <div className="mt-8 space-y-7">
             {lesson.sections.map((section) => <section key={section.heading}>
               <h2 className="font-display text-xl">{section.heading}</h2>
-              <p className="text-sm text-[var(--bp-text-dim)] leading-7 mt-2">{section.body}</p>
-              {section.formula && <pre className="mt-3 overflow-auto rounded border border-[var(--bp-border)] bg-[var(--bp-ink)] p-4 text-xs font-mono text-[var(--bp-cyan)]">{section.formula}</pre>}
-              {section.example && <div className="mt-3 rounded border border-[var(--bp-border)] bg-[var(--bp-panel-raised)] p-4 text-xs font-mono">{section.example}</div>}
+              <p className="whitespace-pre-line text-sm text-[var(--bp-text-dim)] leading-7 mt-2">{section.body}</p>
+              {section.formula && <pre className="whitespace-pre-wrap break-words mt-3 overflow-auto rounded border border-[var(--bp-border)] bg-[var(--bp-ink)] p-4 text-xs font-mono leading-6 text-[var(--bp-cyan)]">{section.formula}</pre>}
+              {section.example && <div className="whitespace-pre-line break-words mt-3 rounded border border-[var(--bp-border)] bg-[var(--bp-panel-raised)] p-4 text-xs font-mono leading-6">{section.example}</div>}
               {PRESETS[lesson.id] && (section.heading.toLowerCase().includes("try it") || section.heading.toLowerCase().includes("try it yourself")) && <div className="mt-3 flex flex-wrap items-center gap-2">
                 {lesson.id === "bell-state" && <label className="text-xs font-mono text-[var(--bp-text-dim)]">State <select value={bellVariant} onChange={(e) => setBellVariant(e.target.value as BellVariant)} className={SELECT_CLASS}><option value="phi_plus">|Φ+⟩ (00+11)</option><option value="phi_minus">|Φ-⟩ (00-11)</option><option value="psi_plus">|Ψ+⟩ (01+10)</option><option value="psi_minus">|Ψ-⟩ (01-10)</option></select></label>}
                 {lesson.id === "deutsch-jozsa" && <><label className="text-xs font-mono text-[var(--bp-text-dim)]">Inputs <select value={djN} onChange={(e) => setDjN(Number(e.target.value) as 1 | 2)} className={SELECT_CLASS}><option value={1}>n=1</option><option value={2}>n=2</option></select></label><label className="text-xs font-mono text-[var(--bp-text-dim)]">Oracle <select value={djOracle} onChange={(e) => setDjOracle(e.target.value as DjOracle)} className={SELECT_CLASS}><option value="balanced">balanced</option><option value="constant_zero">constant 0</option><option value="constant_one">constant 1</option></select></label></>}
@@ -226,6 +235,24 @@ export default function LearningPage({ activeLessonId, onLessonChange, onOpenBui
           </div>
         </section>
       </article>
-    </div>
+      <div className="space-y-3">
+        <ModuleRoadmap
+          modules={learningModules}
+          expandedModuleId={expandedModuleId}
+          selectedTopicId={lesson.moduleTitle ? lesson.id : undefined}
+          onExpandModule={setExpandedModuleId}
+          onSelectTopic={(module, topicId) => {
+            setExpandedModuleId(module.id);
+            setSelected(LESSONS.findIndex((item) => item.id === `${module.id}-${topicId}`));
+          }}
+        />
+        <details className="bp-panel p-4">
+          <summary className="cursor-pointer text-xs font-mono text-[var(--bp-amber)]">Interactive circuit labs</summary>
+          <div className="mt-3 space-y-1">
+            {BASE_LESSONS.filter((item) => PRESETS[item.id]).map((item) => <button key={item.id} onClick={() => setSelected(LESSONS.indexOf(item))} className="w-full rounded px-2 py-2 text-left text-xs text-[var(--bp-text-dim)] hover:bg-[var(--bp-panel-raised)] hover:text-[var(--bp-text)]">{item.title}</button>)}
+          </div>
+        </details>
+      </div>
+      </div>
   );
 }

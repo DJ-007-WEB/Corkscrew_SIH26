@@ -124,6 +124,14 @@ select option:hover {
   color: var(--bp-text);
 }
 
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
 html[data-theme="light"] {
   color-scheme: light;
   --bp-ink: #f4f8fc;

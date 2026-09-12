@@ -1,0 +1,682 @@
+{
+  "MODULE": "Module 4 — Multi-Qubit Systems & Entanglement",
+  "MODULE_GOAL": "Understand tensor products at a high level; create and recognize entangled states.",
+  "MODULE_PREREQUISITES": [
+    "Qubit",
+    "Quantum state",
+    "Probability amplitudes",
+    "Superposition",
+    "Single-qubit gates (H, X, Z)",
+    "Bloch sphere (conceptual)"
+  ],
+  "SOURCE_REFERENCES": [
+    "[Microsoft Learn — Quantum: Explore superposition, https://learn.microsoft.com/en-us/training/modules/explore-superposition/1-introduction]",
+    "[Qiskit Textbook, Chapter on Multiple Qubits and Entangled States]",
+    "[ACM/IEEE CS2023 Q-AR Knowledge Unit – Multi-Qubit Systems & Entanglement]",
+    "[Nielsen & Chuang, Quantum Computation and Quantum Information, Ch. 1-2]"
+  ],
+
+  "CONCEPTS": [
+
+    {
+      "SUBTOPIC_ID": "4.1",
+      "CONCEPT": "Two-Qubit States and the Tensor Product (Conceptual)",
+      "MODULE": "Module 4 — Multi-Qubit Systems & Entanglement",
+      "CONCEPT_ID": "C_TENSOR_PRODUCT",
+      "PREREQUISITES": [
+        "Qubit",
+        "Quantum state",
+        "Probability amplitudes",
+        "Superposition"
+      ],
+      "DIFFICULTY_LEVEL": "Beginner",
+      "LEARNING_OBJECTIVES": [
+        "Describe how the state space of multiple qubits is built from single-qubit spaces using the tensor product.",
+        "List and interpret the four computational basis states |00⟩, |01⟩, |10⟩, |11⟩.",
+        "Write a general two-qubit state as a weighted sum of basis states with complex amplitudes.",
+        "Compute the tensor product of two single-qubit states."
+      ],
+      "SKILLS_TAGGED": [
+        "S_TENSOR_BASIS_ID",
+        "S_TENSOR_STATE_CONSTRUCT"
+      ],
+      "CORE_EXPLANATION": "A single qubit lives in a 2-dimensional space spanned by |0⟩ and |1⟩. When you combine two qubits, their joint state does not live in a 2+2 = 4-dimensional space added together — instead, it lives in a 2×2 = 4-dimensional space built by the tensor product (⊗). This gives four basis states: |00⟩, |01⟩, |10⟩, |11⟩, where the first symbol is qubit 0's value and the second is qubit 1's value (some texts reverse this order, so always check the convention). A general two-qubit state is written as |ψ⟩ = c00|00⟩ + c01|01⟩ + c10|10⟩ + c11|11⟩, where each cij is a complex probability amplitude and |c00|² + |c01|² + |c10|² + |c11|² = 1. If each qubit is prepared independently — qubit 0 in |a⟩ = α0|0⟩+α1|1⟩ and qubit 1 in |b⟩ = β0|0⟩+β1|1⟩ — the combined state is the tensor product |a⟩⊗|b⟩, obtained by multiplying every amplitude of |a⟩ with every amplitude of |b⟩. Such states are called 'separable' or 'product' states because you can always describe each qubit on its own. Adding more qubits multiplies the dimension again: n qubits need 2^n complex amplitudes to describe fully, which is why classical computers struggle to simulate large quantum systems — the state space grows exponentially, not linearly.",
+      "MATHEMATICAL_REPRESENTATION": "General 2-qubit state:\n|ψ⟩ = c00|00⟩ + c01|01⟩ + c10|10⟩ + c11|11⟩,  Σ|cij|² = 1\n\nTensor product of two single-qubit states:\n|a⟩ = α0|0⟩ + α1|1⟩,  |b⟩ = β0|0⟩ + β1|1⟩\n|a⟩⊗|b⟩ = α0β0|00⟩ + α0β1|01⟩ + α1β0|10⟩ + α1β1|11⟩\n\nVector form (column vectors, big-endian |q0 q1⟩ ordering):\n|00⟩=[1,0,0,0]ᵀ  |01⟩=[0,1,0,0]ᵀ  |10⟩=[0,0,1,0]ᵀ  |11⟩=[0,0,0,1]ᵀ",
+      "INTUITION_ANALOGY": "Think of two separate spinners, one red and one blue, each independently pointing to 'A' or 'B'. If the spinners are unrelated, the full description of the system is just 'red spinner's state' AND 'blue spinner's state' combined — this is like a product state. The tensor product is the bookkeeping rule for combining two independent probabilistic (or quantum) systems into one joint description: you multiply the individual probabilities (or amplitudes) for every combination of outcomes.",
+      "EXAMPLES": [
+        {
+          "Example_1": {
+            "DESCRIPTION": "Tensor product of |0⟩ and |1⟩ gives the basis state |01⟩.",
+            "CIRCUIT": [
+              "q0: |0⟩ ─────",
+              "q1: |1⟩ ─────"
+            ],
+            "STATEVECTOR": {
+              "q0": [1, 0],
+              "q1": [0, 1],
+              "combined": [0, 1, 0, 0]
+            },
+            "EXPECTED_SIMULATION": "Qiskit Aer statevector: [0+0j, 1+0j, 0+0j, 0+0j]\nMeasurement histogram: 100% outcome '01' over many shots (no randomness, this is a basis state)."
+          }
+        },
+        {
+          "Example_2": {
+            "DESCRIPTION": "Tensor product of |+⟩ = (|0⟩+|1⟩)/√2 with |0⟩ gives an equal superposition over |00⟩ and |10⟩ — still a product (separable) state.",
+            "CIRCUIT": [
+              "q0: |0⟩ ──H──",
+              "q1: |0⟩ ─────"
+            ],
+            "STATEVECTOR": {
+              "before": [1, 0, 0, 0],
+              "after": [0.7071, 0, 0.7071, 0]
+            },
+            "EXPECTED_SIMULATION": "Qiskit Aer statevector: [0.707+0j, 0+0j, 0.707+0j, 0+0j]\nMeasurement histogram ~ 50% '00', 50% '10' over many shots; note qubit 1 always reads 0."
+          }
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Two separate Bloch spheres (one per qubit) shown side by side for a product state.",
+        "4-bar probability distribution over {00, 01, 10, 11}.",
+        "Statevector as a 4-entry complex column vector, color-coded by amplitude magnitude."
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "The joint state space is NOT 2+2=4 by simple addition of dimensions — it is 2×2=4 via the tensor product, and this multiplicative scaling becomes dramatic as more qubits are added (2^n).",
+        "Not every 4-amplitude vector represents two independent qubits — only 'separable' states can be factored back into |a⟩⊗|b⟩; many valid states cannot be (these are entangled, covered in 4.3).",
+        "The ordering convention |q0 q1⟩ vs |q1 q0⟩ differs between textbooks and simulators (e.g., Qiskit uses little-endian qubit ordering) — always check which qubit is the leftmost/rightmost bit."
+      ],
+      "RELATED_CONCEPTS": [
+        "Superposition",
+        "Tensor product",
+        "Entanglement",
+        "Statevector"
+      ],
+      "ASSESSMENT_IDS": ["Q_TENSOR_01", "Q_TENSOR_02", "Q_TENSOR_03", "Q_TENSOR_04", "Q_TENSOR_05"],
+      "MCQS": [
+        {
+          "ID": "Q_TENSOR_01",
+          "QUESTION": "How many complex amplitudes are needed to fully describe the general state of 2 qubits?",
+          "OPTIONS": ["2", "4", "8", "16"],
+          "CORRECT_ANSWER": "4",
+          "DIFFICULTY_LEVEL": "Beginner",
+          "RELATED_TOPICS": ["C_TENSOR_PRODUCT"]
+        },
+        {
+          "ID": "Q_TENSOR_02",
+          "QUESTION": "Which of the following is the tensor product |1⟩⊗|0⟩ expressed as a computational basis state?",
+          "OPTIONS": ["|00⟩", "|01⟩", "|10⟩", "|11⟩"],
+          "CORRECT_ANSWER": "|10⟩",
+          "DIFFICULTY_LEVEL": "Beginner",
+          "RELATED_TOPICS": ["C_TENSOR_PRODUCT"]
+        },
+        {
+          "ID": "Q_TENSOR_03",
+          "QUESTION": "Qubit 0 is in state |+⟩ = (|0⟩+|1⟩)/√2 and qubit 1 is in state |0⟩. What is the resulting 2-qubit statevector [c00, c01, c10, c11]?",
+          "OPTIONS": [
+            "[1/√2, 0, 1/√2, 0]",
+            "[1/√2, 1/√2, 0, 0]",
+            "[0, 1/√2, 0, 1/√2]",
+            "[0.5, 0.5, 0.5, 0.5]"
+          ],
+          "CORRECT_ANSWER": "[1/√2, 0, 1/√2, 0]",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_TENSOR_PRODUCT", "C_SUPERPOSITION"]
+        },
+        {
+          "ID": "Q_TENSOR_04",
+          "QUESTION": "Why does simulating an n-qubit quantum system become exponentially harder for classical computers as n grows?",
+          "OPTIONS": [
+            "Because each qubit requires its own separate classical processor",
+            "Because the number of amplitudes needed grows as 2^n",
+            "Because quantum gates take exponentially longer to apply",
+            "Because qubits decohere faster as more are added"
+          ],
+          "CORRECT_ANSWER": "Because the number of amplitudes needed grows as 2^n",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_TENSOR_PRODUCT"]
+        },
+        {
+          "ID": "Q_TENSOR_05",
+          "QUESTION": "Which statement about the tensor product |a⟩⊗|b⟩ of two single-qubit states is TRUE?",
+          "OPTIONS": [
+            "It sums the amplitudes of |a⟩ and |b⟩ index by index",
+            "It multiplies every amplitude of |a⟩ with every amplitude of |b⟩ to form 4 new amplitudes",
+            "It always produces an entangled state",
+            "It only works if |a⟩ and |b⟩ are both basis states"
+          ],
+          "CORRECT_ANSWER": "It multiplies every amplitude of |a⟩ with every amplitude of |b⟩ to form 4 new amplitudes",
+          "DIFFICULTY_LEVEL": "Beginner",
+          "RELATED_TOPICS": ["C_TENSOR_PRODUCT"]
+        }
+      ]
+    },
+
+    {
+      "SUBTOPIC_ID": "4.2",
+      "CONCEPT": "Two-Qubit Gates: CNOT, CZ, and SWAP",
+      "MODULE": "Module 4 — Multi-Qubit Systems & Entanglement",
+      "CONCEPT_ID": "C_TWO_QUBIT_GATES",
+      "PREREQUISITES": [
+        "Two-qubit states and tensor product",
+        "Single-qubit gates (H, X, Z)"
+      ],
+      "DIFFICULTY_LEVEL": "Beginner",
+      "LEARNING_OBJECTIVES": [
+        "Explain the control/target idea behind two-qubit gates.",
+        "State the action of the CNOT gate on all four basis states.",
+        "State the action of the CZ gate and contrast it with CNOT.",
+        "State the action of the SWAP gate.",
+        "Represent CNOT, CZ, and SWAP as 4×4 matrices."
+      ],
+      "SKILLS_TAGGED": [
+        "S_CONTROL_TARGET_ID",
+        "S_CNOT_APPLY",
+        "S_CZ_SWAP_APPLY"
+      ],
+      "CORE_EXPLANATION": "Single-qubit gates act on one qubit at a time and can never create correlations between qubits. To link qubits together, we need two-qubit gates, most of which follow a 'control/target' pattern: one qubit (the control) decides whether an operation is applied to the other qubit (the target), without the control itself being changed. The most important such gate is CNOT (Controlled-NOT): if the control qubit is |1⟩, it flips the target qubit (applies an X gate); if the control is |0⟩, it does nothing. CZ (Controlled-Z) follows the same control logic but applies a Z gate (a phase flip) to the target instead of a bit flip — because Z only affects |1⟩ by adding a minus sign, CZ's effect is symmetric: it multiplies the amplitude of |11⟩ by -1 and leaves the other three basis states untouched, regardless of which qubit you call 'control'. SWAP is different — it has no control/target distinction; it simply exchanges the states of the two qubits, so |01⟩ becomes |10⟩ and vice versa, while |00⟩ and |11⟩ are unaffected. These gates matter because, combined with single-qubit gates like H, they are 'universal': CNOT plus arbitrary single-qubit rotations can produce any quantum computation, and crucially CNOT (or CZ) is the key ingredient for creating entanglement — a purely quantum correlation that has no classical analogue.",
+      "MATHEMATICAL_REPRESENTATION": "Basis order: |00⟩, |01⟩, |10⟩, |11⟩ (q0 = control, q1 = target unless stated otherwise)\n\nCNOT (control=q0, target=q1):\n|00⟩→|00⟩, |01⟩→|01⟩, |10⟩→|11⟩, |11⟩→|10⟩\nMatrix:\n[[1,0,0,0],\n [0,1,0,0],\n [0,0,0,1],\n [0,0,1,0]]\n\nCZ:\n|00⟩→|00⟩, |01⟩→|01⟩, |10⟩→|10⟩, |11⟩→ -|11⟩\nMatrix = diag(1, 1, 1, -1)\n\nSWAP:\n|00⟩→|00⟩, |01⟩→|10⟩, |10⟩→|01⟩, |11⟩→|11⟩",
+      "INTUITION_ANALOGY": "CNOT is like a light switch (target) that only gets flipped if a guard (control) is standing in the 'on' position (|1⟩); if the guard is in the 'off' position (|0⟩), the switch is left alone. CZ is like two people who only get a frown (a minus sign) painted on their foreheads if BOTH of them are already in a specific mood (|1⟩) — otherwise nothing visibly changes. SWAP is simply two people trading name tags — whatever each was holding, they now hold the other's.",
+      "EXAMPLES": [
+        {
+          "Example_1": {
+            "DESCRIPTION": "CNOT applied to |10⟩ (control=1, target=0) flips the target to give |11⟩.",
+            "CIRCUIT": [
+              "q0: |1⟩ ──●──",
+              "q1: |0⟩ ──X──"
+            ],
+            "STATEVECTOR": {
+              "before": [0, 0, 1, 0],
+              "after": [0, 0, 0, 1]
+            },
+            "EXPECTED_SIMULATION": "Qiskit Aer statevector: [0+0j, 0+0j, 0+0j, 1+0j]\nMeasurement histogram: 100% '11' over many shots (deterministic, no superposition involved)."
+          }
+        },
+        {
+          "Example_2": {
+            "DESCRIPTION": "SWAP applied to |01⟩ exchanges the qubit values to give |10⟩.",
+            "CIRCUIT": [
+              "q0: |0⟩ ──x──",
+              "q1: |1⟩ ──x──"
+            ],
+            "STATEVECTOR": {
+              "before": [0, 1, 0, 0],
+              "after": [0, 0, 1, 0]
+            },
+            "EXPECTED_SIMULATION": "Qiskit Aer statevector: [0+0j, 0+0j, 1+0j, 0+0j]\nMeasurement histogram: 100% '10' over many shots."
+          }
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Circuit diagram showing control dot (●) connected by a vertical line to target symbol (⊕ for CNOT, ● for CZ, × for SWAP).",
+        "4×4 matrix heatmap for each gate.",
+        "Truth-table style bar chart: input basis state vs. output basis state."
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "CNOT does NOT change the control qubit — only the target is potentially modified.",
+        "CZ is symmetric in control/target (it doesn't matter which qubit is labeled 'control'); CNOT is NOT symmetric — swapping control and target generally gives a different gate.",
+        "Applying a two-qubit gate to a product (separable) state can produce an entangled state — the gate itself, not just superposition, is what generates entanglement.",
+        "SWAP is not the same as CNOT applied twice in both directions in general use-case intuition — SWAP has its own distinct matrix, though it can be built from 3 CNOTs."
+      ],
+      "RELATED_CONCEPTS": [
+        "Entanglement",
+        "Control/target qubits",
+        "Quantum circuits",
+        "Universality of gate sets"
+      ],
+      "ASSESSMENT_IDS": ["Q_GATES_01", "Q_GATES_02", "Q_GATES_03", "Q_GATES_04", "Q_GATES_05"],
+      "MCQS": [
+        {
+          "ID": "Q_GATES_01",
+          "QUESTION": "In a CNOT gate, what happens to the target qubit when the control qubit is |0⟩?",
+          "OPTIONS": ["It is flipped (X applied)", "It is left unchanged", "It gets a phase flip (Z applied)", "It is measured"],
+          "CORRECT_ANSWER": "It is left unchanged",
+          "DIFFICULTY_LEVEL": "Beginner",
+          "RELATED_TOPICS": ["C_TWO_QUBIT_GATES"]
+        },
+        {
+          "ID": "Q_GATES_02",
+          "QUESTION": "What is the result of applying CNOT (control=q0, target=q1) to the basis state |11⟩?",
+          "OPTIONS": ["|11⟩", "|10⟩", "|01⟩", "|00⟩"],
+          "CORRECT_ANSWER": "|10⟩",
+          "DIFFICULTY_LEVEL": "Beginner",
+          "RELATED_TOPICS": ["C_TWO_QUBIT_GATES"]
+        },
+        {
+          "ID": "Q_GATES_03",
+          "QUESTION": "Which of these best describes the effect of the CZ gate?",
+          "OPTIONS": [
+            "It flips the target qubit's bit value when the control is |1⟩",
+            "It multiplies the amplitude of |11⟩ by -1 and leaves other basis states unchanged",
+            "It exchanges the states of the two qubits entirely",
+            "It measures both qubits and collapses the state"
+          ],
+          "CORRECT_ANSWER": "It multiplies the amplitude of |11⟩ by -1 and leaves other basis states unchanged",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_TWO_QUBIT_GATES"]
+        },
+        {
+          "ID": "Q_GATES_04",
+          "QUESTION": "Why is CZ described as 'symmetric' with respect to control and target, unlike CNOT?",
+          "OPTIONS": [
+            "Because CZ only works on the |00⟩ state",
+            "Because swapping which qubit is called 'control' vs 'target' gives the exact same overall gate for CZ",
+            "Because CZ requires two separate control qubits",
+            "Because CZ is only defined for 3 or more qubits"
+          ],
+          "CORRECT_ANSWER": "Because swapping which qubit is called 'control' vs 'target' gives the exact same overall gate for CZ",
+          "DIFFICULTY_LEVEL": "Advanced",
+          "RELATED_TOPICS": ["C_TWO_QUBIT_GATES"]
+        },
+        {
+          "ID": "Q_GATES_05",
+          "QUESTION": "Applying SWAP to the state |01⟩ produces which state?",
+          "OPTIONS": ["|01⟩", "|10⟩", "|00⟩", "|11⟩"],
+          "CORRECT_ANSWER": "|10⟩",
+          "DIFFICULTY_LEVEL": "Beginner",
+          "RELATED_TOPICS": ["C_TWO_QUBIT_GATES"]
+        }
+      ]
+    },
+
+    {
+      "SUBTOPIC_ID": "4.3",
+      "CONCEPT": "Entanglement and Bell States",
+      "MODULE": "Module 4 — Multi-Qubit Systems & Entanglement",
+      "CONCEPT_ID": "C_ENTANGLEMENT_BELL",
+      "PREREQUISITES": [
+        "Two-qubit states and tensor product",
+        "Two-qubit gates (CNOT, CZ)",
+        "Superposition"
+      ],
+      "DIFFICULTY_LEVEL": "Intermediate",
+      "LEARNING_OBJECTIVES": [
+        "Define entanglement in terms of non-separability of the joint quantum state.",
+        "Explain why entanglement is considered a non-classical form of correlation.",
+        "List and write down the four Bell states.",
+        "Explain the no-signaling principle and why entanglement cannot be used to send information faster than light.",
+        "Determine whether a simple given 2-qubit state is entangled or separable."
+      ],
+      "SKILLS_TAGGED": [
+        "S_ENTANGLEMENT_IDENTIFY",
+        "S_NO_SIGNALING_UNDERSTAND"
+      ],
+      "CORE_EXPLANATION": "A two-qubit state is called entangled if it CANNOT be written as a tensor product |a⟩⊗|b⟩ of two individual single-qubit states — meaning neither qubit has a well-defined state of its own; only the joint system does. The canonical examples are the four Bell states (also called EPR pairs): |Φ+⟩ = (|00⟩+|11⟩)/√2, |Φ-⟩ = (|00⟩-|11⟩)/√2, |Ψ+⟩ = (|01⟩+|10⟩)/√2, and |Ψ-⟩ = (|01⟩-|10⟩)/√2. Take |Φ+⟩: if you measure qubit 0 and get 0, qubit 1 is guaranteed to also read 0; if you get 1, qubit 1 is guaranteed to read 1 — yet before measurement, neither qubit individually has a definite value, and no local description of 'qubit 0's state' or 'qubit 1's state' alone can reproduce this. This correlation is stronger than anything possible with classical shared randomness (a fact proven experimentally via violations of Bell inequalities), which is why entanglement is called non-classical. Despite these striking correlations, entanglement does NOT allow faster-than-light communication — this is the no-signaling principle. The person measuring qubit 0 cannot control which outcome they get (it's random), so they cannot encode a chosen message into the correlation; the distant partner only sees genuine correlation once results are classically compared. Entanglement is a resource, not a communication channel, but it underlies quantum teleportation, superdense coding, and quantum cryptography protocols.",
+      "MATHEMATICAL_REPRESENTATION": "Bell states:\n|Φ+⟩ = (|00⟩ + |11⟩)/√2\n|Φ-⟩ = (|00⟩ - |11⟩)/√2\n|Ψ+⟩ = (|01⟩ + |10⟩)/√2\n|Ψ-⟩ = (|01⟩ - |10⟩)/√2\n\nSeparability test: |ψ⟩ is separable if ∃ α0,α1,β0,β1 such that\nc00=α0β0, c01=α0β1, c10=α1β0, c11=α1β1\nEquivalently (for normalized states), |ψ⟩ is entangled iff c00·c11 ≠ c01·c10.",
+      "INTUITION_ANALOGY": "Imagine a pair of magic gloves shipped in two separate boxes to two different cities, where the color of each glove is genuinely undetermined until opened — but the instant one person opens their box and sees a red glove, they know with certainty the other box holds a blue glove, no matter how far away it is or how long ago it was shipped. Unlike a classical 'trick' (where the colors were secretly fixed at packing time), a delicate statistical test (Bell inequality violation) can prove the gloves' colors were genuinely undetermined until observed — that's the leap entanglement makes beyond classical shared secrets.",
+      "EXAMPLES": [
+        {
+          "Example_1": {
+            "DESCRIPTION": "Circuit that creates the Bell state |Φ+⟩ from |00⟩: apply H to q0, then CNOT(q0→q1).",
+            "CIRCUIT": [
+              "q0: |0⟩ ──H──●──",
+              "q1: |0⟩ ─────X──"
+            ],
+            "STATEVECTOR": {
+              "before": [1, 0, 0, 0],
+              "after_H": [0.7071, 0, 0.7071, 0],
+              "after_CNOT": [0.7071, 0, 0, 0.7071]
+            },
+            "EXPECTED_SIMULATION": "Qiskit Aer statevector: [0.707+0j, 0+0j, 0+0j, 0.707+0j]\nMeasurement histogram ~ 50% '00', 50% '11' over many shots; '01' and '10' never occur — the two outcomes are always identical."
+          }
+        },
+        {
+          "Example_2": {
+            "DESCRIPTION": "Checking separability: is |ψ⟩ = (|00⟩+|01⟩+|10⟩+|11⟩)/2 entangled?",
+            "CIRCUIT": ["q0: |0⟩ ──H──", "q1: |0⟩ ──H──"],
+            "STATEVECTOR": {
+              "state": [0.5, 0.5, 0.5, 0.5]
+            },
+            "EXPECTED_SIMULATION": "Separability check: c00·c11 = 0.25, c01·c10 = 0.25 → equal, so this state IS separable (it equals |+⟩⊗|+⟩), NOT entangled, even though all 4 amplitudes are non-zero."
+          }
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Two Bloch spheres shrinking to a single point at the center (maximally mixed) to show that individual qubits in a Bell pair have no definite Bloch vector.",
+        "Correlation diagram: paired measurement outcome bars for q0 and q1 showing perfect correlation/anti-correlation.",
+        "Statevector bar chart showing only |00⟩ and |11⟩ (or |01⟩/|10⟩) populated for Bell states."
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "Entanglement does NOT allow sending information faster than light — measurement outcomes are random and cannot be controlled by the measurer (no-signaling theorem).",
+        "Entangled qubits are not 'secretly' pre-determined like a classical coin sealed in two envelopes — Bell inequality experiments rule out such local hidden-variable explanations.",
+        "A state with all four amplitudes non-zero is not automatically entangled (e.g., |+⟩⊗|+⟩ has all 4 amplitudes equal to 0.5 but is fully separable) — the correct test is whether the state factors into a tensor product.",
+        "Entanglement is not 'stronger superposition' — superposition is a property of a single system's state; entanglement is a property of the CORRELATION between multiple systems."
+      ],
+      "RELATED_CONCEPTS": [
+        "Tensor product",
+        "CNOT gate",
+        "Measurement",
+        "No-signaling principle",
+        "Bell inequalities",
+        "Quantum teleportation"
+      ],
+      "ASSESSMENT_IDS": ["Q_ENTANGLE_01", "Q_ENTANGLE_02", "Q_ENTANGLE_03", "Q_ENTANGLE_04", "Q_ENTANGLE_05"],
+      "MCQS": [
+        {
+          "ID": "Q_ENTANGLE_01",
+          "QUESTION": "What defines an entangled two-qubit state?",
+          "OPTIONS": [
+            "It has amplitudes on all four basis states",
+            "It cannot be written as a tensor product of two individual single-qubit states",
+            "It was created using only single-qubit gates",
+            "It always has negative amplitudes"
+          ],
+          "CORRECT_ANSWER": "It cannot be written as a tensor product of two individual single-qubit states",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_ENTANGLEMENT_BELL"]
+        },
+        {
+          "ID": "Q_ENTANGLE_02",
+          "QUESTION": "Which of the following is the Bell state |Ψ-⟩?",
+          "OPTIONS": [
+            "(|00⟩+|11⟩)/√2",
+            "(|00⟩-|11⟩)/√2",
+            "(|01⟩+|10⟩)/√2",
+            "(|01⟩-|10⟩)/√2"
+          ],
+          "CORRECT_ANSWER": "(|01⟩-|10⟩)/√2",
+          "DIFFICULTY_LEVEL": "Beginner",
+          "RELATED_TOPICS": ["C_ENTANGLEMENT_BELL"]
+        },
+        {
+          "ID": "Q_ENTANGLE_03",
+          "QUESTION": "Why can't entanglement be used to send information faster than light?",
+          "OPTIONS": [
+            "Because entangled particles decay too quickly",
+            "Because CNOT gates cannot be applied over long distances",
+            "Because the measurer cannot control which random outcome they get, so no chosen message can be encoded",
+            "Because entanglement only exists for a few nanoseconds"
+          ],
+          "CORRECT_ANSWER": "Because the measurer cannot control which random outcome they get, so no chosen message can be encoded",
+          "DIFFICULTY_LEVEL": "Advanced",
+          "RELATED_TOPICS": ["C_ENTANGLEMENT_BELL"]
+        },
+        {
+          "ID": "Q_ENTANGLE_04",
+          "QUESTION": "Is the state |ψ⟩ = (|00⟩ + |01⟩ + |10⟩ + |11⟩)/2 entangled?",
+          "OPTIONS": [
+            "Yes, because all four amplitudes are non-zero",
+            "No, because it factors as |+⟩⊗|+⟩",
+            "Yes, because it is a Bell state",
+            "Cannot be determined without measurement"
+          ],
+          "CORRECT_ANSWER": "No, because it factors as |+⟩⊗|+⟩",
+          "DIFFICULTY_LEVEL": "Advanced",
+          "RELATED_TOPICS": ["C_ENTANGLEMENT_BELL", "C_TENSOR_PRODUCT"]
+        },
+        {
+          "ID": "Q_ENTANGLE_05",
+          "QUESTION": "In the Bell state |Φ+⟩ = (|00⟩+|11⟩)/√2, if qubit 0 is measured and gives outcome 1, what is guaranteed about qubit 1?",
+          "OPTIONS": [
+            "It will read 0 with certainty",
+            "It will read 1 with certainty",
+            "It has a 50/50 chance of 0 or 1",
+            "It cannot be measured anymore"
+          ],
+          "CORRECT_ANSWER": "It will read 1 with certainty",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_ENTANGLEMENT_BELL"]
+        }
+      ]
+    },
+
+    {
+      "SUBTOPIC_ID": "4.4",
+      "CONCEPT": "Simple Multi-Qubit Circuits: Creating and Measuring Bell States",
+      "MODULE": "Module 4 — Multi-Qubit Systems & Entanglement",
+      "CONCEPT_ID": "C_MULTIQUBIT_CIRCUITS",
+      "PREREQUISITES": [
+        "Two-qubit gates (CNOT, CZ)",
+        "Entanglement and Bell states",
+        "Superposition"
+      ],
+      "DIFFICULTY_LEVEL": "Intermediate",
+      "LEARNING_OBJECTIVES": [
+        "Construct a circuit (H + CNOT) that creates any of the four Bell states from a chosen basis input.",
+        "Predict measurement outcome correlations for a given Bell state measured in the computational (Z) basis.",
+        "Describe conceptually what it means to measure in a different basis (e.g., the X basis) and how it changes correlations.",
+        "Build simple multi-qubit circuits combining single- and two-qubit gates."
+      ],
+      "SKILLS_TAGGED": [
+        "S_BELL_STATE_BUILD",
+        "S_MULTIQUBIT_CIRCUIT_BUILD",
+        "S_MEASUREMENT_BASIS_CONCEPT"
+      ],
+      "CORE_EXPLANATION": "Creating a specific Bell state follows a simple recipe: start both qubits in |00⟩, optionally flip one or both with X gates, then apply H to qubit 0 followed by CNOT(q0→q1). Starting from |00⟩ gives |Φ+⟩; starting from |01⟩ gives |Ψ+⟩; starting from |10⟩ gives |Φ-⟩; and starting from |11⟩ gives |Ψ-⟩. Once created, measuring both qubits in the standard computational (Z) basis reveals the correlation pattern baked into the state: for |Φ+⟩ and |Φ-⟩, the two outcomes always match (00 or 11); for |Ψ+⟩ and |Ψ-⟩, the two outcomes are always opposite (01 or 10). Measuring 'in a different basis' conceptually means asking a different question of the qubit before collapsing it — instead of asking 'are you 0 or 1 along the Z-axis of the Bloch sphere', you can rotate the measurement to ask 'are you |+⟩ or |-⟩ along the X-axis' (practically done by applying H just before a standard Z-basis measurement). For an entangled Bell pair, measuring both qubits in the X basis still produces perfect correlations (or anti-correlations, depending on which Bell state), just phrased in terms of + and - outcomes instead of 0 and 1 — this basis-independence of the correlation is part of what makes entanglement robust and is the basis for tests like the CHSH/Bell inequality experiments. Building small multi-qubit circuits like this is the first practical step toward larger algorithms (e.g., teleportation, superdense coding, and error correction) that all rely on precisely this H+CNOT entangling pattern.",
+      "MATHEMATICAL_REPRESENTATION": "Bell-state preparation recipe (input |ab⟩ → H on q0 → CNOT(q0→q1)):\n|00⟩ → |Φ+⟩ = (|00⟩+|11⟩)/√2\n|01⟩ → |Ψ+⟩ = (|01⟩+|10⟩)/√2\n|10⟩ → |Φ-⟩ = (|00⟩-|11⟩)/√2\n|11⟩ → |Ψ-⟩ = (|01⟩-|10⟩)/√2\n\nMeasuring |Φ+⟩ or |Φ-⟩ in Z-basis: P(00)=P(11)=1/2, P(01)=P(10)=0 (correlated)\nMeasuring |Ψ+⟩ or |Ψ-⟩ in Z-basis: P(01)=P(10)=1/2, P(00)=P(11)=0 (anti-correlated)",
+      "INTUITION_ANALOGY": "Building a Bell state is like a recipe: 'stir' one qubit into superposition with H, then 'link' it to the second qubit with CNOT so their fates become tied together — like tying two ends of the same rubber band. Measuring 'in a different basis' is like asking the same tied-together pair a different yes/no question (e.g., instead of 'are you facing up or down', asking 'are you facing left or right') — the rubber-band correlation still holds, just phrased differently.",
+      "EXAMPLES": [
+        {
+          "Example_1": {
+            "DESCRIPTION": "Create |Ψ+⟩ by starting from |01⟩: apply X to q1, H to q0, then CNOT(q0→q1).",
+            "CIRCUIT": [
+              "q0: |0⟩ ──H────●──",
+              "q1: |0⟩ ──X────X──"
+            ],
+            "STATEVECTOR": {
+              "after_X": [0, 1, 0, 0],
+              "after_H": [0, 0.7071, 0, 0.7071],
+              "after_CNOT": [0, 0.7071, 0.7071, 0]
+            },
+            "EXPECTED_SIMULATION": "Qiskit Aer statevector: [0+0j, 0.707+0j, 0.707+0j, 0+0j]\nMeasurement histogram ~ 50% '01', 50% '10' over many shots; '00' and '11' never occur."
+          }
+        },
+        {
+          "Example_2": {
+            "DESCRIPTION": "Conceptual X-basis measurement on |Φ+⟩: apply H to both qubits before measuring in Z basis.",
+            "CIRCUIT": [
+              "q0: |Φ+⟩ ──H──[measure]",
+              "q1: (same) ──H──[measure]"
+            ],
+            "STATEVECTOR": {
+              "note": "H⊗H applied to (|00⟩+|11⟩)/√2 algebraically redistributes amplitudes but preserves perfect correlation between the two outcomes."
+            },
+            "EXPECTED_SIMULATION": "Measurement histogram ~ 50% '00', 50% '11' over many shots (still perfectly correlated), even though the measurement basis changed — illustrating that the correlation is a property of the entangled state, not of one particular measurement choice."
+          }
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Full circuit diagram: X gates (optional) → H on q0 → CNOT(q0,q1) → measurement symbols on both qubits.",
+        "Correlation scatter/bar plot comparing Z-basis vs X-basis measurement outcome pairs.",
+        "Decision tree showing the 4 input basis states mapping to the 4 Bell states."
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "The order matters: applying CNOT before H on the control qubit does NOT create entanglement — H must come first to put the control into superposition, otherwise CNOT just deterministically flips or doesn't flip the target.",
+        "Measuring 'in a different basis' does not destroy the entanglement correlation — it changes what labels (0/1 vs +/-) the correlation is expressed in, but the qubits remain perfectly correlated or anti-correlated.",
+        "You cannot create entanglement using only single-qubit gates on separate qubits, no matter how many are applied — a genuine two-qubit interaction gate (like CNOT or CZ) is required."
+      ],
+      "RELATED_CONCEPTS": [
+        "Entanglement and Bell states",
+        "CNOT gate",
+        "Measurement",
+        "Quantum circuits",
+        "Change of basis"
+      ],
+      "ASSESSMENT_IDS": ["Q_CIRCUIT_01", "Q_CIRCUIT_02", "Q_CIRCUIT_03", "Q_CIRCUIT_04", "Q_CIRCUIT_05"],
+      "MCQS": [
+        {
+          "ID": "Q_CIRCUIT_01",
+          "QUESTION": "Starting from |00⟩, applying H to q0 and then CNOT(q0→q1) produces which Bell state?",
+          "OPTIONS": ["|Φ+⟩", "|Φ-⟩", "|Ψ+⟩", "|Ψ-⟩"],
+          "CORRECT_ANSWER": "|Φ+⟩",
+          "DIFFICULTY_LEVEL": "Beginner",
+          "RELATED_TOPICS": ["C_MULTIQUBIT_CIRCUITS"]
+        },
+        {
+          "ID": "Q_CIRCUIT_02",
+          "QUESTION": "To create |Ψ+⟩ = (|01⟩+|10⟩)/√2, which starting basis state should you apply the H+CNOT recipe to?",
+          "OPTIONS": ["|00⟩", "|01⟩", "|10⟩", "|11⟩"],
+          "CORRECT_ANSWER": "|01⟩",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_MULTIQUBIT_CIRCUITS"]
+        },
+        {
+          "ID": "Q_CIRCUIT_03",
+          "QUESTION": "If you apply CNOT(q0→q1) BEFORE applying H to q0 (starting from |00⟩), what happens?",
+          "OPTIONS": [
+            "An entangled Bell state is still created",
+            "No entanglement is created; the result is just a deterministic basis state",
+            "The circuit produces a random mixed state",
+            "This ordering is not physically possible"
+          ],
+          "CORRECT_ANSWER": "No entanglement is created; the result is just a deterministic basis state",
+          "DIFFICULTY_LEVEL": "Advanced",
+          "RELATED_TOPICS": ["C_MULTIQUBIT_CIRCUITS", "C_TWO_QUBIT_GATES"]
+        },
+        {
+          "ID": "Q_CIRCUIT_04",
+          "QUESTION": "For the Bell state |Ψ-⟩ = (|01⟩-|10⟩)/√2, measuring both qubits in the Z basis will give which outcome pattern?",
+          "OPTIONS": [
+            "Always matching outcomes (00 or 11)",
+            "Always opposite outcomes (01 or 10)",
+            "Completely uncorrelated random outcomes",
+            "Always outcome 00"
+          ],
+          "CORRECT_ANSWER": "Always opposite outcomes (01 or 10)",
+          "DIFFICULTY_LEVEL": "Intermediate",
+          "RELATED_TOPICS": ["C_MULTIQUBIT_CIRCUITS", "C_ENTANGLEMENT_BELL"]
+        },
+        {
+          "ID": "Q_CIRCUIT_05",
+          "QUESTION": "Conceptually, what does it mean to measure a qubit 'in the X basis' instead of the standard Z basis?",
+          "OPTIONS": [
+            "Measuring a completely different qubit",
+            "Asking whether the qubit is |+⟩ or |-⟩ rather than |0⟩ or |1⟩, typically done by applying H before a standard measurement",
+            "Ignoring the measurement result entirely",
+            "Measuring the qubit twice in a row"
+          ],
+          "CORRECT_ANSWER": "Asking whether the qubit is |+⟩ or |-⟩ rather than |0⟩ or |1⟩, typically done by applying H before a standard measurement",
+          "DIFFICULTY_LEVEL": "Advanced",
+          "RELATED_TOPICS": ["C_MULTIQUBIT_CIRCUITS"]
+        }
+      ]
+    }
+  ],
+
+  "FINAL_MODULE_ASSESSMENT": {
+    "ASSESSMENT_IDS": [
+      "Q_MOD4_FINAL_01", "Q_MOD4_FINAL_02", "Q_MOD4_FINAL_03", "Q_MOD4_FINAL_04", "Q_MOD4_FINAL_05",
+      "Q_MOD4_FINAL_06", "Q_MOD4_FINAL_07", "Q_MOD4_FINAL_08", "Q_MOD4_FINAL_09", "Q_MOD4_FINAL_10"
+    ],
+    "QUESTIONS": [
+      {
+        "ID": "Q_MOD4_FINAL_01",
+        "QUESTION": "How many computational basis states exist for a 3-qubit system?",
+        "OPTIONS": ["3", "6", "8", "9"],
+        "CORRECT_ANSWER": "8",
+        "DIFFICULTY_LEVEL": "Beginner",
+        "RELATED_TOPICS": ["C_TENSOR_PRODUCT"]
+      },
+      {
+        "ID": "Q_MOD4_FINAL_02",
+        "QUESTION": "Which single circuit element, when combined with H, is essential for creating entanglement between two qubits?",
+        "OPTIONS": ["A second H gate", "A CNOT (or CZ) gate", "A measurement gate", "An X gate on the control only"],
+        "CORRECT_ANSWER": "A CNOT (or CZ) gate",
+        "DIFFICULTY_LEVEL": "Beginner",
+        "RELATED_TOPICS": ["C_TWO_QUBIT_GATES", "C_MULTIQUBIT_CIRCUITS"]
+      },
+      {
+        "ID": "Q_MOD4_FINAL_03",
+        "QUESTION": "A state |ψ⟩ = c00|00⟩+c01|01⟩+c10|10⟩+c11|11⟩ is entangled if and only if:",
+        "OPTIONS": [
+          "c00 = c11 and c01 = c10",
+          "c00·c11 ≠ c01·c10",
+          "All four coefficients are equal",
+          "c00 = 0"
+        ],
+        "CORRECT_ANSWER": "c00·c11 ≠ c01·c10",
+        "DIFFICULTY_LEVEL": "Advanced",
+        "RELATED_TOPICS": ["C_TENSOR_PRODUCT", "C_ENTANGLEMENT_BELL"]
+      },
+      {
+        "ID": "Q_MOD4_FINAL_04",
+        "QUESTION": "What matrix represents the CZ gate in the |00⟩,|01⟩,|10⟩,|11⟩ basis?",
+        "OPTIONS": [
+          "diag(1,1,1,-1)",
+          "The 4×4 identity matrix",
+          "diag(1,-1,-1,1)",
+          "A matrix that swaps rows 2 and 3"
+        ],
+        "CORRECT_ANSWER": "diag(1,1,1,-1)",
+        "DIFFICULTY_LEVEL": "Intermediate",
+        "RELATED_TOPICS": ["C_TWO_QUBIT_GATES"]
+      },
+      {
+        "ID": "Q_MOD4_FINAL_05",
+        "QUESTION": "Two students argue: Student A says 'if I measure my half of an entangled Bell pair, I can instantly force my partner's distant qubit to become a 1, sending a signal.' What is wrong with this claim?",
+        "OPTIONS": [
+          "Nothing — this is exactly how entanglement is used to communicate",
+          "Student A cannot choose or control their own measurement outcome, so no controllable message can be sent (no-signaling)",
+          "Entangled qubits must be next to each other to correlate",
+          "CNOT gates prevent measurement from working"
+        ],
+        "CORRECT_ANSWER": "Student A cannot choose or control their own measurement outcome, so no controllable message can be sent (no-signaling)",
+        "DIFFICULTY_LEVEL": "Advanced",
+        "RELATED_TOPICS": ["C_ENTANGLEMENT_BELL"]
+      },
+      {
+        "ID": "Q_MOD4_FINAL_06",
+        "QUESTION": "Which recipe correctly produces the Bell state |Φ-⟩ = (|00⟩-|11⟩)/√2?",
+        "OPTIONS": [
+          "Start at |00⟩, apply H to q0, then CNOT(q0→q1)",
+          "Start at |01⟩, apply H to q0, then CNOT(q0→q1)",
+          "Start at |10⟩, apply H to q0, then CNOT(q0→q1)",
+          "Start at |11⟩, apply H to q0, then CNOT(q0→q1)"
+        ],
+        "CORRECT_ANSWER": "Start at |10⟩, apply H to q0, then CNOT(q0→q1)",
+        "DIFFICULTY_LEVEL": "Intermediate",
+        "RELATED_TOPICS": ["C_MULTIQUBIT_CIRCUITS", "C_ENTANGLEMENT_BELL"]
+      },
+      {
+        "ID": "Q_MOD4_FINAL_07",
+        "QUESTION": "You apply SWAP to the state (|01⟩+|10⟩)/√2 (the Bell state |Ψ+⟩). What is the result?",
+        "OPTIONS": [
+          "It becomes |Φ+⟩",
+          "It becomes (|10⟩+|01⟩)/√2, which is the same state |Ψ+⟩ unchanged",
+          "It collapses to |00⟩",
+          "It becomes a separable product state"
+        ],
+        "CORRECT_ANSWER": "It becomes (|10⟩+|01⟩)/√2, which is the same state |Ψ+⟩ unchanged",
+        "DIFFICULTY_LEVEL": "Advanced",
+        "RELATED_TOPICS": ["C_TWO_QUBIT_GATES", "C_ENTANGLEMENT_BELL"]
+      },
+      {
+        "ID": "Q_MOD4_FINAL_08",
+        "QUESTION": "Given the state |ψ⟩ = (|00⟩+|01⟩-|10⟩-|11⟩)/2, is this state separable or entangled?",
+        "OPTIONS": [
+          "Entangled, because it has 4 non-zero terms",
+          "Separable — it factors as (|0⟩-|1⟩)⊗(|0⟩+|1⟩)/2, i.e. |-⟩⊗|+⟩ (up to normalization)",
+          "Cannot be determined without measurement",
+          "Entangled, because the signs differ across terms"
+        ],
+        "CORRECT_ANSWER": "Separable — it factors as (|0⟩-|1⟩)⊗(|0⟩+|1⟩)/2, i.e. |-⟩⊗|+⟩ (up to normalization)",
+        "DIFFICULTY_LEVEL": "Advanced",
+        "RELATED_TOPICS": ["C_TENSOR_PRODUCT", "C_ENTANGLEMENT_BELL"]
+      },
+      {
+        "ID": "Q_MOD4_FINAL_09",
+        "QUESTION": "What circuit symbol combination typically represents a CNOT gate in circuit diagrams?",
+        "OPTIONS": [
+          "A filled dot (●) on the control qubit connected by a vertical line to a ⊕ symbol on the target qubit",
+          "Two × symbols connected by a line",
+          "An H box on each qubit",
+          "A measurement gauge symbol on both qubits"
+        ],
+        "CORRECT_ANSWER": "A filled dot (●) on the control qubit connected by a vertical line to a ⊕ symbol on the target qubit",
+        "DIFFICULTY_LEVEL": "Beginner",
+        "RELATED_TOPICS": ["C_TWO_QUBIT_GATES"]
+      },
+      {
+        "ID": "Q_MOD4_FINAL_10",
+        "QUESTION": "Why is it accurate to say that in a Bell state, 'neither qubit has a state of its own'?",
+        "OPTIONS": [
+          "Because the qubits have not been created yet",
+          "Because the joint state cannot be factored into a tensor product of two individual single-qubit states — only the pair as a whole has a well-defined pure state",
+          "Because Bell states can only exist for a few nanoseconds",
+          "Because measurement always destroys both qubits simultaneously"
+        ],
+        "CORRECT_ANSWER": "Because the joint state cannot be factored into a tensor product of two individual single-qubit states — only the pair as a whole has a well-defined pure state",
+        "DIFFICULTY_LEVEL": "Advanced",
+        "RELATED_TOPICS": ["C_ENTANGLEMENT_BELL", "C_TENSOR_PRODUCT"]
+      }
+    ]
+  }
+}

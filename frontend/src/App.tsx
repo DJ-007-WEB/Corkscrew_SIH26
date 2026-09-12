@@ -196,7 +196,7 @@ export default function App() {
       </nav>
 
       <div className="flex-1 min-h-0 overflow-hidden">
-        <main className="h-full overflow-y-auto p-6 max-w-6xl mx-auto w-full">
+        <main className={`h-full overflow-y-auto p-6 max-w-6xl mx-auto w-full ${tab === "learn" || tab === "assessment" ? "scrollbar-hidden" : ""}`}>
           {tab === "home" && <LandingPage onOpenBuilder={(preset?: Circuit) => { if (preset) setPresetCircuit(preset); setBuilderOrigin(null); setTab("builder"); }} onOpenCode={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} onOpenHowToUse={() => setTab("howtouse")} />}
           {tab === "builder" && <CircuitBuilder circuit={circuit} onCircuitChange={setCircuit} presetCircuit={presetCircuit} onPresetClear={() => setPresetCircuit(null)} theme={theme} token={token} onRequireLogin={() => setTab("works")} returnLabel={builderOrigin ? LESSON_TITLES[builderOrigin] ?? builderOrigin : null} onReturn={builderOrigin ? () => setTab("learn") : undefined} />}
           {tab === "waves" && <VisualizationPage result={latestResult} />}
