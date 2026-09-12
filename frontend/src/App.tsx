@@ -1,20 +1,22 @@
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { useEffect, useRef, useState } from "react";
 import VisualizationPage from "./VisualizationPage";
-import type { Circuit, SimulationResult } from "./types";
+import type { Circuit, PublicUser, SimulationResult } from "./types";
 import CircuitBuilder from "./CircuitBuilder";
 import LandingPage from "./LandingPage";
 import AuthPage from "./AuthPage";
+import AuthModal from "./AuthModal";
 import LearningPage from "./LearningPage";
 import QuantumTutor from "./QuantumTutor";
 import MyWorksPage from "./MyWorksPage";
 import AssessmentPage from "./AssessmentPage";
 import ContestPage from "./ContestPage";
 import HowToUsePage from "./HowToUsePage";
+import InstructorDashboard from "./InstructorDashboard";
 
-type Tab = "home" | "builder" | "learn" | "waves" | "works" | "assessment" | "contests" | "howtouse";
+type Tab = "home" | "builder" | "learn" | "waves" | "works" | "assessment" | "contests" | "howtouse" | "dashboard";
 
-const TABS: { id: Tab; label: string }[] = [
+const BASE_TABS: { id: Tab; label: string }[] = [
   { id: "home", label: "Home" },
   { id: "builder", label: "Circuit Builder" },
   { id: "waves", label: "Visualizations" },
@@ -41,6 +43,15 @@ function tokenSub(token: string | null): string | null {
   }
 }
 
+function loadStoredUser(): PublicUser | null {
+  try {
+    const raw = localStorage.getItem("quantum-user");
+    return raw ? (JSON.parse(raw) as PublicUser) : null;
+  } catch {
+    return null;
+  }
+}
+
 function lessonKeyFor(sub: string | null): string {
   return sub ? `quantum-lesson:${sub}` : "quantum-lesson";
 }
@@ -59,6 +70,8 @@ export default function App() {
   const [presetCircuit, setPresetCircuit] = useState<Circuit | null>(null);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [token, setToken] = useState<string | null>(() => localStorage.getItem("quantum-token"));
+  const [user, setUser] = useState<PublicUser | null>(() => loadStoredUser());
+  const [authModal, setAuthModal] = useState<"signin" | "signup" | null>(null);
   const [tutorOpen, setTutorOpen] = useState(false);
   const [activeLessonId, setActiveLessonId] = useState<string>(() => {
     const sub = tokenSub(localStorage.getItem("quantum-token"));
@@ -67,12 +80,14 @@ export default function App() {
   const [builderOrigin, setBuilderOrigin] = useState<string | null>(null);
   const prevSub = useRef<string | null>(tokenSub(localStorage.getItem("quantum-token")));
 
+  const isInstructor = user?.role === "instructor";
+  const TABS = isInstructor ? [...BASE_TABS, { id: "dashboard" as Tab, label: "Instructor Dashboard" }] : BASE_TABS;
+
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("quantum-theme", theme);
   }, [theme]);
 
-  // Keep the active page across refreshes (all tabs, including contests).
   useEffect(() => {
     localStorage.setItem("quantum-tab", tab);
   }, [tab]);
@@ -87,15 +102,12 @@ export default function App() {
 
   function logout() {
     localStorage.removeItem("quantum-token");
+    localStorage.removeItem("quantum-user");
     setToken(null);
+    setUser(null);
     setTab("home");
   }
 
-  // Per-account isolation: the builder draft, simulation output and lesson
-  // bookmark live in App-level state / global localStorage keys, so without
-  // this one account's circuit would still be on screen after switching to
-  // another account in the same browser. Whenever the signed-in identity
-  // changes, start that account from a blank draft and load its own lesson.
   useEffect(() => {
     const sub = tokenSub(token);
     if (sub !== prevSub.current) {
@@ -109,6 +121,12 @@ export default function App() {
       setTab("home");
     }
   }, [token]);
+
+  function handleAuthenticated(auth: { token: string; user: PublicUser }) {
+    setToken(auth.token);
+    setUser(auth.user);
+    setAuthModal(null);
+  }
 
   function handleLessonChange(id: string) {
     setActiveLessonId(id);
@@ -150,7 +168,21 @@ export default function App() {
         </button>
         <p className="text-xs font-mono text-[var(--bp-text-faint)]">circuit builder · SIH 2026</p>
         <div className="ml-auto flex items-center gap-2">
-          {token && <button onClick={logout} className="px-3 py-1.5 rounded border border-[var(--bp-border)] text-[10px] font-mono text-[var(--bp-text-dim)] hover:text-[var(--bp-cyan)]">Sign out</button>}
+          {token && user ? (
+            <>
+              <span className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-[var(--bp-border)] text-[10px] font-mono text-[var(--bp-text-dim)]">
+                {user.picture && <img src={user.picture} alt="" className="w-4 h-4 rounded-full" />}
+                {user.name}
+                <span className="uppercase text-[var(--bp-cyan)]">· {user.role}</span>
+              </span>
+              <button onClick={logout} className="px-3 py-1.5 rounded border border-[var(--bp-border)] text-[10px] font-mono text-[var(--bp-text-dim)] hover:text-[var(--bp-cyan)]">Sign out</button>
+            </>
+          ) : (
+            <>
+              <button onClick={() => setAuthModal("signin")} className="px-3 py-1.5 rounded border border-[var(--bp-border)] text-[10px] font-mono text-[var(--bp-text-dim)] hover:text-[var(--bp-cyan)]">Log in</button>
+              <button onClick={() => setAuthModal("signup")} className="px-3 py-1.5 rounded font-mono text-[10px] font-semibold" style={{ background: "var(--bp-cyan)", color: "#081527" }}>Sign up</button>
+            </>
+          )}
           <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="px-3 py-1.5 rounded border border-[var(--bp-border)] text-[10px] font-mono text-[var(--bp-text-dim)] hover:text-[var(--bp-cyan)]">{theme === "dark" ? "☼ Light" : "☾ Dark"}</button>
         </div>
       </header>
@@ -165,7 +197,7 @@ export default function App() {
 
       <div className="flex-1 min-h-0 overflow-hidden">
         <main className="h-full overflow-y-auto p-6 max-w-6xl mx-auto w-full">
-          {tab === "home" && <LandingPage onOpenBuilder={(preset) => { if (preset) setPresetCircuit(preset); setBuilderOrigin(null); setTab("builder"); }} onOpenCode={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} onOpenHowToUse={() => setTab("howtouse")} />}
+          {tab === "home" && <LandingPage onOpenBuilder={(preset?: Circuit) => { if (preset) setPresetCircuit(preset); setBuilderOrigin(null); setTab("builder"); }} onOpenCode={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} onOpenHowToUse={() => setTab("howtouse")} />}
           {tab === "builder" && <CircuitBuilder circuit={circuit} onCircuitChange={setCircuit} presetCircuit={presetCircuit} onPresetClear={() => setPresetCircuit(null)} theme={theme} token={token} onRequireLogin={() => setTab("works")} returnLabel={builderOrigin ? LESSON_TITLES[builderOrigin] ?? builderOrigin : null} onReturn={builderOrigin ? () => setTab("learn") : undefined} />}
           {tab === "waves" && <VisualizationPage result={latestResult} />}
           {tab === "learn" && (token ? <LearningPage activeLessonId={activeLessonId} onLessonChange={handleLessonChange} onOpenBuilder={openBuilderFromLesson} onOpenVisualizations={() => setTab("waves")} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("learn"); }} />)}
@@ -173,13 +205,14 @@ export default function App() {
           {tab === "assessment" && <AssessmentPage token={token} />}
           {tab === "contests" && (token ? <ContestPage token={token} circuit={circuit} onOpenBuilder={() => setTab("builder")} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("contests"); }} />)}
           {tab === "howtouse" && <HowToUsePage onOpenLearn={() => setTab("learn")} />}
+          {tab === "dashboard" && (token && isInstructor ? <InstructorDashboard token={token} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setUser(loadStoredUser()); setTab("dashboard"); }} />)}
         </main>
       </div>
       <QuantumTutor circuit={circuit} isOpen={tutorOpen} onToggle={setTutorOpen} />
+      {authModal && <AuthModal initialMode={authModal} onAuthenticated={handleAuthenticated} onClose={() => setAuthModal(null)} />}
     </div>
   );
 
   return GOOGLE_CLIENT_ID ? <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>{content}</GoogleOAuthProvider> : content;
 }
-
 

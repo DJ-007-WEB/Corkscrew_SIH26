@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { recordActivity } from "./api";
+﻿import { useState } from "react";
+import { submitAssessment } from "./api";
 
 const QUESTIONS = [
   { tag: "Fundamentals", question: "Which gate creates an equal superposition from |0⟩?", options: ["X", "H", "Z", "CNOT"], answer: 1, explanation: "The Hadamard gate maps |0⟩ to (|0⟩ + |1⟩)/√2." },
@@ -19,10 +19,77 @@ const QUESTIONS = [
 export default function AssessmentPage({ token }: { token?: string | null }) {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [submitted, setSubmitted] = useState(false);
-  function submit() {
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  const score = QUESTIONS.reduce((total, item, index) => total + (answers[index] === item.answer ? 1 : 0), 0);
+
+  async function handleSubmit() {
     setSubmitted(true);
-    const correct = QUESTIONS.filter((item, index) => answers[index] === item.answer).length;
-    void recordActivity(token ?? null, "assessment_complete", `${correct}/${QUESTIONS.length} correct`);
+    if (!token) return;
+    setSaveState("saving");
+    try {
+      await submitAssessment(token, score, QUESTIONS.length);
+      setSaveState("saved");
+    } catch {
+      setSaveState("error");
+    }
   }
-  return <div className="max-w-3xl space-y-5"><div><p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-cyan)]">Assessment engine v0</p><h1 className="font-display text-3xl mt-2">Quantum Fundamentals Check</h1><p className="text-sm text-[var(--bp-text-dim)] mt-2">A stateless practice assessment covering fundamentals plus the Bell, Deutsch-Jozsa, Grover, and Teleportation modules. Results are not saved.</p></div>{QUESTIONS.map((item, index) => <section key={item.question} className="bp-panel p-5"><p className="text-[10px] font-mono uppercase tracking-wider text-[var(--bp-cyan)]">{item.tag}</p><p className="text-sm font-medium mt-1">{index + 1}. {item.question}</p><div className="mt-4 space-y-2">{item.options.map((option, optionIndex) => <label key={option} className="flex items-center gap-2 text-sm text-[var(--bp-text-dim)]"><input type="radio" name={`question-${index}`} checked={answers[index] === optionIndex} onChange={() => setAnswers({ ...answers, [index]: optionIndex })} />{option}</label>)}</div>{submitted && <p className={`mt-4 text-xs leading-relaxed ${answers[index] === item.answer ? "text-[var(--bp-mint)]" : "text-[var(--bp-coral)]"}`}>{answers[index] === item.answer ? "Correct. " : `Correct answer: ${item.options[item.answer]}. `}{item.explanation}</p>}</section>)}<button onClick={submit} className="px-5 py-2 rounded-md font-mono text-sm font-medium" style={{ background: "var(--bp-cyan)", color: "#081527" }}>Submit assessment</button><p className="text-xs text-[var(--bp-text-faint)]">Submitting earns assessment XP and advances your daily streak when signed in. Timed contests and duels live under Contests.</p></div>;
+
+  return (
+    <div className="max-w-3xl space-y-5">
+      <div>
+        <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-cyan)]">Assessment engine v0</p>
+        <h1 className="font-display text-3xl mt-2">Quantum Fundamentals Check</h1>
+        <p className="text-sm text-[var(--bp-text-dim)] mt-2">
+          A practice assessment covering fundamentals plus the Bell, Deutsch-Jozsa, Grover, and Teleportation modules.
+          {token ? " Your score is saved to your learner profile for your instructor's dashboard." : " Log in to have your score saved to your learner profile."}
+        </p>
+      </div>
+
+      {QUESTIONS.map((item, index) => (
+        <section key={item.question} className="bp-panel p-5">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--bp-cyan)]">{item.tag}</p>
+          <p className="text-sm font-medium mt-1">
+            {index + 1}. {item.question}
+          </p>
+          <div className="mt-4 space-y-2">
+            {item.options.map((option, optionIndex) => (
+              <label key={option} className="flex items-center gap-2 text-sm text-[var(--bp-text-dim)]">
+                <input
+                  type="radio"
+                  name={`question-${index}`}
+                  checked={answers[index] === optionIndex}
+                  onChange={() => setAnswers({ ...answers, [index]: optionIndex })}
+                />
+                {option}
+              </label>
+            ))}
+          </div>
+          {submitted && (
+            <p className={`mt-4 text-xs leading-relaxed ${answers[index] === item.answer ? "text-[var(--bp-mint)]" : "text-[var(--bp-coral)]"}`}>
+              {answers[index] === item.answer ? "Correct. " : `Correct answer: ${item.options[item.answer]}. `}
+              {item.explanation}
+            </p>
+          )}
+        </section>
+      ))}
+
+      <button onClick={handleSubmit} className="px-5 py-2 rounded-md font-mono text-sm font-medium" style={{ background: "var(--bp-cyan)", color: "#081527" }}>
+        Submit assessment
+      </button>
+
+      {submitted && (
+        <p className="text-sm font-mono text-[var(--bp-text)]">
+          Score: {score} / {QUESTIONS.length}
+          {token && saveState === "saving" && " · Saving…"}
+          {token && saveState === "saved" && " · Saved to your profile"}
+          {token && saveState === "error" && " · Could not save (backend/DB may be unavailable)"}
+        </p>
+      )}
+
+      <p className="text-xs text-[var(--bp-text-faint)]">
+        Contest and leaderboard feature updates are under Contests; timed practice assessments are local and safe to retry.
+      </p>
+    </div>
+  );
 }

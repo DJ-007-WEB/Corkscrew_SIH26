@@ -2,7 +2,6 @@ import logging
 import time
 from datetime import datetime, timedelta, timezone
 
-
 def _as_aware(value) -> datetime:
     """Coerce a Mongo/ISO datetime to tz-aware UTC.
 
@@ -19,12 +18,25 @@ def _as_aware(value) -> datetime:
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import backends, dns_fix  # noqa: F401
-from .auth import current_user, get_challenge_solves_collection, get_contest_attempts_collection, get_duel_rooms_collection, get_saved_works_collection, get_sprint_solves_collection, get_user_stats_collection, get_users_collection, get_xp_events_collection, google_login
+from . import backends, contests, dns_fix, gamification
+from .auth import (
+    current_user,
+    get_assessment_results_collection,
+    get_challenge_solves_collection,
+    get_contest_attempts_collection,
+    get_duel_rooms_collection,
+    get_saved_works_collection,
+    get_sprint_solves_collection,
+    get_user_stats_collection,
+    get_users_collection,
+    get_xp_events_collection,
+    google_login,
+    login as password_login,
+    require_instructor,
+    signup as password_signup,
+)
 from .circuit_builder import circuit_from_qiskit, circuit_to_qasm, circuit_to_qiskit, gate_catalog, validate_circuit
 from .circuit_diagnostics import diagnose_circuit
-from . import contests
-from . import gamification
 from .gamification import ACTIVITY_XP
 from .quantum_engine import (
     create_bell_circuit,
@@ -35,6 +47,9 @@ from .quantum_engine import (
 )
 from .schemas import (
     ActivityRequest,
+    AssessmentResult,
+    AssessmentSubmitRequest,
+    AuthResponse,
     BackendInfo,
     ChallengeSubmitRequest,
     ChallengeSubmitResponse,
@@ -49,16 +64,21 @@ from .schemas import (
     DuelJoinRequest,
     DuelState,
     GateDefinition,
+    GoogleAuthRequest,
+    InstructorDashboard,
     LeaderboardEntry,
+    LoginRequest,
     QuizQuestion,
     SavedWork,
     SavedWorkRequest,
+    SignupRequest,
     SimulateRequest,
     SimulationResult,
     SprintQuestionResult,
     SprintStartResponse,
     SprintSubmitRequest,
     SprintSubmitResponse,
+    TopPerformer,
     UserPublicProfile,
     UserStats,
 )
@@ -88,12 +108,21 @@ def gates():
     return gate_catalog()
 
 
-@app.post("/api/auth/google")
-def auth_google(payload: dict):
-    credential = payload.get("credential")
-    if not credential:
+@app.post("/api/auth/google", response_model=AuthResponse)
+def auth_google(payload: GoogleAuthRequest):
+    if not payload.credential:
         raise HTTPException(400, "Google credential is required")
-    return google_login(credential)
+    return google_login(payload.credential, payload.role)
+
+
+@app.post("/api/auth/signup", response_model=AuthResponse)
+def auth_signup(payload: SignupRequest):
+    return password_signup(payload.name, payload.email, payload.password, payload.role)
+
+
+@app.post("/api/auth/login", response_model=AuthResponse)
+def auth_login(payload: LoginRequest):
+    return password_login(payload.email, payload.password)
 
 
 @app.get("/api/auth/me")
@@ -984,6 +1013,94 @@ def preset_teleportation(payload: str = "plus"):
         return create_teleportation_circuit(payload)
     except (KeyError, ValueError, IndexError) as exc:
         raise HTTPException(400, f"invalid teleportation preset: {exc}") from exc
+
+
+@app.post("/api/assessment/submit", response_model=AssessmentResult)
+def submit_assessment(payload: AssessmentSubmitRequest, request: Request):
+    """Persist a learner's assessment attempt so instructors can see cumulative
+    scores. Requires login; anonymous attempts are graded client-side only and
+    are not tracked here."""
+    user = current_user(request)
+    collection = get_assessment_results_collection()
+    if collection is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    if payload.score > payload.total:
+        raise HTTPException(400, "score cannot exceed total")
+    now = datetime.now(timezone.utc)
+    percentage = round((payload.score / payload.total) * 100, 2)
+    document = {
+        "user_id": user["sub"],
+        "user_name": user.get("name", "Quantum Learner"),
+        "user_email": user.get("email"),
+        "score": payload.score,
+        "total": payload.total,
+        "percentage": percentage,
+        "created_at": now,
+    }
+    result = collection.insert_one(document)
+    return {
+        "id": str(result.inserted_id),
+        "score": payload.score,
+        "total": payload.total,
+        "percentage": percentage,
+        "created_at": now.isoformat(),
+    }
+
+
+@app.get("/api/instructor/dashboard", response_model=InstructorDashboard)
+def instructor_dashboard(request: Request, active_window_days: int = 7):
+    """Live instructor overview. Every figure is computed on read from the
+    users and assessment_results collections — nothing here is cached or
+    hardcoded, so it reflects real signups/attempts as they happen.
+
+    Note: a dedicated contest engine (submissions, timed challenges, ranking
+    history) is still a roadmap item — see ContestPage. Until it ships,
+    "top performers" is powered by the assessment leaderboard below."""
+    require_instructor(request)
+
+    users = get_users_collection()
+    results = get_assessment_results_collection()
+    if users is None or results is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+
+    total_signups = users.count_documents({})
+    cutoff = datetime.now(timezone.utc) - timedelta(days=active_window_days)
+    active_learners = users.count_documents({"last_active": {"$gte": cutoff}})
+
+    attempts = list(results.find({}))
+    total_attempts = len(attempts)
+    average_score = round(sum(a["percentage"] for a in attempts) / total_attempts, 2) if total_attempts else 0.0
+
+    by_user: dict[str, dict] = {}
+    for attempt in attempts:
+        bucket = by_user.setdefault(
+            attempt["user_id"],
+            {"name": attempt.get("user_name", "Quantum Learner"), "email": attempt.get("user_email"), "scores": []},
+        )
+        bucket["scores"].append(attempt["percentage"])
+
+    leaderboard = [
+        TopPerformer(
+            name=bucket["name"],
+            email=bucket["email"],
+            attempts=len(bucket["scores"]),
+            average_percentage=round(sum(bucket["scores"]) / len(bucket["scores"]), 2),
+            best_percentage=round(max(bucket["scores"]), 2),
+        )
+        for bucket in by_user.values()
+    ]
+    leaderboard.sort(key=lambda p: (p.average_percentage, p.attempts), reverse=True)
+
+    return InstructorDashboard(
+        generated_at=datetime.now(timezone.utc).isoformat(),
+        total_signups=total_signups,
+        active_learners=active_learners,
+        active_window_days=active_window_days,
+        total_assessment_attempts=total_attempts,
+        average_assessment_score=average_score,
+        top_performers=leaderboard[:10],
+        note="Contest engine not built yet — top performers reflect the assessment leaderboard.",
+    )
 
 
 @app.post("/api/tutor/chat", response_model=ChatResponse)

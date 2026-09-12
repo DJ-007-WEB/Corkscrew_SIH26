@@ -2,7 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import BlochSphere from "./BlochSphere";
 import QSphere from "./QSphere";
 import ProbabilityTimeline from "./ProbabilityTimeline";
+import HistogramChart from "./HistogramChart";
+import { marginalCounts, sampleShots } from "./shots";
 import type { SimulationResult } from "./types";
+
+const SHOT_PRESETS = [128, 256, 512, 1024, 2048, 4096, 8192];
 
 function amp(a: { real: number; imag: number }) {
   const r = Math.abs(a.real) < 1e-9 ? 0 : a.real;
@@ -16,12 +20,29 @@ export default function VisualizationPage({ result }: { result: SimulationResult
   const [step, setStep] = useState(0);
   const [qubit, setQubit] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [blochShots, setBlochShots] = useState(1024);
+  const [blochRunTick, setBlochRunTick] = useState(0);
+  const [qsphereShots, setQsphereShots] = useState(1024);
+  const [qsphereRunTick, setQsphereRunTick] = useState(0);
   const current = result?.steps[step] ?? null;
   const probabilities = current?.state.probabilities ?? {};
   const amplitudes = current?.state.statevector ?? {};
   const entries = useMemo(
     () => Object.entries(probabilities).filter(([, p]) => p > 1e-10),
     [probabilities],
+  );
+
+  const blochSampledCounts = useMemo(
+    () => sampleShots(probabilities, blochShots),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [probabilities, blochShots, blochRunTick],
+  );
+  const blochMarginal = useMemo(() => marginalCounts(blochSampledCounts, qubit), [blochSampledCounts, qubit]);
+
+  const qsphereSampledCounts = useMemo(
+    () => sampleShots(probabilities, qsphereShots),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [probabilities, qsphereShots, qsphereRunTick],
   );
 
   useEffect(() => {
@@ -128,6 +149,20 @@ export default function VisualizationPage({ result }: { result: SimulationResult
             </select>
           </div>
           <BlochSphere amplitudes={amplitudes} qubits={totalQubits} selectedQubit={qubit} />
+
+          <div className="mt-4 pt-4 border-t border-[var(--bp-border)]">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+              <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-text-dim)]">Measurement results · q[{qubit}]</p>
+              <div className="flex items-center gap-2">
+                <select value={blochShots} onChange={(e) => setBlochShots(Number(e.target.value))} className="bg-[var(--bp-bg)] border border-[var(--bp-border)] rounded px-2 py-1.5 text-[11px] font-mono">
+                  {SHOT_PRESETS.map((n) => <option key={n} value={n}>{n} shots</option>)}
+                </select>
+                <button onClick={() => setBlochRunTick((t) => t + 1)} className="px-3 py-1.5 rounded border border-[var(--bp-border-strong)] text-[11px] font-mono text-[var(--bp-cyan)] hover:border-[var(--bp-cyan)]">↻ Run shots</button>
+              </div>
+            </div>
+            <HistogramChart title={`q[${qubit}] outcomes`} counts={{ "0": blochMarginal["0"], "1": blochMarginal["1"] }} shots={blochShots} />
+            <p className="text-[10px] text-[var(--bp-text-faint)] mt-2 leading-relaxed">Sampled by drawing {blochShots} shots from the full circuit's exact probabilities, then marginalizing onto q[{qubit}]. Change the shot count or click Run shots to resample.</p>
+          </div>
         </section>
         <section className="bp-panel p-5">
           <div className="mb-3">
@@ -135,6 +170,20 @@ export default function VisualizationPage({ result }: { result: SimulationResult
             <p className="text-xs text-[var(--bp-text-faint)] mt-1 leading-relaxed">Full multi-qubit state: basis states, amplitudes, probabilities, and phase.</p>
           </div>
           <QSphere amplitudes={amplitudes} />
+
+          <div className="mt-4 pt-4 border-t border-[var(--bp-border)]">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+              <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-text-dim)]">Measurement results · all qubits</p>
+              <div className="flex items-center gap-2">
+                <select value={qsphereShots} onChange={(e) => setQsphereShots(Number(e.target.value))} className="bg-[var(--bp-bg)] border border-[var(--bp-border)] rounded px-2 py-1.5 text-[11px] font-mono">
+                  {SHOT_PRESETS.map((n) => <option key={n} value={n}>{n} shots</option>)}
+                </select>
+                <button onClick={() => setQsphereRunTick((t) => t + 1)} className="px-3 py-1.5 rounded border border-[var(--bp-border-strong)] text-[11px] font-mono text-[var(--bp-cyan)] hover:border-[var(--bp-cyan)]">↻ Run shots</button>
+              </div>
+            </div>
+            <HistogramChart title="Basis-state outcomes" counts={qsphereSampledCounts} shots={qsphereShots} />
+            <p className="text-[10px] text-[var(--bp-text-faint)] mt-2 leading-relaxed">Sampled by drawing {qsphereShots} shots from the current step's exact statevector probabilities. Change the shot count or click Run shots to resample.</p>
+          </div>
         </section>
       </div>
 

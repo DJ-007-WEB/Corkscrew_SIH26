@@ -1,4 +1,8 @@
+import hashlib
+import hmac
 import os
+import re
+import secrets
 from datetime import datetime, timedelta, timezone
 
 import dns.resolver
@@ -19,12 +23,35 @@ MONGODB_DATABASE = os.getenv("MONGODB_DATABASE", "corkscrew")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 JWT_SECRET = os.getenv("JWT_SECRET")
 
+VALID_ROLES = ("student", "instructor")
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
 _client = None
 _db = None
 _users = None
 _saved_works = None
 _user_stats = None
 _xp_events = None
+_assessment_results = None
+
+
+# --- Password hashing (dependency-free PBKDF2-HMAC-SHA256) -----------------
+
+def hash_password(password: str) -> str:
+    salt = secrets.token_hex(16)
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), bytes.fromhex(salt), 200_000)
+    return f"pbkdf2_sha256$200000${salt}${digest.hex()}"
+
+
+def verify_password(password: str, stored: str) -> bool:
+    try:
+        algorithm, iterations, salt, digest_hex = stored.split("$")
+        if algorithm != "pbkdf2_sha256":
+            return False
+        digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), bytes.fromhex(salt), int(iterations))
+        return hmac.compare_digest(digest.hex(), digest_hex)
+    except (ValueError, AttributeError):
+        return False
 
 
 def get_db():
@@ -130,13 +157,64 @@ def get_duel_rooms_collection():
     return None
 
 
+def get_assessment_results_collection():
+    global _assessment_results
+    if _assessment_results is not None:
+        return _assessment_results
+    db = get_db()
+    if db is not None:
+        _assessment_results = db["assessment_results"]
+        return _assessment_results
+    return None
 
-def google_login(credential: str) -> dict:
+
+def _public_user(user: dict) -> dict:
+    """Strip internal/secret fields before sending a user doc to the client."""
+    return {
+        "name": user.get("name"),
+        "email": user.get("email"),
+        "role": user.get("role", "student"),
+        "picture": user.get("picture"),
+    }
+
+
+def _issue_token(user_id: str, email: str | None, name: str, role: str) -> str:
+    if not JWT_SECRET:
+        raise HTTPException(500, "JWT_SECRET is not configured")
+    return jwt.encode(
+        {
+            "sub": user_id,
+            "email": email,
+            "name": name,
+            "role": role,
+            "exp": datetime.now(timezone.utc) + timedelta(days=7),
+        },
+        JWT_SECRET,
+        algorithm="HS256",
+    )
+
+
+def _normalize_role(role: str | None) -> str:
+    return role if role in VALID_ROLES else "student"
+
+
+def touch_last_active(user_id: str) -> None:
+    """Best-effort activity ping used to approximate 'active learners'."""
+    users = get_users_collection()
+    if users is None:
+        return
+    try:
+        users.update_one({"google_id": user_id}, {"$set": {"last_active": datetime.now(timezone.utc)}})
+    except Exception:
+        pass
+
+
+def google_login(credential: str, role: str | None = None) -> dict:
     if not GOOGLE_CLIENT_ID:
         raise HTTPException(500, "GOOGLE_CLIENT_ID is not configured")
     if not JWT_SECRET:
         raise HTTPException(500, "JWT_SECRET is not configured")
-    
+
     users = get_users_collection()
     if users is None:
         raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
@@ -148,30 +226,83 @@ def google_login(credential: str) -> dict:
     except ValueError as exc:
         raise HTTPException(401, "Invalid Google credential") from exc
 
+    now = datetime.now(timezone.utc)
     user = {
         "google_id": info["sub"],
         "email": info.get("email"),
         "name": info.get("name", "Quantum Learner"),
         "picture": info.get("picture"),
-        "updated_at": datetime.now(timezone.utc),
+        "auth_provider": "google",
+        "updated_at": now,
+        "last_active": now,
     }
     users.update_one(
         {"google_id": user["google_id"]},
-        {"$set": user, "$setOnInsert": {"created_at": user["updated_at"]}},
+        {
+            "$set": user,
+            "$setOnInsert": {"created_at": now, "role": _normalize_role(role)},
+        },
         upsert=True,
     )
+    stored = users.find_one({"google_id": user["google_id"]}) or user
 
-    token = jwt.encode(
-        {
-            "sub": user["google_id"],
-            "email": user["email"],
-            "name": user["name"],
-            "exp": datetime.now(timezone.utc) + timedelta(days=7),
-        },
-        JWT_SECRET,
-        algorithm="HS256",
-    )
-    return {"token": token, "user": user}
+    token = _issue_token(stored["google_id"], stored.get("email"), stored.get("name", "Quantum Learner"), stored.get("role", "student"))
+    return {"token": token, "user": _public_user(stored)}
+
+
+def signup(name: str, email: str, password: str, role: str | None) -> dict:
+    if not JWT_SECRET:
+        raise HTTPException(500, "JWT_SECRET is not configured")
+    users = get_users_collection()
+    if users is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+
+    name = (name or "").strip()
+    email = (email or "").strip().lower()
+    if not name:
+        raise HTTPException(400, "Name is required")
+    if not EMAIL_RE.match(email):
+        raise HTTPException(400, "A valid email is required")
+    if not password or len(password) < 8:
+        raise HTTPException(400, "Password must be at least 8 characters")
+
+    if users.find_one({"email": email}):
+        raise HTTPException(409, "An account with this email already exists")
+
+    now = datetime.now(timezone.utc)
+    user_id = f"local:{secrets.token_hex(12)}"
+    document = {
+        "google_id": user_id,
+        "email": email,
+        "name": name,
+        "role": _normalize_role(role),
+        "auth_provider": "password",
+        "password_hash": hash_password(password),
+        "picture": None,
+        "created_at": now,
+        "updated_at": now,
+        "last_active": now,
+    }
+    users.insert_one(document)
+    token = _issue_token(user_id, email, name, document["role"])
+    return {"token": token, "user": _public_user(document)}
+
+
+def login(email: str, password: str) -> dict:
+    if not JWT_SECRET:
+        raise HTTPException(500, "JWT_SECRET is not configured")
+    users = get_users_collection()
+    if users is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+
+    email = (email or "").strip().lower()
+    user = users.find_one({"email": email})
+    if not user or not user.get("password_hash") or not verify_password(password, user["password_hash"]):
+        raise HTTPException(401, "Invalid email or password")
+
+    users.update_one({"google_id": user["google_id"]}, {"$set": {"last_active": datetime.now(timezone.utc)}})
+    token = _issue_token(user["google_id"], user.get("email"), user.get("name", "Quantum Learner"), user.get("role", "student"))
+    return {"token": token, "user": _public_user(user)}
 
 
 def current_user(request: Request) -> dict:
@@ -181,6 +312,16 @@ def current_user(request: Request) -> dict:
     if not authorization.startswith("Bearer "):
         raise HTTPException(401, "Authentication required")
     try:
-        return jwt.decode(authorization[7:], JWT_SECRET, algorithms=["HS256"])
+        payload = jwt.decode(authorization[7:], JWT_SECRET, algorithms=["HS256"])
     except jwt.PyJWTError as exc:
         raise HTTPException(401, "Invalid or expired session") from exc
+    payload.setdefault("role", "student")
+    touch_last_active(payload["sub"])
+    return payload
+
+
+def require_instructor(request: Request) -> dict:
+    user = current_user(request)
+    if user.get("role") != "instructor":
+        raise HTTPException(403, "Instructor access required")
+    return user

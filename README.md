@@ -91,6 +91,18 @@ npm run dev
 
 ---
 
+## 👤 Role-based Auth, Assessments & Instructor Dashboard
+
+- **Login / Signup (top-right)**: email+password accounts with a Student/Instructor role picker at signup, alongside the existing Google sign-in (Google sign-up also uses the selected role for first-time accounts).
+- **Assessment tracking**: logged-in learners have their `/assessment` score persisted to MongoDB (`assessment_results` collection); anonymous attempts are still graded client-side but not saved.
+- **Instructor Dashboard** (`/api/instructor/dashboard`, instructor-role only): total sign-ups, active learners (active in the last 7 days by default), cumulative average assessment score, and a top-performers leaderboard — all computed live from the database, nothing hardcoded.
+  - A dedicated contest engine (see `ContestPage`) is still a roadmap item, so "top performers" is currently powered by the assessment leaderboard until that ships.
+  - Instructor-editable Learning-module topics were intentionally left out of this round — flagged as a future enhancement on the dashboard.
+
+## 📊 Configurable Shots (Bloch Sphere & Q-Sphere)
+
+The Visualization Lab now includes a shots selector (128–8192) under both the Bloch Sphere and Q-Sphere panels. Each draws that many samples from the current step's exact statevector probabilities (client-side multinomial sampling — the same distribution Qiskit Aer's `shots=` measurement would produce) and renders a live histogram of the sampled outcomes. Bloch Sphere shows the marginal 0/1 counts for the selected qubit; Q-Sphere shows counts per full basis state. Both resample on shot-count change or via the "Run shots" button.
+
 ## 📡 API Reference
 
 ### Tutor Chat Endpoint: `POST /api/tutor/chat`
@@ -157,10 +169,15 @@ Corkscrew_SIH26/
 │   │   ├── App.tsx             # Root container with centralized floating Quantum Tutor
 │   │   ├── QuantumTutor.tsx    # Centralized floating AI chatbot drawer component
 │   │   ├── CircuitBuilder.tsx  # Drag-and-drop circuit canvas
-│   │   ├── BlochSphere.tsx     # 3D Three.js single-qubit Bloch Sphere
-│   │   ├── QSphere.tsx         # 3D Three.js multi-qubit Q-Sphere
+│   │   ├── BlochSphere.tsx     # 3D Three.js single-qubit Bloch Sphere (+ shots histogram)
+│   │   ├── QSphere.tsx         # 3D Three.js multi-qubit Q-Sphere (+ shots histogram)
+│   │   ├── shots.ts            # Client-side multinomial shot sampling
 │   │   ├── ProbabilityTimeline.tsx # Step-by-step probability progression
 │   │   ├── CodePanel.tsx       # Monaco-powered Qiskit Python code builder
+│   │   ├── AuthForm.tsx        # Shared role-based login/signup form (+ Google)
+│   │   ├── AuthModal.tsx       # Top-right header Login/Signup modal
+│   │   ├── AuthPage.tsx        # Full-page auth gate for Learning/My Works tabs
+│   │   ├── InstructorDashboard.tsx # Live cohort stats for instructor accounts
 │   │   ├── api.ts              # Typed backend client
 │   │   └── types.ts            # TypeScript interfaces & IR contracts
 │   ├── package.json

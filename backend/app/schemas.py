@@ -293,3 +293,71 @@ class DuelState(BaseModel):
     guest_result: Optional[DuelPlayerResult] = None
     results: list[SprintQuestionResult] = Field(default_factory=list)
     stats: Optional[UserStats] = None
+# --- Auth / roles -----------------------------------------------------------
+
+Role = Literal["student", "instructor"]
+
+
+class SignupRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    email: str = Field(min_length=3, max_length=200)
+    password: str = Field(min_length=8, max_length=200)
+    role: Role = "student"
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=200)
+    password: str = Field(min_length=1, max_length=200)
+
+
+class GoogleAuthRequest(BaseModel):
+    credential: str
+    role: Optional[Role] = None
+
+
+class PublicUser(BaseModel):
+    name: str
+    email: Optional[str] = None
+    role: Role = "student"
+    picture: Optional[str] = None
+
+
+class AuthResponse(BaseModel):
+    token: str
+    user: PublicUser
+
+
+# --- Assessment tracking -----------------------------------------------------
+
+class AssessmentSubmitRequest(BaseModel):
+    score: int = Field(ge=0)
+    total: int = Field(ge=1)
+
+
+class AssessmentResult(BaseModel):
+    id: str
+    score: int
+    total: int
+    percentage: float
+    created_at: str
+
+
+# --- Instructor dashboard ----------------------------------------------------
+
+class TopPerformer(BaseModel):
+    name: str
+    email: Optional[str] = None
+    attempts: int
+    average_percentage: float
+    best_percentage: float
+
+
+class InstructorDashboard(BaseModel):
+    generated_at: str
+    total_signups: int
+    active_learners: int
+    active_window_days: int
+    total_assessment_attempts: int
+    average_assessment_score: float
+    top_performers: list[TopPerformer]
+    note: Optional[str] = None

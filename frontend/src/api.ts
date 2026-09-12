@@ -1,4 +1,27 @@
-import type { BackendId, BackendInfo, ChallengeResult, ChallengeTask, ChatMessage, Circuit, CircuitDiagnosis, CodeRequest, DuelState, GateDefinition, LeaderboardEntry, SavedWork, SimulationResult, SprintResult, SprintStart, TutorResponse, UserProfile, UserStats } from "./types";
+import type {
+  AssessmentResult,
+  AuthResponse,
+  BackendId,
+  BackendInfo,
+  ChallengeResult,
+  ChallengeTask,
+  ChatMessage,
+  Circuit,
+  CircuitDiagnosis,
+  CodeRequest,
+  DuelState,
+  GateDefinition,
+  InstructorDashboard,
+  LeaderboardEntry,
+  Role,
+  SavedWork,
+  SimulationResult,
+  SprintResult,
+  SprintStart,
+  TutorResponse,
+  UserProfile,
+  UserStats,
+} from "./types";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -202,3 +225,40 @@ export function cancelDuel(token: string, code: string): Promise<{ ok: boolean }
     headers: authHeaders(token),
   });
 }
+
+export function signup(name: string, email: string, password: string, role: Role): Promise<AuthResponse> {
+  return request<AuthResponse>("/api/auth/signup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, password, role }),
+  });
+}
+
+export function login(email: string, password: string): Promise<AuthResponse> {
+  return request<AuthResponse>("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export function googleAuth(credential: string, role?: Role): Promise<AuthResponse> {
+  return request<AuthResponse>("/api/auth/google", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ credential, role }),
+  });
+}
+
+export function submitAssessment(token: string, score: number, total: number): Promise<AssessmentResult> {
+  return request<AssessmentResult>("/api/assessment/submit", {
+    method: "POST",
+    headers: { ...authHeaders(token), "Content-Type": "application/json" },
+    body: JSON.stringify({ score, total }),
+  });
+}
+
+export function getInstructorDashboard(token: string): Promise<InstructorDashboard> {
+  return request<InstructorDashboard>("/api/instructor/dashboard", { headers: authHeaders(token) });
+}
+

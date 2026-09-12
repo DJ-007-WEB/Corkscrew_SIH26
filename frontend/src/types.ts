@@ -239,3 +239,44 @@ export interface TutorResponse {
   provider: string;
   recommendation?: string | null;
 }
+
+export type Role = "student" | "instructor";
+
+export interface PublicUser {
+  name: string;
+  email?: string | null;
+  role: Role;
+  picture?: string | null;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: PublicUser;
+}
+
+export interface AssessmentResult {
+  id: string;
+  score: number;
+  total: number;
+  percentage: number;
+  created_at: string;
+}
+
+export interface TopPerformer {
+  name: string;
+  email?: string | null;
+  attempts: number;
+  average_percentage: number;
+  best_percentage: number;
+}
+
+export interface InstructorDashboard {
+  generated_at: string;
+  total_signups: number;
+  active_learners: number;
+  active_window_days: number;
+  total_assessment_attempts: number;
+  average_assessment_score: number;
+  top_performers: TopPerformer[];
+  note?: string | null;
+}
