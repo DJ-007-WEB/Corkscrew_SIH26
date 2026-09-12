@@ -1,0 +1,889 @@
+{
+  "MODULE": "Module 3 — Quantum Gates & Circuits (1-qubit focus)",
+  "MODULE_GOAL": "Build and analyze simple circuits; connect gates to matrices/rotations.",
+  "SUBTOPICS": [
+    {
+      "CONCEPT": "Quantum Circuit Model Basics",
+      "SUBTOPIC_ID": "3.1",
+      "CONCEPT_ID": "C_CIRCUIT_MODEL",
+      "PREREQUISITES": [
+        "Qubit and state vector (Module 1, 2)",
+        "Single-qubit gates as rotations (Module 2, C_GATES_ROTATIONS)"
+      ],
+      "DIFFICULTY_LEVEL": "Beginner",
+      "LEARNING_OBJECTIVES": [
+        "Identify the parts of a quantum circuit diagram: wires (qubit registers), gates, and measurement symbols.",
+        "Explain the left-to-right time-flow convention used in circuit diagrams.",
+        "Explain why a measurement operation is typically drawn at the end of a circuit and what it outputs.",
+        "Explain why every quantum gate box must have the same number of wires entering and exiting it (reversibility)."
+      ],
+      "SKILLS_TAGGED": [
+        "S_CIRCUIT_READING",
+        "S_TIME_FLOW",
+        "S_MEASUREMENT_SYMBOL"
+      ],
+      "CORE_EXPLANATION": "A quantum circuit diagram is a picture that describes a sequence of operations applied to one or more qubits. Each qubit register is drawn as a horizontal line, or wire, with the top line usually labeled qubit 0, the next line qubit 1, and so on. Quantum operations are drawn as boxes placed on these wires, called quantum gates, in direct analogy to classical logic gates. Crucially, time flows from left to right in a circuit diagram: the left-most gate on a wire is the one applied first, and gates further to the right are applied later, in chronological order. The wires entering a gate box represent the qubit(s) going into that operation, and the wires leaving it represent the qubit(s) coming out.\n\nBecause every quantum operation on qubits (other than measurement) must be reversible — a consequence of the fact that quantum operations are represented by unitary matrices — any gate box drawn in a circuit must have exactly the same number of wires entering it as exiting it. If a gate had more outputs than inputs, information would have to be created from nothing, which would break reversibility and therefore couldn't correspond to a valid unitary operation. Measurement is the one operation in a circuit that is not reversible and not unitary: it is drawn using a distinctive meter symbol, takes a qubit register (a solid wire) as input, and produces classical information (conventionally drawn as a double line) as output. Because measurement irreversibly collapses the qubit's quantum state into a definite classical result, it is almost always placed at the very end of a circuit, after all the reversible gate operations have been applied, so useful quantum information isn't collapsed prematurely.",
+      "MATHEMATICAL_REPRESENTATION": "Circuit reading order vs matrix order: a circuit applying gate A, then B, then C (left to right) corresponds to the matrix product CBA applied to the initial state — i.e. |output⟩ = CBA|input⟩ (matrix multiplication is applied right-to-left, the OPPOSITE order from how gates are read in the diagram).",
+      "INTUITION_ANALOGY": "Think of a circuit diagram like sheet music read left to right: each gate is a note played in order, and the wire is the instrument's string carrying the qubit through time. The measurement symbol at the end is like the final note being recorded — once it's played (measured), you can't take it back or replay a different version; that's why it's saved for last.",
+      "EXAMPLES": [
+        {
+          "EXAMPLE_ID": "Example 1",
+          "DESCRIPTION": "A simple one-qubit circuit with time flowing left to right",
+          "CIRCUIT": [
+            "q0: |0⟩ ──H────X────[Measure]──"
+          ],
+          "READING_ORDER": "H is applied first, then X, then the qubit is measured.",
+          "MATRIX_FORM": "Final state (before measurement) = X·H·|0⟩ (matrix multiplication applied right to left)"
+        },
+        {
+          "EXAMPLE_ID": "Example 2",
+          "DESCRIPTION": "Why gate boxes need equal inputs and outputs",
+          "EXPLANATION": "A single-qubit gate box has exactly 1 wire in and 1 wire out, because it represents a 2x2 unitary matrix acting on a 2-dimensional state vector — the number of qubits (and thus dimensions) is preserved."
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Annotated circuit diagram labeling: qubit wire, gate box, measurement meter symbol",
+        "Side-by-side comparison: circuit diagram (left-to-right reading) vs. matrix expression (right-to-left multiplication order)",
+        "Simple animation of a qubit 'traveling' along a wire through successive gates"
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "The order gates are read in a circuit (left to right) is the OPPOSITE of the order they're multiplied in matrix notation (right to left) — mixing these up is one of the most common circuit-reading mistakes.",
+        "Measurement is not just 'another gate' — it is irreversible and not unitary, unlike every other standard single-qubit gate.",
+        "A wire in a circuit diagram represents a qubit register over time, not a physical wire carrying an electrical signal."
+      ],
+      "RELATED_CONCEPTS": [
+        "Unitary matrices",
+        "Quantum gates",
+        "Measurement",
+        "Reversibility"
+      ],
+      "ASSESSMENT_IDS": [
+        "Q_CM_01",
+        "Q_CM_02",
+        "Q_CM_03",
+        "Q_CM_04",
+        "Q_CM_05"
+      ],
+      "SOURCE_REFERENCES": [
+        "Microsoft Learn — Quantum circuit diagram conventions (Azure Quantum): https://learn.microsoft.com/en-us/azure/quantum/concepts-circuits"
+      ],
+      "MCQS": [
+        {
+          "QUESTION_ID": "Q_CM_01",
+          "QUESTION": "In a quantum circuit diagram, which direction does time flow?",
+          "OPTIONS": {
+            "A": "Right to left",
+            "B": "Left to right",
+            "C": "Top to bottom",
+            "D": "There is no consistent convention"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_CIRCUIT_MODEL"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_CM_02",
+          "QUESTION": "A circuit applies gate A, then B, then C to a qubit (left to right in the diagram). What is the correct matrix expression for the final state, starting from |ψ⟩?",
+          "OPTIONS": {
+            "A": "ABC|ψ⟩",
+            "B": "CBA|ψ⟩",
+            "C": "A+B+C|ψ⟩",
+            "D": "BCA|ψ⟩"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_CIRCUIT_MODEL"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_CM_03",
+          "QUESTION": "Why must a single-qubit gate box in a circuit diagram have exactly one wire entering and one wire exiting?",
+          "OPTIONS": {
+            "A": "Because circuit diagrams are only allowed one wire per gate by drawing convention",
+            "B": "Because quantum gates (other than measurement) are unitary and therefore reversible, requiring equal numbers of inputs and outputs",
+            "C": "Because qubits cannot be drawn with more than one wire",
+            "D": "Because gates always output classical information"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_CIRCUIT_MODEL"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_CM_04",
+          "QUESTION": "Why is measurement typically placed at the very end of a quantum circuit?",
+          "OPTIONS": {
+            "A": "Because measurement is reversible and can be undone later",
+            "B": "Because measurement irreversibly collapses the quantum state, so it's placed after all reversible gate operations to avoid destroying quantum information prematurely",
+            "C": "Because measurement must always be the first operation",
+            "D": "Because circuit diagrams do not support measurement in the middle under any circumstance"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_CIRCUIT_MODEL"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_CM_05",
+          "QUESTION": "What does the measurement symbol (meter) output, in terms of wire type?",
+          "OPTIONS": {
+            "A": "A quantum register (solid wire)",
+            "B": "Classical information, conventionally shown as a double line",
+            "C": "Another qubit in superposition",
+            "D": "Nothing; measurement has no output"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_CIRCUIT_MODEL"
+          ]
+        }
+      ]
+    },
+    {
+      "CONCEPT": "Standard Gate Set (Pauli X/Y/Z, H, S, T)",
+      "SUBTOPIC_ID": "3.2",
+      "CONCEPT_ID": "C_STANDARD_GATES",
+      "PREREQUISITES": [
+        "Quantum circuit model basics (C_CIRCUIT_MODEL)",
+        "State vectors and normalization (Module 2, C_STATE_VECTOR)",
+        "Matrices and matrix multiplication (basic linear algebra)"
+      ],
+      "DIFFICULTY_LEVEL": "Beginner",
+      "LEARNING_OBJECTIVES": [
+        "Write out the 2x2 matrices for the Pauli X, Y, Z gates, the Hadamard (H) gate, the phase (S) gate, and the T gate.",
+        "Explain that single-qubit quantum operations are represented by 2x2 unitary matrices.",
+        "Compute the result of applying any of these gates to a given single-qubit state vector.",
+        "Recognize the T gate as the standard non-Clifford gate and S = T²."
+      ],
+      "SKILLS_TAGGED": [
+        "S_GATE_MATRIX_RECALL",
+        "S_GATE_APPLICATION",
+        "S_GATE_MULTIPLICATION"
+      ],
+      "CORE_EXPLANATION": "In quantum computing, operations on qubits are represented by square matrices. Since a single qubit's state is a 2-dimensional column vector, single-qubit operations are represented by 2×2 matrices. A quantum operation must be a unitary matrix U, meaning UU† = U†U = 𝕀 (its adjoint, or conjugate transpose, equals its inverse); this property guarantees that applying the operation preserves the norm of the state vector, so the result is always still a valid, properly normalized quantum state.\n\nThe standard single-qubit gate set consists of the Pauli operators X, Y, and Z; the Hadamard gate H; the phase gate S; and the T gate. X = [[0,1],[1,0]] swaps the amplitudes of |0⟩ and |1⟩ (a bit flip). Z = [[1,0],[0,-1]] leaves |0⟩ unchanged but flips the sign of |1⟩'s amplitude (a phase flip). Y = [[0,-i],[i,0]] combines both a bit flip and a phase flip. H = (1/√2)[[1,1],[1,-1]] turns a basis state into an equal superposition (or vice versa). S = [[1,0],[0,i]] applies a quarter-turn phase to the |1⟩ amplitude, and is related to T by S = T². T = [[1,0],[0,e^(iπ/4)]] (also called the π/8 gate) applies a smaller, one-eighth-turn phase to the |1⟩ amplitude and is the standard non-Clifford gate; X, Y, Z, H, and S are collectively called the Clifford gates. Together, the Clifford gates plus T form a set that can approximate any single-qubit unitary transformation, which is why this particular gate set is used as the standard building-block vocabulary for single-qubit circuits.",
+      "MATHEMATICAL_REPRESENTATION": "X = [[0, 1], [1, 0]]\nY = [[0, -i], [i, 0]]\nZ = [[1, 0], [0, -1]]\nH = (1/√2) [[1, 1], [1, -1]]\nS = [[1, 0], [0, i]]  =  T²\nT = [[1, 0], [0, e^(iπ/4)]]\nUnitarity condition for any valid single-qubit gate U: U U† = U† U = 𝕀",
+      "INTUITION_ANALOGY": "Think of these six gates as a small toolbox of standard moves: X is a 'swap' tool (flip 0 and 1), Z is a 'sign-flip' tool that only touches the |1⟩ part, Y does both at once, H is the 'mixer' that turns a definite state into a blend (or unmixes a blend back to definite), and S and T are 'fine-adjustment' tools that nudge the phase of the |1⟩ part by a quarter-turn and an eighth-turn respectively. Just like a small set of screwdriver bits can tackle almost any screw, this small gate set (plus enough repetition) can approximate almost any single-qubit operation.",
+      "EXAMPLES": [
+        {
+          "EXAMPLE_ID": "Example 1",
+          "DESCRIPTION": "Applying X to |0⟩",
+          "CIRCUIT": [
+            "q0: |0⟩ ──X──"
+          ],
+          "STATEVECTOR": {
+            "before": [
+              1,
+              0
+            ],
+            "after": [
+              0,
+              1
+            ]
+          },
+          "RESULT": "X|0⟩ = |1⟩"
+        },
+        {
+          "EXAMPLE_ID": "Example 2",
+          "DESCRIPTION": "Applying H to |0⟩",
+          "CIRCUIT": [
+            "q0: |0⟩ ──H──"
+          ],
+          "STATEVECTOR": {
+            "before": [
+              1,
+              0
+            ],
+            "after": [
+              "1/√2",
+              "1/√2"
+            ]
+          },
+          "RESULT": "H|0⟩ = |+⟩"
+        },
+        {
+          "EXAMPLE_ID": "Example 3",
+          "DESCRIPTION": "Applying Z to |1⟩",
+          "CIRCUIT": [
+            "q0: |1⟩ ──Z──"
+          ],
+          "STATEVECTOR": {
+            "before": [
+              0,
+              1
+            ],
+            "after": [
+              0,
+              -1
+            ]
+          },
+          "RESULT": "Z|1⟩ = -|1⟩"
+        },
+        {
+          "EXAMPLE_ID": "Example 4",
+          "DESCRIPTION": "Applying S then T to |1⟩ (accumulating phase)",
+          "CIRCUIT": [
+            "q0: |1⟩ ──S────T──"
+          ],
+          "STATEVECTOR": {
+            "before": [
+              0,
+              1
+            ],
+            "after_S": [
+              0,
+              "i"
+            ],
+            "after_ST": [
+              0,
+              "i·e^(iπ/4)"
+            ]
+          },
+          "RESULT": "S|1⟩ = i|1⟩; then T(i|1⟩) = i·e^(iπ/4)|1⟩ — phases accumulate multiplicatively"
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Table listing each gate's name, matrix, and one-line effect (X: bit flip, Z: phase flip, H: mixer, S/T: fine phase adjustments)",
+        "Bar chart comparing |0⟩/|1⟩ measurement probabilities before and after each gate is applied to a sample state",
+        "Circuit snippets for each gate showing before/after statevectors"
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "Not all 2x2 matrices are valid quantum gates — only unitary matrices (U U† = 𝕀) are.",
+        "S and T are related but not identical: S = T², so two T gates in a row equal one S gate.",
+        "The Y gate is not simply 'X then Z' as plain matrix addition — it is its own distinct unitary matrix combining a bit flip and phase flip with a specific complex structure ([[0,-i],[i,0]])."
+      ],
+      "RELATED_CONCEPTS": [
+        "Unitary matrices",
+        "Clifford gates",
+        "Non-Clifford (T) gate",
+        "Bloch sphere rotations",
+        "Matrix multiplication"
+      ],
+      "ASSESSMENT_IDS": [
+        "Q_SG_01",
+        "Q_SG_02",
+        "Q_SG_03",
+        "Q_SG_04",
+        "Q_SG_05"
+      ],
+      "SOURCE_REFERENCES": [
+        "Microsoft Learn — The qubit in quantum computing (Azure Quantum), section 'Single-qubit operations': https://learn.microsoft.com/en-us/azure/quantum/concepts-the-qubit",
+        "Microsoft Learn — Vectors and matrices in quantum computing (Azure Quantum): https://learn.microsoft.com/en-us/azure/quantum/concepts-vectors-and-matrices"
+      ],
+      "MCQS": [
+        {
+          "QUESTION_ID": "Q_SG_01",
+          "QUESTION": "What matrix represents the Pauli X gate?",
+          "OPTIONS": {
+            "A": "[[1,0],[0,-1]]",
+            "B": "[[0,1],[1,0]]",
+            "C": "[[1,0],[0,1]]",
+            "D": "[[0,-i],[i,0]]"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_STANDARD_GATES"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_SG_02",
+          "QUESTION": "Which condition must a matrix U satisfy to represent a valid quantum gate?",
+          "OPTIONS": {
+            "A": "U must be symmetric",
+            "B": "U must be unitary: U U† = U† U = 𝕀",
+            "C": "U must have all positive entries",
+            "D": "U must equal its own transpose"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_STANDARD_GATES"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_SG_03",
+          "QUESTION": "What is the relationship between the S gate and the T gate?",
+          "OPTIONS": {
+            "A": "S = T²",
+            "B": "T = S²",
+            "C": "S and T are identical",
+            "D": "There is no relationship"
+          },
+          "CORRECT_ANSWER": "A",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_STANDARD_GATES"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_SG_04",
+          "QUESTION": "What is the result of applying the Z gate to the state |1⟩?",
+          "OPTIONS": {
+            "A": "|0⟩",
+            "B": "|1⟩ (unchanged)",
+            "C": "-|1⟩",
+            "D": "i|1⟩"
+          },
+          "CORRECT_ANSWER": "C",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_STANDARD_GATES"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_SG_05",
+          "QUESTION": "Which gate set, when combined, can approximate any single-qubit unitary transformation, per this module?",
+          "OPTIONS": {
+            "A": "Only the identity gate",
+            "B": "The Clifford gates (X, Y, Z, H, S) together with the non-Clifford T gate",
+            "C": "Only measurement operations",
+            "D": "Only the Pauli X and Y gates"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_STANDARD_GATES"
+          ]
+        }
+      ]
+    },
+    {
+      "CONCEPT": "Circuit Composition & Matrix Multiplication (Light)",
+      "SUBTOPIC_ID": "3.3",
+      "CONCEPT_ID": "C_CIRCUIT_COMPOSITION",
+      "PREREQUISITES": [
+        "Standard gate set (C_STANDARD_GATES)",
+        "Quantum circuit model basics (C_CIRCUIT_MODEL)",
+        "Basic matrix multiplication"
+      ],
+      "DIFFICULTY_LEVEL": "Beginner-Intermediate",
+      "LEARNING_OBJECTIVES": [
+        "Explain how applying gates sequentially in a circuit corresponds to multiplying their matrices together.",
+        "Correctly order matrix multiplication given a sequence of gates read left to right in a circuit diagram.",
+        "Define a unitary matrix and explain why quantum gates must be unitary.",
+        "Compute the overall matrix (and resulting state vector) for a short sequence of single-qubit gates."
+      ],
+      "SKILLS_TAGGED": [
+        "S_MATRIX_MULTIPLICATION",
+        "S_UNITARY_CONCEPT",
+        "S_CIRCUIT_TO_MATRIX"
+      ],
+      "CORE_EXPLANATION": "Multiplying two matrices M (size m×n) and N (size n×p) produces a new matrix P (size m×p), where each entry P_ik is the sum over j of M_ij · N_jk — equivalently, entry P_11 is the scalar (dot) product of the first row of M with the first column of N, and so on for every entry. Because a vector is just a special case of a matrix (with only one column), this same rule defines how a matrix acts on a state vector: applying gate matrix G to state vector |ψ⟩ is simply the matrix-vector product G|ψ⟩.\n\nWhen several gates are applied one after another in a circuit, the overall effect is found by multiplying their matrices together — but the order matters and can be a common source of confusion. In a circuit diagram, gates are read left to right in the order they are applied over time. In matrix notation, however, matrix multiplication is applied right to left: the matrix closest to the state vector acts first. So a circuit that applies gate A, then B, then C corresponds to the overall matrix CBA, applied to the input state as CBA|ψ⟩ — A is written last (closest to |ψ⟩) precisely because it's applied first.\n\nA special square matrix is the identity matrix 𝕀 (all 1s on the diagonal, 0s elsewhere), which leaves any vector unchanged. For a square matrix A, a matrix B is its inverse if AB = BA = 𝕀, and quantum operations must specifically be unitary matrices: a matrix U is unitary if U U† = U† U = 𝕀, i.e., its inverse equals its own adjoint (conjugate transpose). This unitarity requirement is what guarantees that the norm of the state vector — and therefore the total measurement probability of 1 — is preserved after every single gate in the circuit, and therefore after the entire sequence of gates as well, since a product of unitary matrices is itself always unitary.",
+      "MATHEMATICAL_REPRESENTATION": "Matrix multiplication: P = MN, with entries P_ik = Σ_j M_ij N_jk\nCircuit → matrix translation: circuit applies A, then B, then C (left to right)  ⇒  final state = CBA|ψ⟩\nUnitary condition: U U† = U† U = 𝕀  (equivalently, U⁻¹ = U†)\nProduct of unitaries is unitary: if U and V are unitary, then UV is also unitary",
+      "INTUITION_ANALOGY": "Composing gates is like following a recipe written on index cards, laid out left to right on a table (the circuit), but you have to physically fold the cards into a single stack to cook (the matrix), and the bottom card in the stack — the one your hands touch first — is the first step. So the recipe you read left-to-right ends up stacked right-to-left when written as a single combined instruction (the matrix product).",
+      "EXAMPLES": [
+        {
+          "EXAMPLE_ID": "Example 1",
+          "DESCRIPTION": "Composing H then Z then H, written correctly as matrices",
+          "CIRCUIT": [
+            "q0: |0⟩ ──H────Z────H──"
+          ],
+          "MATRIX_ORDER": "Final state = H · Z · H · |0⟩  (H applied first is written right-most, closest to |0⟩)",
+          "COMPUTATION": {
+            "after_H": [
+              "1/√2",
+              "1/√2"
+            ],
+            "after_ZH": [
+              "1/√2",
+              "-1/√2"
+            ],
+            "after_HZH": [
+              0,
+              1
+            ]
+          },
+          "RESULT": "H·Z·H|0⟩ = |1⟩ — demonstrating X = HZH"
+        },
+        {
+          "EXAMPLE_ID": "Example 2",
+          "DESCRIPTION": "Verifying H is unitary",
+          "CHECK": "H·H† = H·H (since H is real and symmetric, H† = H) = (1/2)[[1,1],[1,-1]]·[[1,1],[1,-1]] = [[1,0],[0,1]] = 𝕀",
+          "RESULT": "H is confirmed to be unitary, since H H† = 𝕀"
+        },
+        {
+          "EXAMPLE_ID": "Example 3",
+          "DESCRIPTION": "Order matters: XZ vs ZX applied to |1⟩",
+          "XZ_ORDER": "Circuit: Z then X (Z applied first) ⇒ matrix X·Z|1⟩ = X(-|1⟩) = -|0⟩",
+          "ZX_ORDER": "Circuit: X then Z (X applied first) ⇒ matrix Z·X|1⟩ = Z(|0⟩) = |0⟩",
+          "RESULT": "The two circuits give results differing by a global phase (−1) in this case, illustrating that gate order can change the outcome and must be tracked carefully"
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Step-by-step matrix multiplication grid showing how each output entry is a dot product of a row and column",
+        "Circuit-to-matrix-expression translator diagram, showing the left-to-right vs right-to-left order flip",
+        "Animated stacking of gate matrices building up the overall circuit unitary"
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "The order of gates in a circuit (left to right, applied in that order) is NOT the same as the left-to-right order of matrices when you write the product — the matrices are multiplied in reverse (right to left) order.",
+        "Gate composition is not commutative in general: applying gate A then B is not always the same as applying B then A.",
+        "A sequence of unitary gates always produces an overall unitary transformation — the state remains validly normalized throughout the whole circuit, not just after each individual gate."
+      ],
+      "RELATED_CONCEPTS": [
+        "Unitary matrices",
+        "Matrix multiplication",
+        "Standard gate set",
+        "Quantum circuit model"
+      ],
+      "ASSESSMENT_IDS": [
+        "Q_CC_01",
+        "Q_CC_02",
+        "Q_CC_03",
+        "Q_CC_04",
+        "Q_CC_05"
+      ],
+      "SOURCE_REFERENCES": [
+        "Microsoft Learn — Vectors and matrices in quantum computing (Azure Quantum), sections 'Matrix multiplication' and 'Special types of matrices': https://learn.microsoft.com/en-us/azure/quantum/concepts-vectors-and-matrices",
+        "Microsoft Learn — Quantum circuit diagram conventions (Azure Quantum), section 'Applying quantum gates': https://learn.microsoft.com/en-us/azure/quantum/concepts-circuits"
+      ],
+      "MCQS": [
+        {
+          "QUESTION_ID": "Q_CC_01",
+          "QUESTION": "A circuit applies gate A first, then gate B, reading left to right. What is the correct matrix expression for the final state starting from |ψ⟩?",
+          "OPTIONS": {
+            "A": "AB|ψ⟩",
+            "B": "BA|ψ⟩",
+            "C": "A|ψ⟩B",
+            "D": "(A+B)|ψ⟩"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_CIRCUIT_COMPOSITION",
+            "C_CIRCUIT_MODEL"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_CC_02",
+          "QUESTION": "What condition defines a unitary matrix U?",
+          "OPTIONS": {
+            "A": "U = U†",
+            "B": "U U† = U† U = 𝕀",
+            "C": "U has only real entries",
+            "D": "U is diagonal"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_CIRCUIT_COMPOSITION"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_CC_03",
+          "QUESTION": "Why must every quantum gate be represented by a unitary matrix?",
+          "OPTIONS": {
+            "A": "So that the norm (total probability) of the state vector is preserved after the operation",
+            "B": "So that gates can be drawn as boxes in circuit diagrams",
+            "C": "So that measurement always yields |0⟩",
+            "D": "Unitarity is not actually required for quantum gates"
+          },
+          "CORRECT_ANSWER": "A",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_CIRCUIT_COMPOSITION"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_CC_04",
+          "QUESTION": "Is gate composition in general commutative — i.e., does applying gate A then B always give the same result as B then A?",
+          "OPTIONS": {
+            "A": "Yes, always",
+            "B": "No, order generally matters; applying gates in a different order can give a different result",
+            "C": "Only for the identity gate",
+            "D": "Only when measurement is involved"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_CIRCUIT_COMPOSITION"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_CC_05",
+          "QUESTION": "A circuit applies H, then Z, then H to |0⟩ (left to right). What is the correctly ordered matrix product for the final state, and what is the result?",
+          "OPTIONS": {
+            "A": "H·Z·H|0⟩ = |1⟩",
+            "B": "H·H·Z|0⟩ = |0⟩",
+            "C": "Z·H·H|0⟩ = |0⟩ (since H·H = 𝕀)",
+            "D": "H+Z+H|0⟩ = |+⟩"
+          },
+          "CORRECT_ANSWER": "A",
+          "DIFFICULTY": "Hard",
+          "TOPIC_MAP": [
+            "C_CIRCUIT_COMPOSITION",
+            "C_STANDARD_GATES"
+          ]
+        }
+      ]
+    },
+    {
+      "CONCEPT": "Simple Circuit Patterns",
+      "SUBTOPIC_ID": "3.4",
+      "CONCEPT_ID": "C_CIRCUIT_PATTERNS",
+      "PREREQUISITES": [
+        "Standard gate set (C_STANDARD_GATES)",
+        "Circuit composition & matrix multiplication (C_CIRCUIT_COMPOSITION)"
+      ],
+      "DIFFICULTY_LEVEL": "Beginner-Intermediate",
+      "LEARNING_OBJECTIVES": [
+        "Design a one-gate circuit that creates an equal superposition from |0⟩.",
+        "Design a one-gate circuit that flips |0⟩ to |1⟩ (or vice versa).",
+        "Compute the final state vector for a short sequence of gates applied to |0⟩.",
+        "Describe, at a light conceptual level, what 'phase kickback' means in a controlled-gate setting."
+      ],
+      "SKILLS_TAGGED": [
+        "S_CIRCUIT_FINAL_STATE",
+        "S_CIRCUIT_DESIGN",
+        "S_PHASE_KICKBACK_INTUITION"
+      ],
+      "CORE_EXPLANATION": "With just a handful of standard gates, you can already build several important and reusable single-qubit circuit patterns. The most fundamental 'superposition-creating' pattern is a single Hadamard gate applied to |0⟩: H|0⟩ = |+⟩ = (1/√2)(|0⟩ + |1⟩), producing a qubit that measures 0 or 1 with equal (50/50) probability. The most fundamental 'state-flipping' pattern is a single Pauli X gate, which swaps the amplitudes of |0⟩ and |1⟩ — X|0⟩ = |1⟩ and X|1⟩ = |0⟩ — acting as a quantum bit-flip. These two one-gate patterns, along with combinations like applying Z after H to flip the relative phase of a superposition, form the basic vocabulary used to prepare a wide range of target single-qubit states starting from |0⟩.\n\nA more advanced (but conceptually important) pattern involves controlled gates, where a target qubit's operation is applied conditionally on a separate control qubit's value: Λ(G)(α|0⟩+β|1⟩)|ψ⟩ = α|0⟩|ψ⟩ + β|1⟩G|ψ⟩ — meaning the operation G is applied to the target only in the branch where the control qubit is |1⟩. A subtle and useful effect called phase kickback can occur here: if the target qubit |ψ⟩ happens to be an eigenstate of G with eigenvalue e^(iφ) (so that G|ψ⟩ = e^(iφ)|ψ⟩), then that phase factor doesn't stay hidden on the target — it gets 'kicked back' onto the control qubit instead, turning the control's superposition α|0⟩ + β|1⟩ into α|0⟩ + β e^(iφ)|1⟩|ψ⟩, i.e. a relative phase appears on the control. This module only introduces the intuition at a light level, since phase kickback truly comes alive once multi-qubit and controlled circuits are studied in depth in a later module — here it's enough to recognize that a phase acquired by a target qubit under a controlled operation can 'leak back' to affect the control qubit's own relative phase.",
+      "MATHEMATICAL_REPRESENTATION": "Superposition pattern: H|0⟩ = (1/√2)(|0⟩ + |1⟩) = |+⟩\nFlip pattern: X|0⟩ = |1⟩,  X|1⟩ = |0⟩\nPhase-flip-on-superposition pattern: Z·H|0⟩ = Z|+⟩ = (1/√2)(|0⟩ − |1⟩) = |−⟩\nControlled-gate action: Λ(G)(α|0⟩ + β|1⟩)|ψ⟩ = α|0⟩|ψ⟩ + β|1⟩ G|ψ⟩\nPhase kickback (light intuition): if G|ψ⟩ = e^(iφ)|ψ⟩, then Λ(G)(α|0⟩+β|1⟩)|ψ⟩ = (α|0⟩ + β e^(iφ)|1⟩)|ψ⟩",
+      "INTUITION_ANALOGY": "Preparing states from |0⟩ with gates is like starting from a blank page and applying a small set of stamps in sequence to reach a target picture: one Hadamard stamp gives you an even 'blend' (superposition), one X stamp flips the page over completely, and stacking an X and Z stamp in different combinations gives you |+⟩, |−⟩, |0⟩, or |1⟩ depending on the order. Phase kickback is stranger: imagine flipping a coin (the target) whose result secretly depends on another coin (the control) — if flipping the target coin doesn't actually change which face it shows (it's already 'settled', like an eigenstate) but does leave an invisible mark, that mark ends up appearing on the control coin instead, even though nothing about the control coin's physical face changed.",
+      "EXAMPLES": [
+        {
+          "EXAMPLE_ID": "Example 1",
+          "DESCRIPTION": "Design a circuit to prepare |+⟩ from |0⟩",
+          "CIRCUIT": [
+            "q0: |0⟩ ──H──"
+          ],
+          "STATEVECTOR": {
+            "before": [
+              1,
+              0
+            ],
+            "after": [
+              "1/√2",
+              "1/√2"
+            ]
+          },
+          "EXPECTED_SIMULATION": "Measurement histogram over many shots ~ 50% |0⟩, 50% |1⟩"
+        },
+        {
+          "EXAMPLE_ID": "Example 2",
+          "DESCRIPTION": "Design a circuit to prepare |1⟩ from |0⟩",
+          "CIRCUIT": [
+            "q0: |0⟩ ──X──"
+          ],
+          "STATEVECTOR": {
+            "before": [
+              1,
+              0
+            ],
+            "after": [
+              0,
+              1
+            ]
+          },
+          "EXPECTED_SIMULATION": "Measurement always yields 1"
+        },
+        {
+          "EXAMPLE_ID": "Example 3",
+          "DESCRIPTION": "Design a circuit to prepare |−⟩ from |0⟩",
+          "CIRCUIT": [
+            "q0: |0⟩ ──H────Z──"
+          ],
+          "STATEVECTOR": {
+            "before": [
+              1,
+              0
+            ],
+            "after_H": [
+              "1/√2",
+              "1/√2"
+            ],
+            "after_HZ": [
+              "1/√2",
+              "-1/√2"
+            ]
+          },
+          "EXPECTED_SIMULATION": "Measurement histogram over many shots ~ 50% |0⟩, 50% |1⟩ (same probabilities as |+⟩, but a different relative phase)"
+        },
+        {
+          "EXAMPLE_ID": "Example 4",
+          "DESCRIPTION": "Light phase-kickback intuition with a controlled-Z-like gate",
+          "SETUP": "Control qubit in state |+⟩ = (1/√2)(|0⟩+|1⟩); target qubit |ψ⟩ is an eigenstate of G with eigenvalue -1 (i.e., G|ψ⟩ = -|ψ⟩)",
+          "RESULT": "Λ(G)|+⟩|ψ⟩ = (1/√2)(|0⟩|ψ⟩ - |1⟩|ψ⟩) = |−⟩|ψ⟩ — the -1 phase from G acting on the target has 'kicked back' onto the control qubit, turning |+⟩ into |−⟩"
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Bloch sphere before/after diagram for H|0⟩ → |+⟩ and X|0⟩ → |1⟩",
+        "Circuit diagrams for each of the four state-preparation examples (|0⟩→|+⟩, |0⟩→|1⟩, |0⟩→|−⟩)",
+        "Simple schematic of the phase-kickback setup: control qubit, target qubit, controlled-G box, with an arrow showing the phase 'jumping back' to the control"
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "Different circuits can produce states with identical measurement probabilities (like |+⟩ and |−⟩) yet still be physically different states due to relative phase — always track the full state vector, not just probabilities.",
+        "Phase kickback does not change the target qubit's own state or probabilities at all — the entire observable effect lands on the control qubit's relative phase.",
+        "There is often more than one valid circuit to prepare a given target state — e.g., a global phase or an alternate gate sequence can reach the 'same' physical state in more than one way."
+      ],
+      "RELATED_CONCEPTS": [
+        "Superposition",
+        "Global vs relative phase",
+        "Standard gate set",
+        "Controlled gates",
+        "Bloch sphere"
+      ],
+      "ASSESSMENT_IDS": [
+        "Q_SP_01",
+        "Q_SP_02",
+        "Q_SP_03",
+        "Q_SP_04",
+        "Q_SP_05"
+      ],
+      "SOURCE_REFERENCES": [
+        "Microsoft Learn — The qubit in quantum computing (Azure Quantum): https://learn.microsoft.com/en-us/azure/quantum/concepts-the-qubit",
+        "Microsoft Learn — Quantum circuit diagram conventions (Azure Quantum), section 'Controlled gates': https://learn.microsoft.com/en-us/azure/quantum/concepts-circuits",
+        "Note: the phase-kickback example is adapted (light, single-control-qubit level) from the general controlled-gate formula given in the circuits article; full phase-kickback treatment is reserved for a later multi-qubit module."
+      ],
+      "MCQS": [
+        {
+          "QUESTION_ID": "Q_SP_01",
+          "QUESTION": "Which single gate, applied to |0⟩, creates the equal superposition state |+⟩?",
+          "OPTIONS": {
+            "A": "X",
+            "B": "Z",
+            "C": "H",
+            "D": "S"
+          },
+          "CORRECT_ANSWER": "C",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_CIRCUIT_PATTERNS",
+            "C_STANDARD_GATES"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_SP_02",
+          "QUESTION": "Which single gate, applied to |0⟩, produces |1⟩?",
+          "OPTIONS": {
+            "A": "H",
+            "B": "X",
+            "C": "Z",
+            "D": "T"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_CIRCUIT_PATTERNS",
+            "C_STANDARD_GATES"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_SP_03",
+          "QUESTION": "What circuit (starting from |0⟩) prepares the state |−⟩ = (1/√2)(|0⟩ − |1⟩)?",
+          "OPTIONS": {
+            "A": "H alone",
+            "B": "X alone",
+            "C": "H followed by Z",
+            "D": "Z alone"
+          },
+          "CORRECT_ANSWER": "C",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_CIRCUIT_PATTERNS",
+            "C_CIRCUIT_COMPOSITION"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_SP_04",
+          "QUESTION": "In phase kickback, if a controlled-G gate acts on a target qubit that is an eigenstate of G with eigenvalue e^(iφ), where does the resulting phase end up appearing?",
+          "OPTIONS": {
+            "A": "It stays entirely on the target qubit, with no effect on the control",
+            "B": "It appears as a relative phase on the control qubit's amplitude for the |1⟩ branch",
+            "C": "It disappears completely and has no observable effect anywhere",
+            "D": "It converts the control qubit into a classical bit"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Hard",
+          "TOPIC_MAP": [
+            "C_CIRCUIT_PATTERNS"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_SP_05",
+          "QUESTION": "A student prepares |+⟩ and |−⟩ using two different one-qubit circuits starting from |0⟩. When measured in the computational basis, both give 50/50 outcomes. What is the correct conclusion?",
+          "OPTIONS": {
+            "A": "The two circuits must have produced the exact same physical state",
+            "B": "The two states have the same measurement probabilities but are physically different states, differing in relative phase",
+            "C": "One of the circuits must contain an error",
+            "D": "Measurement probabilities alone are always sufficient to fully identify a quantum state"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_CIRCUIT_PATTERNS",
+            "C_CIRCUIT_COMPOSITION"
+          ]
+        }
+      ]
+    }
+  ],
+  "FINAL_MODULE_ASSESSMENT": {
+    "ASSESSMENT_ID": "MODULE3_FINAL",
+    "INSTRUCTIONS": "10 questions covering all of Module 3. Some questions require integrating concepts from multiple subtopics.",
+    "QUESTIONS": [
+      {
+        "QUESTION_ID": "F3_Q01",
+        "QUESTION": "In a circuit diagram, which gate is applied first if the diagram reads |0⟩ ──H────X──── from left to right?",
+        "OPTIONS": {
+          "A": "X",
+          "B": "H",
+          "C": "Both are applied simultaneously",
+          "D": "Neither; order does not matter"
+        },
+        "CORRECT_ANSWER": "B",
+        "DIFFICULTY": "Easy",
+        "TOPIC_MAP": [
+          "C_CIRCUIT_MODEL"
+        ]
+      },
+      {
+        "QUESTION_ID": "F3_Q02",
+        "QUESTION": "For the circuit |0⟩ ──H────X────[Measure]──, what is the correctly ordered matrix expression for the state right before measurement?",
+        "OPTIONS": {
+          "A": "H·X|0⟩",
+          "B": "X·H|0⟩",
+          "C": "(H+X)|0⟩",
+          "D": "X|0⟩·H"
+        },
+        "CORRECT_ANSWER": "B",
+        "DIFFICULTY": "Medium",
+        "TOPIC_MAP": [
+          "C_CIRCUIT_MODEL",
+          "C_CIRCUIT_COMPOSITION"
+        ]
+      },
+      {
+        "QUESTION_ID": "F3_Q03",
+        "QUESTION": "What is the matrix for the Hadamard gate H?",
+        "OPTIONS": {
+          "A": "(1/√2)[[1,1],[1,-1]]",
+          "B": "[[0,1],[1,0]]",
+          "C": "[[1,0],[0,-1]]",
+          "D": "[[1,0],[0,i]]"
+        },
+        "CORRECT_ANSWER": "A",
+        "DIFFICULTY": "Easy",
+        "TOPIC_MAP": [
+          "C_STANDARD_GATES"
+        ]
+      },
+      {
+        "QUESTION_ID": "F3_Q04",
+        "QUESTION": "Why must every gate matrix in this module's standard gate set (X, Y, Z, H, S, T) be unitary?",
+        "OPTIONS": {
+          "A": "So that the resulting state vector remains normalized (norm 1) after the gate is applied",
+          "B": "So that circuit diagrams can be drawn with boxes",
+          "C": "So that measurement always gives a random result",
+          "D": "Unitarity is not actually necessary for these gates"
+        },
+        "CORRECT_ANSWER": "A",
+        "DIFFICULTY": "Medium",
+        "TOPIC_MAP": [
+          "C_CIRCUIT_COMPOSITION",
+          "C_STANDARD_GATES"
+        ]
+      },
+      {
+        "QUESTION_ID": "F3_Q05",
+        "QUESTION": "A circuit applies gates in the order A, then B, then C (left to right). Which matrix product correctly represents the overall circuit unitary?",
+        "OPTIONS": {
+          "A": "ABC",
+          "B": "CBA",
+          "C": "BAC",
+          "D": "A+B+C"
+        },
+        "CORRECT_ANSWER": "B",
+        "DIFFICULTY": "Medium",
+        "TOPIC_MAP": [
+          "C_CIRCUIT_COMPOSITION"
+        ]
+      },
+      {
+        "QUESTION_ID": "F3_Q06",
+        "QUESTION": "Which one-gate circuit, applied to |0⟩, produces an equal superposition state?",
+        "OPTIONS": {
+          "A": "Z",
+          "B": "X",
+          "C": "H",
+          "D": "S"
+        },
+        "CORRECT_ANSWER": "C",
+        "DIFFICULTY": "Easy",
+        "TOPIC_MAP": [
+          "C_CIRCUIT_PATTERNS"
+        ]
+      },
+      {
+        "QUESTION_ID": "F3_Q07",
+        "QUESTION": "You need to design a one-qubit circuit that prepares the state |−⟩ = (1/√2)(|0⟩−|1⟩) starting from |0⟩. Which sequence of gates works, and in what circuit order?",
+        "OPTIONS": {
+          "A": "Apply H, then Z (circuit: |0⟩──H────Z──)",
+          "B": "Apply Z, then H (circuit: |0⟩──Z────H──)",
+          "C": "Apply X alone",
+          "D": "Apply S alone"
+        },
+        "CORRECT_ANSWER": "A",
+        "DIFFICULTY": "Hard",
+        "TOPIC_MAP": [
+          "C_CIRCUIT_PATTERNS",
+          "C_CIRCUIT_COMPOSITION",
+          "C_CIRCUIT_MODEL"
+        ]
+      },
+      {
+        "QUESTION_ID": "F3_Q08",
+        "QUESTION": "A gate box in a circuit diagram has 1 input wire but appears to need 2 output wires. What does this indicate?",
+        "OPTIONS": {
+          "A": "This is a valid, ordinary single-qubit gate",
+          "B": "This cannot represent a valid unitary single-qubit gate, since inputs and outputs of a reversible operation must match in number",
+          "C": "This must be a measurement operation",
+          "D": "This is always a Hadamard gate"
+        },
+        "CORRECT_ANSWER": "B",
+        "DIFFICULTY": "Medium",
+        "TOPIC_MAP": [
+          "C_CIRCUIT_MODEL"
+        ]
+      },
+      {
+        "QUESTION_ID": "F3_Q09",
+        "QUESTION": "In a phase-kickback scenario, a controlled-G gate is applied where the target qubit is an eigenstate of G with eigenvalue e^(iφ), and the control starts in |+⟩. What happens to the control qubit's state?",
+        "OPTIONS": {
+          "A": "It remains |+⟩, completely unaffected",
+          "B": "It gains a relative phase e^(iφ) on its |1⟩ amplitude, potentially changing |+⟩ into a different equator state such as |−⟩ (if φ=π)",
+          "C": "It collapses immediately to |0⟩",
+          "D": "It becomes entangled with a third, unrelated qubit"
+        },
+        "CORRECT_ANSWER": "B",
+        "DIFFICULTY": "Hard",
+        "TOPIC_MAP": [
+          "C_CIRCUIT_PATTERNS"
+        ]
+      },
+      {
+        "QUESTION_ID": "F3_Q10",
+        "QUESTION": "Which statement best ties together this module's four subtopics (circuit basics, standard gates, matrix composition, and circuit patterns)?",
+        "OPTIONS": {
+          "A": "A circuit is read left to right as a sequence of unitary gate operations (from the standard gate set) on qubit wires, ending in measurement; translating that sequence into linear algebra means multiplying the corresponding matrices in reverse order, and specific short sequences of these gates form reusable patterns for preparing target states (or, in controlled settings, for effects like phase kickback)",
+          "B": "Circuits, gates, matrices, and patterns are separate, unrelated ideas with no connection to each other",
+          "C": "Only the H gate is ever used in real circuits; all other gates are purely theoretical",
+          "D": "Matrix multiplication order is irrelevant to how circuits are read"
+        },
+        "CORRECT_ANSWER": "A",
+        "DIFFICULTY": "Hard",
+        "TOPIC_MAP": [
+          "C_CIRCUIT_MODEL",
+          "C_STANDARD_GATES",
+          "C_CIRCUIT_COMPOSITION",
+          "C_CIRCUIT_PATTERNS"
+        ]
+      }
+    ]
+  }
+}
