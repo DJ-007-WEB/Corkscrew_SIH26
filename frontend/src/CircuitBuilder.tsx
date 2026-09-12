@@ -5,7 +5,7 @@ import GatePalette from "./GatePalette";
 import CodePanel from "./CodePanel";
 import ResultsPanel from "./ResultsPanel";
 import { FAMILY_COLOR } from "./gates";
-import { circuitToCode, circuitToQasm, diagnoseCircuit, getBackends, getGateDefinitions, saveWork, simulateCircuit, validateCircuit } from "./api";
+import { circuitToCode, circuitToQasm, diagnoseCircuit, getBackends, getGateDefinitions, recordActivity, saveWork, simulateCircuit, validateCircuit } from "./api";
 import { downloadCircuitPdf } from "./pdfExport";
 import { removeGate } from "./circuitBuilderLogic";
 import type { BackendId, BackendInfo, Circuit, CircuitDiagnosis, Gate, GateDefinition, GateType, SimulationResult } from "./types";
@@ -259,6 +259,7 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
       const simulation = await simulateCircuit(validated, backendId);
       setResult(simulation);
       window.dispatchEvent(new CustomEvent("quantum:simulation", { detail: simulation }));
+      void recordActivity(token, "circuit_run", `${validated.qubits}q/${validated.gates.length}g`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Simulation failed");
       setDiagnosing(true);
@@ -334,6 +335,7 @@ export default function CircuitBuilder({ circuit, onCircuitChange, theme, token,
     try {
       const code = await circuitToCode(circuit);
       const saved = await saveWork(token, code, title, saveDescription.trim());
+      void recordActivity(token, "save_circuit", title.slice(0, 200));
       setSaveSuccess(`Saved as "${saved.title}". Find it in My Works.`);
       setShowSaveDialog(false);
     } catch (err) {

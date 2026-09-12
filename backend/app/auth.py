@@ -23,6 +23,8 @@ _client = None
 _db = None
 _users = None
 _saved_works = None
+_user_stats = None
+_xp_events = None
 
 
 def get_db():
@@ -59,6 +61,72 @@ def get_saved_works_collection():
     if db is not None:
         _saved_works = db["saved_works"]
         return _saved_works
+    return None
+
+
+def get_user_stats_collection():
+    global _user_stats
+    if _user_stats is not None:
+        return _user_stats
+    db = get_db()
+    if db is not None:
+        _user_stats = db["user_stats"]
+        return _user_stats
+    return None
+
+
+def get_xp_events_collection():
+    global _xp_events
+    if _xp_events is not None:
+        return _xp_events
+    db = get_db()
+    if db is not None:
+        _xp_events = db["xp_events"]
+        return _xp_events
+    return None
+
+
+def get_contest_attempts_collection():
+    db = get_db()
+    if db is not None:
+        return db["contest_attempts"]
+    return None
+
+
+_sprint_solves = None
+
+
+def get_sprint_solves_collection():
+    """First-solve records: one doc per {user_id, question_id} ever answered correctly."""
+    global _sprint_solves
+    if _sprint_solves is not None:
+        return _sprint_solves
+    db = get_db()
+    if db is not None:
+        _sprint_solves = db["sprint_solves"]
+        return _sprint_solves
+    return None
+
+
+_challenge_solves = None
+
+
+def get_challenge_solves_collection():
+    """First-pass records: one doc per {user_id, task_id} ever solved."""
+    global _challenge_solves
+    if _challenge_solves is not None:
+        return _challenge_solves
+    db = get_db()
+    if db is not None:
+        _challenge_solves = db["challenge_solves"]
+        return _challenge_solves
+    return None
+
+
+def get_duel_rooms_collection():
+    db = get_db()
+    if db is not None:
+        return db["duel_rooms"]
     return None
 
 

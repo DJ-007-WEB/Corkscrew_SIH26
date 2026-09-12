@@ -93,6 +93,144 @@ export interface GroundedFact {
   value: string;
 }
 
+export interface UserStats {
+  user_id: string;
+  name: string;
+  total_xp: number;
+  level: number;
+  xp_into_level: number;
+  xp_for_next_level: number;
+  streak_count: number;
+  best_streak: number;
+  contests_played: number;
+  duels_won: number;
+  rank: number | null;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  user_id: string;
+  name: string;
+  total_xp: number;
+  level: number;
+  streak_count: number;
+  is_me: boolean;
+}
+
+export interface ProfileActivity {
+  kind: string;
+  points: number;
+  created_at: string;
+}
+
+export interface UserProfile {
+  user_id: string;
+  name: string;
+  picture: string | null;
+  total_xp: number;
+  level: number;
+  xp_into_level: number;
+  xp_for_next_level: number;
+  streak_count: number;
+  best_streak: number;
+  contests_played: number;
+  duels_won: number;
+  rank: number | null;
+  is_me: boolean;
+  recent_activity: ProfileActivity[];
+}
+
+export interface QuizQuestion {
+  id: string;
+  tag: string;
+  question: string;
+  options: string[];
+}
+
+export interface SprintStart {
+  attempt_id: string;
+  questions: QuizQuestion[];
+  duration_sec: number;
+  started_at: string;
+}
+
+export interface SprintQuestionResult {
+  id: string;
+  tag: string;
+  question: string;
+  options: string[];
+  your_option: number | null;
+  correct_option: number;
+  is_correct: boolean;
+  answered: boolean;
+  explanation: string;
+}
+
+export interface SprintResult {
+  correct: number;
+  wrong: number;
+  skipped: number;
+  total: number;
+  time_sec: number;
+  base_score: number;
+  time_bonus: number;
+  xp_earned: number;
+  already_solved?: boolean;
+  results: SprintQuestionResult[];
+  stats: UserStats;
+}
+
+export interface ChallengeTask {
+  id: string;
+  title: string;
+  description: string;
+  qubits: number;
+  max_gates: number;
+  hint: string;
+}
+
+export interface ChallengeResult {
+  passed: boolean;
+  message: string;
+  probabilities: Record<string, number>;
+  gates_used: number;
+  xp_earned: number;
+  already_solved?: boolean;
+  stats: UserStats;
+}
+
+export interface DuelPlayerResult {
+  name: string;
+  correct: number;
+  wrong: number;
+  answered: number;
+  elapsed_sec: number;
+  xp_earned: number;
+}
+
+export interface DuelState {
+  code: string;
+  status: string;
+  host_name: string;
+  guest_name: string;
+  is_host: boolean;
+  questions: QuizQuestion[];
+  duration_sec: number;
+  time_left_sec: number;
+  my_answers: Record<string, number>;
+  my_submitted: boolean;
+  opponent_name: string;
+  opponent_answered: number;
+  opponent_submitted: boolean;
+  winner: string;
+  winner_name: string;
+  is_winner: boolean | null;
+  host_result: DuelPlayerResult | null;
+  guest_result: DuelPlayerResult | null;
+  results: SprintQuestionResult[];
+  stats: UserStats | null;
+}
+
 export interface TutorResponse {
   answer: string;
   mode: "grounded" | "conceptual";

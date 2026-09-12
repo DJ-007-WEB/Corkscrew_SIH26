@@ -1,14 +1,31 @@
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+
+
+def _as_aware(value) -> datetime:
+    """Coerce a Mongo/ISO datetime to tz-aware UTC.
+
+    MongoDB returns naive datetimes (tzinfo stripped on storage), so any
+    timestamp read back from the DB must be re-anchored to UTC before
+    arithmetic against datetime.now(timezone.utc).
+    """
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if isinstance(value, datetime) and value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import backends, dns_fix  # noqa: F401
-from .auth import current_user, get_saved_works_collection, google_login
+from .auth import current_user, get_challenge_solves_collection, get_contest_attempts_collection, get_duel_rooms_collection, get_saved_works_collection, get_sprint_solves_collection, get_user_stats_collection, get_users_collection, get_xp_events_collection, google_login
 from .circuit_builder import circuit_from_qiskit, circuit_to_qasm, circuit_to_qiskit, gate_catalog, validate_circuit
 from .circuit_diagnostics import diagnose_circuit
+from . import contests
+from . import gamification
+from .gamification import ACTIVITY_XP
 from .quantum_engine import (
     create_bell_circuit,
     create_dj_circuit,
@@ -17,23 +34,40 @@ from .quantum_engine import (
     run_circuit,
 )
 from .schemas import (
+    ActivityRequest,
     BackendInfo,
+    ChallengeSubmitRequest,
+    ChallengeSubmitResponse,
+    ChallengeTask,
     ChatRequest,
     ChatResponse,
     Circuit,
     CircuitDiagnosis,
     CodeRequest,
+    DuelAnswerRequest,
+    DuelCreateResponse,
+    DuelJoinRequest,
+    DuelState,
     GateDefinition,
+    LeaderboardEntry,
+    QuizQuestion,
     SavedWork,
     SavedWorkRequest,
     SimulateRequest,
     SimulationResult,
+    SprintQuestionResult,
+    SprintStartResponse,
+    SprintSubmitRequest,
+    SprintSubmitResponse,
+    UserPublicProfile,
+    UserStats,
 )
 from .tutor_service import answer as tutor_answer
 
 app = FastAPI(title="Quantum Learning Platform API")
 logger = logging.getLogger("quantum_tutor")
 _chat_limits: dict[str, list[float]] = {}
+_sprint_solves_index_ready = False
 
 # Dev defaults; production should set FRONTEND_URL in the environment.
 app.add_middleware(
@@ -65,6 +99,721 @@ def auth_google(payload: dict):
 @app.get("/api/auth/me")
 def auth_me(request: Request):
     return {"user": current_user(request)}
+
+
+def _stats_doc(user_id: str, name: str) -> dict:
+    return {
+        "user_id": user_id,
+        "name": name,
+        "total_xp": 0,
+        "streak_count": 0,
+        "best_streak": 0,
+        "last_active_day": None,
+        "contests_played": 0,
+        "duels_won": 0,
+        "updated_at": datetime.now(timezone.utc),
+    }
+
+
+def _stats_response(doc: dict, rank: int | None = None) -> dict:
+    total = int(doc.get("total_xp", 0))
+    into, needed = gamification.xp_into_level(total)
+    return {
+        "user_id": doc["user_id"],
+        "name": doc.get("name", "Quantum Learner"),
+        "total_xp": total,
+        "level": gamification.level_for_xp(total),
+        "xp_into_level": into,
+        "xp_for_next_level": needed,
+        "streak_count": int(doc.get("streak_count", 0)),
+        "best_streak": int(doc.get("best_streak", 0)),
+        "contests_played": int(doc.get("contests_played", 0)),
+        "duels_won": int(doc.get("duels_won", 0)),
+        "rank": rank,
+    }
+
+
+def _my_rank(stats_collection, total_xp: int) -> int:
+    try:
+        return int(stats_collection.count_documents({"total_xp": {"$gt": total_xp}})) + 1
+    except Exception:
+        return 1
+
+
+@app.get("/api/gamification/me", response_model=UserStats)
+def gamification_me(request: Request):
+    user = current_user(request)
+    stats_collection = get_user_stats_collection()
+    if stats_collection is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    doc = stats_collection.find_one({"user_id": user["sub"]})
+    if doc is None:
+        doc = _stats_doc(user["sub"], user.get("name", "Quantum Learner"))
+        stats_collection.insert_one(doc)
+    return _stats_response(doc, _my_rank(stats_collection, int(doc.get("total_xp", 0))))
+
+
+@app.post("/api/gamification/activity", response_model=UserStats)
+def gamification_activity(payload: ActivityRequest, request: Request):
+    """Award XP for a passive learning action and advance the daily streak.
+
+    Fire-and-forget from the client: unknown kinds earn 0 XP but still
+    count toward the streak. Hourly cap prevents farming.
+    """
+    import time as _time
+
+    user = current_user(request)
+    stats_collection = get_user_stats_collection()
+    events_collection = get_xp_events_collection()
+    if stats_collection is None or events_collection is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    kind = payload.kind.strip().lower()
+    base = int(ACTIVITY_XP.get(kind, 0))
+    granted = gamification.check_hourly_cap(user["sub"], base, _time.monotonic()) if base else 0
+
+    name = user.get("name", "Quantum Learner")
+    doc = stats_collection.find_one({"user_id": user["sub"]})
+    if doc is None:
+        doc = _stats_doc(user["sub"], name)
+        stats_collection.insert_one(doc)
+
+    today = gamification.utc_today()
+    signal = gamification.compute_streak(doc.get("last_active_day"), today)
+    update: dict = {"name": name, "updated_at": datetime.now(timezone.utc)}
+    if signal != 0:
+        new_streak = doc.get("streak_count", 0) + 1 if signal == 1 else 1
+        update["streak_count"] = new_streak
+        update["best_streak"] = max(int(doc.get("best_streak", 0)), new_streak)
+        update["last_active_day"] = today
+    if granted:
+        update["total_xp"] = int(doc.get("total_xp", 0)) + granted
+    stats_collection.update_one({"user_id": user["sub"]}, {"$set": update})
+    if granted:
+        events_collection.insert_one(
+            {"user_id": user["sub"], "kind": kind, "points": granted, "meta": payload.detail[:200], "created_at": datetime.now(timezone.utc)}
+        )
+    doc = stats_collection.find_one({"user_id": user["sub"]})
+    return _stats_response(doc, _my_rank(stats_collection, int(doc.get("total_xp", 0))))
+
+
+@app.get("/api/leaderboard", response_model=list[LeaderboardEntry])
+def leaderboard(request: Request, period: str = "all"):
+    user = current_user(request)
+    stats_collection = get_user_stats_collection()
+    events_collection = get_xp_events_collection()
+    if stats_collection is None or events_collection is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    period = period.strip().lower()
+    entries: list[dict] = []
+    if period == "weekly":
+        start = gamification.week_start_utc()
+        pipeline = [
+            {"$match": {"created_at": {"$gte": start}}},
+            {"$group": {"_id": "$user_id", "points": {"$sum": "$points"}}},
+            {"$sort": {"points": -1}},
+            {"$limit": 50},
+        ]
+        weekly = list(events_collection.aggregate(pipeline))
+        for index, row in enumerate(weekly, start=1):
+            doc = stats_collection.find_one({"user_id": row["_id"]}) or {}
+            total = int(doc.get("total_xp", row["points"]))
+            entries.append(
+                {
+                    "rank": index,
+                    "user_id": row["_id"],
+                    "name": doc.get("name", "Quantum Learner"),
+                    "total_xp": total,
+                    "level": gamification.level_for_xp(total),
+                    "streak_count": int(doc.get("streak_count", 0)),
+                    "is_me": row["_id"] == user["sub"],
+                }
+            )
+        return entries
+    docs = list(stats_collection.find().sort("total_xp", -1).limit(50))
+    return [
+        {
+            "rank": index,
+            "user_id": doc.get("user_id", ""),
+            "name": doc.get("name", "Quantum Learner"),
+            "total_xp": int(doc.get("total_xp", 0)),
+            "level": gamification.level_for_xp(int(doc.get("total_xp", 0))),
+            "streak_count": int(doc.get("streak_count", 0)),
+            "is_me": doc.get("user_id") == user["sub"],
+        }
+        for index, doc in enumerate(docs, start=1)
+    ]
+
+
+@app.get("/api/users/{user_id}", response_model=UserPublicProfile)
+def user_profile(user_id: str, request: Request):
+    """Public LeetCode-style profile: any signed-in user may view any player's
+    overview. Never exposes email or credentials — only name, avatar, public
+    stats, rank and recent scoring activity."""
+    me = current_user(request)
+    stats_collection = get_user_stats_collection()
+    events_collection = get_xp_events_collection()
+    users_collection = get_users_collection()
+    if stats_collection is None or events_collection is None or users_collection is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    target = user_id.strip()[:64]
+    doc = stats_collection.find_one({"user_id": target})
+    if doc is None:
+        raise HTTPException(404, "Player not found")
+    account = users_collection.find_one({"google_id": target}) or {}
+    total = int(doc.get("total_xp", 0))
+    into, needed = gamification.xp_into_level(total)
+    recent = list(events_collection.find({"user_id": target}).sort("created_at", -1).limit(10))
+    return {
+        "user_id": target,
+        "name": doc.get("name", account.get("name", "Quantum Learner")),
+        "picture": account.get("picture"),
+        "total_xp": total,
+        "level": gamification.level_for_xp(total),
+        "xp_into_level": into,
+        "xp_for_next_level": needed,
+        "streak_count": int(doc.get("streak_count", 0)),
+        "best_streak": int(doc.get("best_streak", 0)),
+        "contests_played": int(doc.get("contests_played", 0)),
+        "duels_won": int(doc.get("duels_won", 0)),
+        "rank": _my_rank(stats_collection, total),
+        "is_me": target == me["sub"],
+        "recent_activity": [
+            {
+                "kind": str(e.get("kind", "")),
+                "points": int(e.get("points", 0)),
+                "created_at": e.get("created_at").isoformat() if e.get("created_at") else "",
+            }
+            for e in recent
+        ],
+    }
+
+
+def _award_contest_xp(user: dict, kind: str, points: int, detail: str) -> dict:
+    """Shared contest payout: streak advance + XP + audit event + contests_played bump."""
+    stats_collection = get_user_stats_collection()
+    events_collection = get_xp_events_collection()
+    if stats_collection is None or events_collection is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    name = user.get("name", "Quantum Learner")
+    doc = stats_collection.find_one({"user_id": user["sub"]})
+    if doc is None:
+        doc = gamification.blank_stats(user["sub"], name)
+        stats_collection.insert_one(doc)
+    update = gamification.apply_award(doc, points, gamification.utc_today())
+    update["name"] = name
+    update["contests_played"] = int(doc.get("contests_played", 0)) + 1
+    stats_collection.update_one({"user_id": user["sub"]}, {"$set": update})
+    events_collection.insert_one(
+        {"user_id": user["sub"], "kind": kind, "points": points, "meta": detail[:200], "created_at": datetime.now(timezone.utc)}
+    )
+    fresh = stats_collection.find_one({"user_id": user["sub"]})
+    return _stats_response(fresh, _my_rank(stats_collection, int(fresh.get("total_xp", 0))))
+
+
+@app.post("/api/contests/sprint/start", response_model=SprintStartResponse)
+def sprint_start(request: Request):
+    import uuid
+
+    user = current_user(request)
+    attempts = get_contest_attempts_collection()
+    if attempts is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    attempt_id = uuid.uuid4().hex[:16]
+    questions = contests.pick_questions(seed=f"{user['sub']}:{attempt_id}")
+    started = datetime.now(timezone.utc)
+    attempts.insert_one(
+        {
+            "attempt_id": attempt_id,
+            "user_id": user["sub"],
+            "question_ids": [q["id"] for q in questions],
+            # Order-independent identity of this quiz set: a repeat of the
+            # same questions (any order) pays XP only the first time.
+            "quiz_key": ",".join(sorted(q["id"] for q in questions)),
+            "started_at": started,
+            "duration_sec": contests.SPRINT_DURATION_SEC,
+            "submitted": False,
+        }
+    )
+    return {
+        "attempt_id": attempt_id,
+        "questions": [contests.public_question(q) for q in questions],
+        "duration_sec": contests.SPRINT_DURATION_SEC,
+        "started_at": started.isoformat(),
+    }
+
+
+@app.post("/api/contests/sprint/submit", response_model=SprintSubmitResponse)
+def sprint_submit(payload: SprintSubmitRequest, request: Request):
+    user = current_user(request)
+    attempts = get_contest_attempts_collection()
+    if attempts is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    # Atomic single-submit claim: only the first submit for an attempt proceeds;
+    # concurrent retries find submitted=True already set and get the 400 below.
+    # Payout is per-question first-solve (see below): new questions earn XP,
+    # already-solved ones grade normally but pay nothing.
+    now = datetime.now(timezone.utc)
+    attempt = attempts.find_one_and_update(
+        {"attempt_id": payload.attempt_id, "user_id": user["sub"], "submitted": {"$ne": True}},
+        {"$set": {"submitted": True, "submitted_at": now}},
+    )
+    if attempt is None:
+        existing = attempts.find_one({"attempt_id": payload.attempt_id, "user_id": user["sub"]})
+        if existing is None:
+            raise HTTPException(404, "Sprint attempt not found")
+        raise HTTPException(400, "This attempt was already submitted")
+    bank = {q["id"]: q for q in contests.QUESTION_BANK}
+    questions = [bank[qid] for qid in attempt["question_ids"] if qid in bank]
+    if not questions:
+        raise HTTPException(400, "Sprint attempt has no valid questions")
+    started = _as_aware(attempt["started_at"])
+    elapsed = max(0.0, (now - started).total_seconds())
+    if elapsed > attempt["duration_sec"] + contests.SPRINT_SUBMIT_GRACE_SEC:
+        raise HTTPException(400, "Time expired — this attempt is no longer submittable. Start a new sprint.")
+    answers = {qid: val for qid, val in (payload.answers or {}).items() if isinstance(val, int)}
+    correct, wrong, results = contests.grade_sprint(questions, answers)
+    base, bonus, _ = contests.sprint_xp(correct, wrong, elapsed, attempt["duration_sec"])
+    attempts.update_one({"attempt_id": payload.attempt_id}, {"$set": {"score": base}})
+    # First-solve credit: XP only for questions this user has never answered
+    # correctly before. Re-solving known questions (even a perfect paper)
+    # still grades normally but earns nothing — LeetCode-style, no farming by
+    # replaying overlapping quiz sets.
+    solves = get_sprint_solves_collection()
+    stats_collection = get_user_stats_collection()
+    if solves is None or stats_collection is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    global _sprint_solves_index_ready
+    if not _sprint_solves_index_ready:
+        solves.create_index([("user_id", 1), ("question_id", 1)], unique=True)
+        _sprint_solves_index_ready = True
+    from pymongo.errors import DuplicateKeyError
+
+    fresh_ids: list[str] = []
+    for r in results:
+        if not r["is_correct"]:
+            continue
+        if solves.find_one({"user_id": user["sub"], "question_id": r["id"]}) is None:
+            fresh_ids.append(r["id"])
+    new_correct = 0
+    for qid in fresh_ids:
+        try:
+            solves.insert_one(
+                {"user_id": user["sub"], "question_id": qid, "created_at": datetime.now(timezone.utc)}
+            )
+            new_correct += 1
+        except DuplicateKeyError:
+            pass  # lost a concurrent first-solve race: no credit, no crash
+    _, _, total = contests.sprint_new_solve_xp(new_correct, wrong, elapsed, attempt["duration_sec"])
+    already_solved = correct > 0 and new_correct == 0
+    if already_solved:
+        doc = stats_collection.find_one({"user_id": user["sub"]})
+        if doc is None:
+            doc = gamification.blank_stats(user["sub"], user.get("name", "Quantum Learner"))
+            stats_collection.insert_one(doc)
+        stats = _stats_response(doc, _my_rank(stats_collection, int(doc.get("total_xp", 0))))
+        return {
+            "correct": correct,
+            "wrong": wrong,
+            "skipped": len(questions) - correct - wrong,
+            "total": len(questions),
+            "time_sec": round(elapsed, 1),
+            "base_score": base,
+            "time_bonus": bonus,
+            "xp_earned": 0,
+            "already_solved": True,
+            "results": results,
+            "stats": stats,
+        }
+    stats = _award_contest_xp(
+        user, "sprint_quiz", total, f"{correct}/{len(questions)} correct ({new_correct} new) in {elapsed:.0f}s"
+    )
+    return {
+        "correct": correct,
+        "wrong": wrong,
+        "skipped": len(questions) - correct - wrong,
+        "total": len(questions),
+        "time_sec": round(elapsed, 1),
+        "base_score": base,
+        "time_bonus": bonus,
+        "xp_earned": total,
+        "already_solved": False,
+        "results": results,
+        "stats": stats,
+    }
+
+
+@app.get("/api/contests/challenges", response_model=list[ChallengeTask])
+def challenge_list():
+    return contests.CHALLENGE_TASKS
+
+
+@app.post("/api/contests/challenges/submit", response_model=ChallengeSubmitResponse)
+def challenge_submit(payload: ChallengeSubmitRequest, request: Request):
+    user = current_user(request)
+    task = next((t for t in contests.CHALLENGE_TASKS if t["id"] == payload.task_id), None)
+    if task is None:
+        raise HTTPException(404, "Challenge task not found")
+    try:
+        circuit = validate_circuit(payload.circuit)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    if circuit.qubits != task["qubits"]:
+        raise HTTPException(400, f"This task needs exactly {task['qubits']} qubit(s); yours has {circuit.qubits}.")
+    try:
+        result = run_circuit(circuit, "qiskit_aer")
+    except backends.BackendUnavailable as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except (KeyError, ValueError, IndexError) as exc:
+        raise HTTPException(400, f"invalid circuit: {exc}") from exc
+    passed, message = contests.check_challenge(task["id"], result.final_probabilities, len(circuit.gates))
+    solves = get_challenge_solves_collection()
+    stats_collection = get_user_stats_collection()
+    if solves is None or stats_collection is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    # First successful submission per task per user earns XP; later passes
+    # only report correctness so challenge XP can't be farmed by resubmitting.
+    already_solved = solves.find_one({"user_id": user["sub"], "task_id": task["id"]}) is not None
+    if passed and already_solved:
+        doc = stats_collection.find_one({"user_id": user["sub"]})
+        if doc is None:
+            doc = gamification.blank_stats(user["sub"], user.get("name", "Quantum Learner"))
+            stats_collection.insert_one(doc)
+        stats = _stats_response(doc, _my_rank(stats_collection, int(doc.get("total_xp", 0))))
+        return {
+            "passed": passed,
+            "message": message,
+            "probabilities": result.final_probabilities,
+            "gates_used": len(circuit.gates),
+            "xp_earned": 0,
+            "already_solved": True,
+            "stats": stats,
+        }
+    xp = contests.challenge_xp(passed, len(circuit.gates), task["max_gates"])
+    if passed:
+        solves.insert_one(
+            {"user_id": user["sub"], "task_id": task["id"], "xp": xp, "created_at": datetime.now(timezone.utc)}
+        )
+    stats = _award_contest_xp(user, "circuit_challenge", xp, f"{task['id']}: {'pass' if passed else 'fail'}")
+    return {
+        "passed": passed,
+        "message": message,
+        "probabilities": result.final_probabilities,
+        "gates_used": len(circuit.gates),
+        "xp_earned": xp,
+        "already_solved": already_solved,
+        "stats": stats,
+    }
+
+
+DUEL_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+
+def _new_duel_code(rooms) -> str:
+    import random as _random
+
+    for _ in range(20):
+        code = "".join(_random.choice(DUEL_CODE_ALPHABET) for _ in range(6))
+        if rooms.find_one({"code": code, "status": {"$ne": "finished"}}) is None:
+            return code
+    raise HTTPException(503, "Could not create a duel room right now. Try again.")
+
+
+def _duel_deadline(room) -> datetime:
+    started = _as_aware(room["started_at"])
+    return started + timedelta(seconds=room["duration_sec"] + 10)
+
+
+def _finish_duel(room) -> dict:
+    """Grade a live room, pay out XP to both players, mark finished. Idempotent.
+
+    The live -> finishing claim is a single atomic write, so simultaneous
+    submits (or a submit racing the deadline poll) can only ever pay out
+    once per duel. Re-submits after that are pure reads: no XP, no rank delta.
+    """
+    rooms = get_duel_rooms_collection()
+    stats_collection = get_user_stats_collection()
+    events_collection = get_xp_events_collection()
+    claimed = rooms.update_one({"code": room["code"], "status": "live"}, {"$set": {"status": "finishing"}})
+    if claimed.modified_count == 0:
+        return rooms.find_one({"code": room["code"]}) or room
+    room = rooms.find_one({"code": room["code"]}) or room
+    bank = {q["id"]: q for q in contests.QUESTION_BANK}
+    questions = [bank[qid] for qid in room["question_ids"] if qid in bank]
+    now = datetime.now(timezone.utc)
+    deadline = _duel_deadline(room)
+
+    def elapsed(side: str) -> float:
+        started = _as_aware(room["started_at"])
+        submitted_at = room.get(f"{side}_submitted_at")
+        if submitted_at:
+            return max(0.0, (_as_aware(submitted_at) - started).total_seconds())
+        return max(0.0, min((now - started).total_seconds(), room["duration_sec"]))
+
+    host_answers = {k: v for k, v in (room.get("host_answers") or {}).items() if isinstance(v, int)}
+    guest_answers = {k: v for k, v in (room.get("guest_answers") or {}).items() if isinstance(v, int)}
+    host_correct, host_wrong, _ = contests.grade_sprint(questions, host_answers)
+    guest_correct, guest_wrong, _ = contests.grade_sprint(questions, guest_answers)
+    host_time, guest_time = elapsed("host"), elapsed("guest")
+    winner = contests.decide_duel_winner(host_correct, host_time, guest_correct, guest_time)
+
+    payouts = {}
+    if winner == "tie":
+        payouts = {"host": contests.DUEL_TIE_XP, "guest": contests.DUEL_TIE_XP}
+    elif winner == "host":
+        payouts = {"host": contests.DUEL_WINNER_XP, "guest": contests.DUEL_LOSER_XP}
+    else:
+        payouts = {"host": contests.DUEL_LOSER_XP, "guest": contests.DUEL_WINNER_XP}
+
+    today = gamification.utc_today()
+    for side in ("host", "guest"):
+        uid = room.get(f"{side}_id")
+        if not uid:
+            continue
+        doc = stats_collection.find_one({"user_id": uid})
+        if doc is None:
+            doc = gamification.blank_stats(uid, room.get(f"{side}_name", "Quantum Learner"))
+            stats_collection.insert_one(doc)
+        update = gamification.apply_award(doc, payouts[side], today)
+        update["name"] = room.get(f"{side}_name", doc.get("name", "Quantum Learner"))
+        if winner != "tie" and winner == side:
+            update["duels_won"] = int(doc.get("duels_won", 0)) + 1
+        stats_collection.update_one({"user_id": uid}, {"$set": update})
+        events_collection.insert_one(
+            {"user_id": uid, "kind": "duel", "points": payouts[side], "meta": f"duel {room['code']}: {winner}", "created_at": now}
+        )
+
+    rooms.update_one(
+        {"code": room["code"]},
+        {"$set": {
+            "status": "finished",
+            "finished_at": now,
+            "winner": winner,
+            "host_correct": host_correct,
+            "host_wrong": host_wrong,
+            "guest_correct": guest_correct,
+            "guest_wrong": guest_wrong,
+            "host_elapsed": host_time,
+            "guest_elapsed": guest_time,
+            "host_xp": payouts["host"],
+            "guest_xp": payouts["guest"],
+        }},
+    )
+    return rooms.find_one({"code": room["code"]})
+
+
+def _maybe_finish_duel(room) -> dict:
+    """Finalize a live room when both players submitted or the deadline passed."""
+    if room.get("status") != "live":
+        return room
+    now = datetime.now(timezone.utc)
+    both_in = room.get("host_submitted") and room.get("guest_submitted")
+    if both_in or now >= _duel_deadline(room):
+        return _finish_duel(room)
+    return room
+
+
+def _duel_state(room, user: dict) -> dict:
+    uid = user["sub"]
+    is_host = room.get("host_id") == uid
+    if room.get("host_id") != uid and room.get("guest_id") != uid:
+        raise HTTPException(403, "You are not a player in this duel")
+    bank = {q["id"]: q for q in contests.QUESTION_BANK}
+    questions = [bank[qid] for qid in room.get("question_ids", []) if qid in bank]
+    side = "host" if is_host else "guest"
+    other = "guest" if is_host else "host"
+    now = datetime.now(timezone.utc)
+    time_left = 0.0
+    # "finishing" is the transient grading state inside _finish_duel (lasts
+    # milliseconds); clients only know waiting | live | finished.
+    status = room.get("status", "waiting")
+    if status == "finishing":
+        status = "live"
+    if status == "live":
+        time_left = max(0.0, (_duel_deadline(room) - now).total_seconds())
+    state: dict = {
+        "code": room["code"],
+        "status": status,
+        "host_name": room.get("host_name", "Quantum Learner"),
+        "guest_name": room.get("guest_name", ""),
+        "is_host": is_host,
+        "questions": [contests.public_question(q) for q in questions] if status in ("live", "finished") else [],
+        "duration_sec": room.get("duration_sec", contests.DUEL_DURATION_SEC),
+        "time_left_sec": round(time_left, 1),
+        "my_answers": room.get(f"{side}_answers") or {},
+        "my_submitted": bool(room.get(f"{side}_submitted")),
+        "opponent_name": room.get(f"{other}_name", ""),
+        "opponent_answered": len(room.get(f"{other}_answers") or {}),
+        "opponent_submitted": bool(room.get(f"{other}_submitted")),
+        "winner": room.get("winner", ""),
+        "winner_name": "",
+        "is_winner": None,
+        "host_result": None,
+        "guest_result": None,
+        "results": [],
+        "stats": None,
+    }
+    if room.get("status") == "finished":
+        winner = room.get("winner", "")
+        names = {"host": room.get("host_name", ""), "guest": room.get("guest_name", "")}
+        state["winner_name"] = names.get(winner, "")
+        state["is_winner"] = (winner == side) if winner in ("host", "guest") else None
+        if winner == "tie":
+            state["winner_name"] = "Tie"
+        state["host_result"] = {
+            "name": room.get("host_name", ""),
+            "correct": int(room.get("host_correct", 0)),
+            "wrong": int(room.get("host_wrong", 0)),
+            "answered": len(room.get("host_answers") or {}),
+            "elapsed_sec": round(float(room.get("host_elapsed", 0.0)), 1),
+            "xp_earned": int(room.get("host_xp", 0)),
+        }
+        state["guest_result"] = {
+            "name": room.get("guest_name", ""),
+            "correct": int(room.get("guest_correct", 0)),
+            "wrong": int(room.get("guest_wrong", 0)),
+            "answered": len(room.get("guest_answers") or {}),
+            "elapsed_sec": round(float(room.get("guest_elapsed", 0.0)), 1),
+            "xp_earned": int(room.get("guest_xp", 0)),
+        }
+        _, _, state["results"] = contests.grade_sprint(questions, room.get(f"{side}_answers") or {})
+        stats_collection = get_user_stats_collection()
+        if stats_collection is not None:
+            doc = stats_collection.find_one({"user_id": uid})
+            if doc is not None:
+                state["stats"] = _stats_response(doc, _my_rank(stats_collection, int(doc.get("total_xp", 0))))
+    return state
+
+
+@app.post("/api/duels/create", response_model=DuelCreateResponse)
+def duel_create(request: Request):
+    user = current_user(request)
+    rooms = get_duel_rooms_collection()
+    if rooms is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    code = _new_duel_code(rooms)
+    questions = contests.pick_questions(n=contests.DUEL_QUESTIONS, seed=f"duel:{code}")
+    rooms.insert_one(
+        {
+            "code": code,
+            "status": "waiting",
+            "host_id": user["sub"],
+            "host_name": user.get("name", "Quantum Learner"),
+            "guest_id": None,
+            "guest_name": "",
+            "question_ids": [q["id"] for q in questions],
+            "duration_sec": contests.DUEL_DURATION_SEC,
+            "started_at": None,
+            "host_answers": {},
+            "guest_answers": {},
+            "host_submitted": False,
+            "guest_submitted": False,
+            "host_submitted_at": None,
+            "guest_submitted_at": None,
+            "created_at": datetime.now(timezone.utc),
+        }
+    )
+    return {"code": code}
+
+
+@app.post("/api/duels/join", response_model=DuelState)
+def duel_join(payload: DuelJoinRequest, request: Request):
+    user = current_user(request)
+    rooms = get_duel_rooms_collection()
+    if rooms is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    code = payload.code.strip().upper()
+    room = rooms.find_one({"code": code})
+    if room is None or room.get("status") == "finished":
+        raise HTTPException(404, "Duel room not found. Check the code and try again.")
+    if room.get("host_id") == user["sub"]:
+        return _duel_state(room, user)
+    if room.get("status") != "waiting":
+        raise HTTPException(400, "This duel already has two players.")
+    rooms.update_one(
+        {"code": code},
+        {"$set": {
+            "guest_id": user["sub"],
+            "guest_name": user.get("name", "Quantum Learner"),
+            "status": "live",
+            "started_at": datetime.now(timezone.utc),
+        }},
+    )
+    return _duel_state(rooms.find_one({"code": code}), user)
+
+
+@app.get("/api/duels/{code}", response_model=DuelState)
+def duel_state(code: str, request: Request):
+    user = current_user(request)
+    rooms = get_duel_rooms_collection()
+    if rooms is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    room = rooms.find_one({"code": code.strip().upper()})
+    if room is None:
+        raise HTTPException(404, "Duel room not found.")
+    room = _maybe_finish_duel(room)
+    return _duel_state(room, user)
+
+
+@app.post("/api/duels/{code}/answer", response_model=DuelState)
+def duel_answer(code: str, payload: DuelAnswerRequest, request: Request):
+    user = current_user(request)
+    rooms = get_duel_rooms_collection()
+    if rooms is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    room = rooms.find_one({"code": code.strip().upper()})
+    if room is None:
+        raise HTTPException(404, "Duel room not found.")
+    room = _maybe_finish_duel(room)
+    if room.get("status") != "live":
+        raise HTTPException(400, "This duel is not live.")
+    side = "host" if room.get("host_id") == user["sub"] else "guest" if room.get("guest_id") == user["sub"] else None
+    if side is None:
+        raise HTTPException(403, "You are not a player in this duel")
+    if room.get(f"{side}_submitted"):
+        raise HTTPException(400, "You already submitted — answers are locked.")
+    if payload.question_id not in (room.get("question_ids") or []):
+        raise HTTPException(400, "Unknown question for this duel.")
+    rooms.update_one({"code": room["code"]}, {"$set": {f"{side}_answers.{payload.question_id}": payload.option}})
+    room = _maybe_finish_duel(rooms.find_one({"code": room["code"]}))
+    return _duel_state(room, user)
+
+
+@app.post("/api/duels/{code}/submit", response_model=DuelState)
+def duel_submit(code: str, request: Request):
+    user = current_user(request)
+    rooms = get_duel_rooms_collection()
+    if rooms is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    room = rooms.find_one({"code": code.strip().upper()})
+    if room is None:
+        raise HTTPException(404, "Duel room not found.")
+    side = "host" if room.get("host_id") == user["sub"] else "guest" if room.get("guest_id") == user["sub"] else None
+    if side is None:
+        raise HTTPException(403, "You are not a player in this duel")
+    if room.get("status") == "live" and not room.get(f"{side}_submitted"):
+        rooms.update_one(
+            {"code": room["code"]},
+            {"$set": {f"{side}_submitted": True, f"{side}_submitted_at": datetime.now(timezone.utc)}},
+        )
+    room = _maybe_finish_duel(rooms.find_one({"code": room["code"]}))
+    return _duel_state(room, user)
+
+
+@app.delete("/api/duels/{code}")
+def duel_cancel(code: str, request: Request):
+    user = current_user(request)
+    rooms = get_duel_rooms_collection()
+    if rooms is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    room = rooms.find_one({"code": code.strip().upper()})
+    if room is None:
+        raise HTTPException(404, "Duel room not found.")
+    if room.get("host_id") != user["sub"]:
+        raise HTTPException(403, "Only the host can cancel this duel.")
+    if room.get("status") != "waiting":
+        raise HTTPException(400, "Live duels cannot be cancelled — finish or let the timer expire.")
+    rooms.delete_one({"code": room["code"]})
+    return {"ok": True}
 
 
 @app.get("/api/backends", response_model=list[BackendInfo])

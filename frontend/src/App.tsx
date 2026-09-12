@@ -1,5 +1,5 @@
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import VisualizationPage from "./VisualizationPage";
 import type { Circuit, SimulationResult } from "./types";
 import CircuitBuilder from "./CircuitBuilder";
@@ -22,26 +22,60 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "howtouse", label: "How to Use" },
   { id: "works", label: "My Works" },
   { id: "assessment", label: "Assessment" },
-  { id: "contests", label: "Contests · Roadmap" },
+  { id: "contests", label: "Contests" },
 ];
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
 
+const BLANK_CIRCUIT: Circuit = { qubits: 2, gates: [] };
+
+/** Extract the JWT sub client-side (namespacing local drafts only, never auth). */
+function tokenSub(token: string | null): string | null {
+  if (!token) return null;
+  try {
+    const segment = token.split(".")[1];
+    const payload = JSON.parse(atob(segment.replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof payload.sub === "string" ? payload.sub : null;
+  } catch {
+    return null;
+  }
+}
+
+function lessonKeyFor(sub: string | null): string {
+  return sub ? `quantum-lesson:${sub}` : "quantum-lesson";
+}
+
+const VALID_TABS: Tab[] = ["home", "builder", "learn", "waves", "works", "assessment", "contests", "howtouse"];
+
+function storedTab(): Tab {
+  const saved = localStorage.getItem("quantum-tab");
+  return saved && (VALID_TABS as string[]).includes(saved) ? (saved as Tab) : "home";
+}
+
 export default function App() {
-  const [tab, setTab] = useState<Tab>("home");
+  const [tab, setTab] = useState<Tab>(storedTab);
   const [latestResult, setLatestResult] = useState<SimulationResult | null>(null);
   const [circuit, setCircuit] = useState<Circuit>({ qubits: 2, gates: [] });
   const [presetCircuit, setPresetCircuit] = useState<Circuit | null>(null);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [token, setToken] = useState<string | null>(() => localStorage.getItem("quantum-token"));
   const [tutorOpen, setTutorOpen] = useState(false);
-  const [activeLessonId, setActiveLessonId] = useState<string>(() => localStorage.getItem("quantum-lesson") ?? "intro");
+  const [activeLessonId, setActiveLessonId] = useState<string>(() => {
+    const sub = tokenSub(localStorage.getItem("quantum-token"));
+    return localStorage.getItem(lessonKeyFor(sub)) ?? localStorage.getItem("quantum-lesson") ?? "intro";
+  });
   const [builderOrigin, setBuilderOrigin] = useState<string | null>(null);
+  const prevSub = useRef<string | null>(tokenSub(localStorage.getItem("quantum-token")));
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("quantum-theme", theme);
   }, [theme]);
+
+  // Keep the active page across refreshes (all tabs, including contests).
+  useEffect(() => {
+    localStorage.setItem("quantum-tab", tab);
+  }, [tab]);
 
   useEffect(() => {
     const saved = localStorage.getItem("quantum-theme") as "dark" | "light" | null;
@@ -57,9 +91,28 @@ export default function App() {
     setTab("home");
   }
 
+  // Per-account isolation: the builder draft, simulation output and lesson
+  // bookmark live in App-level state / global localStorage keys, so without
+  // this one account's circuit would still be on screen after switching to
+  // another account in the same browser. Whenever the signed-in identity
+  // changes, start that account from a blank draft and load its own lesson.
+  useEffect(() => {
+    const sub = tokenSub(token);
+    if (sub !== prevSub.current) {
+      prevSub.current = sub;
+      setCircuit({ ...BLANK_CIRCUIT, gates: [] });
+      setLatestResult(null);
+      setPresetCircuit(null);
+      setBuilderOrigin(null);
+      setTutorOpen(false);
+      setActiveLessonId(localStorage.getItem(lessonKeyFor(sub)) ?? "intro");
+      setTab("home");
+    }
+  }, [token]);
+
   function handleLessonChange(id: string) {
     setActiveLessonId(id);
-    localStorage.setItem("quantum-lesson", id);
+    localStorage.setItem(lessonKeyFor(tokenSub(token)), id);
   }
 
   function openBuilderFromLesson(preset: Circuit | undefined, lessonId?: string) {
@@ -117,8 +170,8 @@ export default function App() {
           {tab === "waves" && <VisualizationPage result={latestResult} />}
           {tab === "learn" && (token ? <LearningPage activeLessonId={activeLessonId} onLessonChange={handleLessonChange} onOpenBuilder={openBuilderFromLesson} onOpenVisualizations={() => setTab("waves")} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("learn"); }} />)}
           {tab === "works" && (token ? <MyWorksPage token={token} onOpenCircuit={(nextCircuit) => { setCircuit(nextCircuit); setTab("builder"); }} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("works"); }} />)}
-          {tab === "assessment" && <AssessmentPage />}
-          {tab === "contests" && <ContestPage />}
+          {tab === "assessment" && <AssessmentPage token={token} />}
+          {tab === "contests" && (token ? <ContestPage token={token} circuit={circuit} onOpenBuilder={() => setTab("builder")} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("contests"); }} />)}
           {tab === "howtouse" && <HowToUsePage onOpenLearn={() => setTab("learn")} />}
         </main>
       </div>

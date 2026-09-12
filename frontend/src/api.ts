@@ -1,4 +1,4 @@
-import type { BackendId, BackendInfo, ChatMessage, Circuit, CircuitDiagnosis, CodeRequest, GateDefinition, SavedWork, SimulationResult, TutorResponse } from "./types";
+import type { BackendId, BackendInfo, ChallengeResult, ChallengeTask, ChatMessage, Circuit, CircuitDiagnosis, CodeRequest, DuelState, GateDefinition, LeaderboardEntry, SavedWork, SimulationResult, SprintResult, SprintStart, TutorResponse, UserProfile, UserStats } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -104,6 +104,100 @@ export function updateWork(token: string, id: string, patch: { title?: string; d
 
 export function deleteWork(token: string, id: string): Promise<{ ok: boolean }> {
   return request<{ ok: boolean }>(`/api/works/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+}
+
+export function getMyStats(token: string): Promise<UserStats> {
+  return request<UserStats>("/api/gamification/me", { headers: authHeaders(token) });
+}
+
+export function getLeaderboard(token: string, period: "all" | "weekly" = "all"): Promise<LeaderboardEntry[]> {
+  return request<LeaderboardEntry[]>(`/api/leaderboard?period=${period}`, { headers: authHeaders(token) });
+}
+
+export function getUserProfile(token: string, userId: string): Promise<UserProfile> {
+  return request<UserProfile>(`/api/users/${encodeURIComponent(userId)}`, { headers: authHeaders(token) });
+}
+
+/** Fire-and-forget XP/streak ping. Never throws — safe to call from any learning action. */
+export async function recordActivity(token: string | null, kind: string, detail = ""): Promise<UserStats | null> {
+  if (!token) return null;
+  try {
+    return await request<UserStats>("/api/gamification/activity", {
+      method: "POST",
+      headers: { ...authHeaders(token), "Content-Type": "application/json" },
+      body: JSON.stringify({ kind, detail }),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export function startSprint(token: string): Promise<SprintStart> {
+  return request<SprintStart>("/api/contests/sprint/start", {
+    method: "POST",
+    headers: authHeaders(token),
+  });
+}
+
+export function submitSprint(token: string, attemptId: string, answers: Record<string, number>): Promise<SprintResult> {
+  return request<SprintResult>("/api/contests/sprint/submit", {
+    method: "POST",
+    headers: { ...authHeaders(token), "Content-Type": "application/json" },
+    body: JSON.stringify({ attempt_id: attemptId, answers }),
+  });
+}
+
+export function listChallenges(): Promise<ChallengeTask[]> {
+  return request<ChallengeTask[]>("/api/contests/challenges");
+}
+
+export function submitChallenge(token: string, taskId: string, circuit: Circuit): Promise<ChallengeResult> {
+  return request<ChallengeResult>("/api/contests/challenges/submit", {
+    method: "POST",
+    headers: { ...authHeaders(token), "Content-Type": "application/json" },
+    body: JSON.stringify({ task_id: taskId, circuit }),
+  });
+}
+
+export function createDuel(token: string): Promise<{ code: string }> {
+  return request<{ code: string }>("/api/duels/create", {
+    method: "POST",
+    headers: authHeaders(token),
+  });
+}
+
+export function joinDuel(token: string, code: string): Promise<DuelState> {
+  return request<DuelState>("/api/duels/join", {
+    method: "POST",
+    headers: { ...authHeaders(token), "Content-Type": "application/json" },
+    body: JSON.stringify({ code }),
+  });
+}
+
+export function getDuel(token: string, code: string): Promise<DuelState> {
+  return request<DuelState>(`/api/duels/${code}`, { headers: authHeaders(token) });
+}
+
+export function answerDuel(token: string, code: string, questionId: string, option: number): Promise<DuelState> {
+  return request<DuelState>(`/api/duels/${code}/answer`, {
+    method: "POST",
+    headers: { ...authHeaders(token), "Content-Type": "application/json" },
+    body: JSON.stringify({ question_id: questionId, option }),
+  });
+}
+
+export function submitDuel(token: string, code: string): Promise<DuelState> {
+  return request<DuelState>(`/api/duels/${code}/submit`, {
+    method: "POST",
+    headers: authHeaders(token),
+  });
+}
+
+export function cancelDuel(token: string, code: string): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>(`/api/duels/${code}`, {
     method: "DELETE",
     headers: authHeaders(token),
   });
