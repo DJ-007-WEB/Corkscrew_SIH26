@@ -1,0 +1,654 @@
+{
+  "MODULE": "Module 1 — Introduction & Classical vs Quantum",
+  "MODULE_GOAL": "Intuition + motivation; minimal math at first.",
+  "SUBTOPICS": [
+    {
+      "CONCEPT": "What is Quantum Computing?",
+      "SUBTOPIC_ID": "1.1",
+      "CONCEPT_ID": "C_QC_INTRO",
+      "PREREQUISITES": [
+        "Basic familiarity with classical computers",
+        "Basic probability (helpful, not required)"
+      ],
+      "DIFFICULTY_LEVEL": "Beginner",
+      "LEARNING_OBJECTIVES": [
+        "Define what quantum computing is and what problem it tries to solve.",
+        "Explain why simulating quantum systems is hard for classical computers.",
+        "Identify examples of where quantum computing helps and where it does not.",
+        "Recall key historical milestones (Feynman, Deutsch, Shor) that motivated the field."
+      ],
+      "SKILLS_TAGGED": [
+        "S_QC_DEF",
+        "S_QC_VS_CLASSICAL",
+        "S_QC_HISTORY"
+      ],
+      "CORE_EXPLANATION": "Quantum computing is a model of computation that uses the rules of quantum mechanics rather than classical physics to store and process information. The motivation goes back to the 1980s, when physicists such as Richard Feynman and Yuri Manin noticed that classical computers struggle to simulate quantum systems (like molecules or materials) because a quantum system made of many particles exists in a combination of many configurations at once, and the number of configurations grows exponentially with the number of particles. For example, a system of just 40 particles that can each be 'present' or 'absent' in a location has 2^40 possible configurations — describing it exactly on a classical computer already needs well over 100 GB of memory. Add a few hundred more particles and no computer on Earth could store the description.\n\nThis observation led to an idea: if quantum systems are hard to simulate classically, perhaps a machine that itself exploits quantum effects could simulate them efficiently, and perhaps that same machine could tackle other hard problems too. David Deutsch (1985) showed such a machine could simulate any physical system efficiently, and Peter Shor (1994) found a quantum algorithm that factors large numbers exponentially faster than the best known classical method — directly relevant to breaking common encryption schemes like RSA. Quantum computing is not a faster version of classical computing for every task; it offers large speedups only for specific problems (simulation, factoring, search, some optimization and machine learning tasks), while ordinary tasks like word processing or web browsing are still best done classically.",
+      "MATHEMATICAL_REPRESENTATION": "Number of classical configurations of n two-state particles = 2^n\nClassical memory needed to fully describe the quantum state of n particles ≈ 2^n numbers\nQuantum memory needed to describe the same system = n qubits",
+      "INTUITION_ANALOGY": "Think of trying to describe a coin that is spinning in the air (rather than lying flat as heads or tails). A classical description forces you to eventually say 'heads' or 'tails' — one state at a time. Now imagine needing to track thousands of spinning coins simultaneously, where the description of the whole set can't be broken into independent per-coin notes — the bookkeeping explodes combinatorially. A classical computer is like a filing cabinet that must hold one enormous exploding set of folders; a quantum computer is like directly manipulating the spinning coins themselves, using their natural physics to do the 'filing' for you.",
+      "EXAMPLES": [
+        {
+          "EXAMPLE_ID": "Example 1",
+          "DESCRIPTION": "Classical memory cost of describing a quantum system of particles that can each be in 2 configurations",
+          "TABLE": {
+            "n_particles": [
+              40,
+              41,
+              300
+            ],
+            "classical_states_2_pow_n": [
+              "2^40 (~1.1 x 10^12)",
+              "2^41 (~2.2 x 10^12)",
+              "2^300 (astronomically large)"
+            ],
+            "approx_classical_memory": [
+              "> 130 GB",
+              "> 260 GB",
+              "exceeds particles in the observable universe"
+            ],
+            "qubits_needed": [
+              40,
+              41,
+              300
+            ]
+          },
+          "EXPECTED_TAKEAWAY": "Classical memory requirements double with every extra particle, while the number of qubits needed grows only linearly."
+        },
+        {
+          "EXAMPLE_ID": "Example 2",
+          "DESCRIPTION": "Where quantum computing helps vs. does not help",
+          "HELPS": [
+            "Simulating molecules/materials (chemistry, drug discovery)",
+            "Factoring large integers (Shor's algorithm)",
+            "Unstructured database search (Grover's algorithm)",
+            "Certain optimization and sampling problems"
+          ],
+          "DOES_NOT_HELP_MUCH": [
+            "General-purpose everyday computing (web browsing, spreadsheets)",
+            "Simple arithmetic on small numbers",
+            "Tasks with no known quantum speedup"
+          ]
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Bar/line chart: classical memory required (GB, log scale) vs. number of particles/qubits, showing exponential vs. linear growth",
+        "Timeline: 1980s Feynman/Manin -> 1985 Deutsch -> 1994 Shor -> modern quantum computing",
+        "Venn-style diagram: problems where quantum helps vs. classical remains best"
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "Quantum computers are not simply 'faster classical computers' for all tasks — the speedup is problem-specific.",
+        "Quantum computers will not replace classical computers entirely; most everyday computing will remain classical.",
+        "Having more qubits alone does not guarantee a working, useful quantum computer — the qubits must also be controlled, connected, and measured reliably."
+      ],
+      "RELATED_CONCEPTS": [
+        "Qubit",
+        "Superposition",
+        "Entanglement",
+        "Shor's algorithm",
+        "Quantum simulation"
+      ],
+      "ASSESSMENT_IDS": [
+        "Q_QC_01",
+        "Q_QC_02",
+        "Q_QC_03",
+        "Q_QC_04",
+        "Q_QC_05"
+      ],
+      "SOURCE_REFERENCES": [
+        "Microsoft Learn — What is quantum computing? (Azure Quantum): https://learn.microsoft.com/en-us/azure/quantum/overview-understanding-quantum-computing"
+      ],
+      "MCQS": [
+        {
+          "QUESTION_ID": "Q_QC_01",
+          "QUESTION": "Why is it difficult for a classical computer to fully simulate a quantum system of many particles?",
+          "OPTIONS": {
+            "A": "Classical computers cannot perform floating-point arithmetic accurately enough.",
+            "B": "The number of configurations needed to describe the system grows exponentially with the number of particles.",
+            "C": "Quantum systems only exist inside quantum computers.",
+            "D": "Classical computers cannot store negative numbers."
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_QC_INTRO"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_QC_02",
+          "QUESTION": "Approximately how much classical memory is needed to fully describe the state of a 40-particle quantum system (each particle having 2 possible configurations)?",
+          "OPTIONS": {
+            "A": "40 bytes",
+            "B": "40 kilobytes",
+            "C": "Over 130 GB",
+            "D": "Exactly 1 GB"
+          },
+          "CORRECT_ANSWER": "C",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_QC_INTRO"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_QC_03",
+          "QUESTION": "Which discovery by Peter Shor (1994) sparked major interest in quantum computing?",
+          "OPTIONS": {
+            "A": "A quantum algorithm that efficiently factors large integers",
+            "B": "The invention of the qubit",
+            "C": "The first working quantum computer chip",
+            "D": "A proof that quantum computers cannot outperform classical computers"
+          },
+          "CORRECT_ANSWER": "A",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_QC_INTRO"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_QC_04",
+          "QUESTION": "Which statement best reflects where quantum computing is expected to help?",
+          "OPTIONS": {
+            "A": "It will make everyday tasks like web browsing much faster.",
+            "B": "It offers large speedups mainly for specific problems such as simulation, factoring, and search.",
+            "C": "It replaces classical computers for all computing tasks.",
+            "D": "It only works for arithmetic on small numbers."
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_QC_INTRO"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_QC_05",
+          "QUESTION": "David Deutsch's 1985 result was significant because it showed that:",
+          "OPTIONS": {
+            "A": "A quantum computer could efficiently simulate the behavior of any physical system.",
+            "B": "Classical computers are always faster than quantum computers.",
+            "C": "Qubits cannot be measured accurately.",
+            "D": "Quantum computers require absolute zero temperatures to function at all."
+          },
+          "CORRECT_ANSWER": "A",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_QC_INTRO"
+          ]
+        }
+      ]
+    },
+    {
+      "CONCEPT": "Bits vs Qubits",
+      "SUBTOPIC_ID": "1.2",
+      "CONCEPT_ID": "C_BITS_QUBITS",
+      "PREREQUISITES": [
+        "What is quantum computing (C_QC_INTRO)",
+        "Basic vectors (2D column vectors)"
+      ],
+      "DIFFICULTY_LEVEL": "Beginner",
+      "LEARNING_OBJECTIVES": [
+        "Describe the classical bit as a two-state (0 or 1) object.",
+        "Describe a qubit as a two-level quantum system represented by a unit-norm 2D column vector.",
+        "Write qubit states using Dirac (|0>, |1>) notation and column-vector notation.",
+        "State the normalization condition |α|² + |β|² = 1 and explain why it must hold."
+      ],
+      "SKILLS_TAGGED": [
+        "S_BIT_QUBIT_DIFF",
+        "S_QUBIT_NOTATION",
+        "S_NORMALIZATION"
+      ],
+      "CORE_EXPLANATION": "A classical bit is the fundamental unit of information in ordinary computing: at any given moment it holds exactly one of two values, 0 or 1. A qubit (quantum bit) is the fundamental unit of information in quantum computing, but it behaves very differently. Instead of being restricted to just 0 or 1, a qubit's state is described by a two-dimensional column vector of complex numbers whose squared magnitudes sum to 1 (a 'unit norm' vector). Two special vectors, written [1,0] and [0,1] and denoted |0⟩ and |1⟩ in Dirac notation, correspond exactly to the classical bit values 0 and 1 and together form what is called the computational basis. Any other valid qubit state, written |ψ⟩ = α|0⟩ + β|1⟩, is a superposition — a combination — of these two basis states, where α and β are complex numbers called probability amplitudes.\n\nThe constraint |α|² + |β|² = 1 is essential: it guarantees that when the qubit is eventually measured, the probabilities of getting each possible outcome add up to exactly 1, just as ordinary probabilities must. While a classical bit has only 2 possible states, a qubit has infinitely many valid states, since α and β can take any complex values satisfying the norm condition. This extra richness — the ability to be in a combination of 0 and 1 rather than just one or the other — is what gives quantum computers their distinctive power, and it is the direct source of phenomena like superposition that later modules explore in more depth.",
+      "MATHEMATICAL_REPRESENTATION": "Classical bit: b ∈ {0, 1}\nQubit state: |ψ⟩ = α|0⟩ + β|1⟩ = [α, β]^T, with |α|² + |β|² = 1\nComputational basis: |0⟩ = [1, 0]^T,  |1⟩ = [0, 1]^T",
+      "INTUITION_ANALOGY": "A classical bit is like a light switch that must be fully OFF or fully ON. A qubit is more like a dimmer switch combined with a dial that can point anywhere between OFF and ON, with an extra twist (a phase) that a plain dimmer doesn't have — but until you 'check' the switch, it isn't committed to being fully off or fully on; it holds a weighted combination of both, described precisely by the two numbers α and β.",
+      "EXAMPLES": [
+        {
+          "EXAMPLE_ID": "Example 1",
+          "DESCRIPTION": "Representing classical 0 and 1 as qubit vectors",
+          "STATEVECTORS": {
+            "classical_0": [
+              1,
+              0
+            ],
+            "classical_1": [
+              0,
+              1
+            ]
+          }
+        },
+        {
+          "EXAMPLE_ID": "Example 2",
+          "DESCRIPTION": "A valid superposition state and checking normalization",
+          "STATE": "|ψ⟩ = (1/√2)|0⟩ + (1/√2)|1⟩",
+          "STATEVECTOR": [
+            "1/√2",
+            "1/√2"
+          ],
+          "NORMALIZATION_CHECK": "|1/√2|² + |1/√2|² = 1/2 + 1/2 = 1  (valid qubit state)"
+        },
+        {
+          "EXAMPLE_ID": "Example 3",
+          "DESCRIPTION": "An invalid (non-normalized) vector",
+          "STATE": "v = 0.6|0⟩ + 0.6|1⟩",
+          "NORMALIZATION_CHECK": "0.6² + 0.6² = 0.36 + 0.36 = 0.72 ≠ 1  (NOT a valid qubit state)"
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Side-by-side diagram: classical bit as a switch (0/1) vs. qubit as a vector in 2D complex space",
+        "Simple 2D arrow diagram showing |0⟩ and |1⟩ as basis axes, with a superposition vector between them",
+        "Table comparing classical bit properties vs. qubit properties"
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "A qubit is not 'a bit that is randomly 0 or 1 already decided but unknown to us' — it genuinely holds a combination described by amplitudes until measured.",
+        "α and β are complex numbers, not simple percentages; probabilities come from their squared magnitudes, not the numbers directly.",
+        "Not every 2D vector is a valid qubit state — only vectors satisfying |α|² + |β|² = 1 are valid."
+      ],
+      "RELATED_CONCEPTS": [
+        "Superposition",
+        "Dirac notation",
+        "Quantum state vector",
+        "Probability amplitudes",
+        "Computational basis"
+      ],
+      "ASSESSMENT_IDS": [
+        "Q_BQ_01",
+        "Q_BQ_02",
+        "Q_BQ_03",
+        "Q_BQ_04",
+        "Q_BQ_05"
+      ],
+      "SOURCE_REFERENCES": [
+        "Microsoft Learn — The qubit in quantum computing (Azure Quantum): https://learn.microsoft.com/en-us/azure/quantum/concepts-the-qubit",
+        "Microsoft Learn — What is quantum computing? (Azure Quantum): https://learn.microsoft.com/en-us/azure/quantum/overview-understanding-quantum-computing"
+      ],
+      "MCQS": [
+        {
+          "QUESTION_ID": "Q_BQ_01",
+          "QUESTION": "How many distinct values can a single classical bit hold at any given moment?",
+          "OPTIONS": {
+            "A": "1",
+            "B": "2",
+            "C": "Infinite",
+            "D": "4"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_BITS_QUBITS"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_BQ_02",
+          "QUESTION": "Which of the following correctly represents the qubit state |1⟩ as a column vector?",
+          "OPTIONS": {
+            "A": "[1, 0]",
+            "B": "[0, 1]",
+            "C": "[1, 1]",
+            "D": "[0.5, 0.5]"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_BITS_QUBITS"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_BQ_03",
+          "QUESTION": "For a qubit state α|0⟩ + β|1⟩ to be valid, which condition must α and β satisfy?",
+          "OPTIONS": {
+            "A": "α + β = 1",
+            "B": "α = β",
+            "C": "|α|² + |β|² = 1",
+            "D": "α and β must both be real numbers"
+          },
+          "CORRECT_ANSWER": "C",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_BITS_QUBITS"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_BQ_04",
+          "QUESTION": "Is the vector [0.6, 0.6] a valid qubit state?",
+          "OPTIONS": {
+            "A": "Yes, because 0.6 + 0.6 = 1.2 which rounds to 1",
+            "B": "No, because 0.6² + 0.6² = 0.72, which is not equal to 1",
+            "C": "Yes, any two equal numbers form a valid qubit",
+            "D": "No, qubit amplitudes cannot be positive"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_BITS_QUBITS"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_BQ_05",
+          "QUESTION": "What is the key structural difference between a classical bit and a qubit?",
+          "OPTIONS": {
+            "A": "A qubit can only be 0 or 1, just like a bit, but stored magnetically",
+            "B": "A qubit can exist in a superposition (weighted combination) of |0⟩ and |1⟩, described by complex amplitudes",
+            "C": "A bit can hold more information than a qubit",
+            "D": "There is no difference; qubit is just another name for bit"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_BITS_QUBITS"
+          ]
+        }
+      ]
+    },
+    {
+      "CONCEPT": "Probabilities and Measurement (Intuitive)",
+      "SUBTOPIC_ID": "1.3",
+      "CONCEPT_ID": "C_PROB_MEASUREMENT",
+      "PREREQUISITES": [
+        "Bits vs qubits (C_BITS_QUBITS)",
+        "Basic probability"
+      ],
+      "DIFFICULTY_LEVEL": "Beginner",
+      "LEARNING_OBJECTIVES": [
+        "Explain that measuring a qubit produces a random classical outcome (0 or 1).",
+        "Compute measurement probabilities from a qubit's amplitudes α and β.",
+        "Describe how measurement collapses the qubit's quantum state to a classical basis state.",
+        "Recognize that an overall (global) phase does not affect measurement probabilities."
+      ],
+      "SKILLS_TAGGED": [
+        "S_MEASUREMENT_PROB",
+        "S_STATE_COLLAPSE",
+        "S_GLOBAL_PHASE"
+      ],
+      "CORE_EXPLANATION": "Before it is measured, a qubit in state |ψ⟩ = α|0⟩ + β|1⟩ is not 'secretly' a 0 or a 1 waiting to be revealed — it genuinely exists in a combination of both, described by the amplitudes α and β. Measurement is the act of 'looking' at the qubit, and it immediately and irreversibly collapses this combination into one of the two classical outcomes. The outcome is fundamentally random: you get result 0 with probability |α|², and result 1 with probability |β|². Because |α|² + |β|² = 1, these two probabilities always add up to exactly 1, so no other outcome is possible. After the measurement, the qubit's state literally becomes |0⟩ or |1⟩ depending on which result occurred — the original superposition is gone.\n\nOne subtlety is that the overall sign (or more generally, a global phase e^{iφ}) applied to the entire vector does not change these probabilities at all, since probabilities depend only on squared magnitudes; flipping the sign of both α and β leaves |α|² and |β|² unchanged. A special case worth noting: if a qubit already starts in a purely classical state such as |0⟩, measuring it always yields 0 with certainty and leaves the state unchanged — measurement only introduces randomness when the qubit is in a genuine superposition. This intuitive picture — random outcomes governed by squared amplitudes — is the foundation for every quantum algorithm's final read-out step.",
+      "MATHEMATICAL_REPRESENTATION": "|ψ⟩ = α|0⟩ + β|1⟩\nP(measure 0) = |α|²\nP(measure 1) = |β|²\nP(measure 0) + P(measure 1) = |α|² + |β|² = 1\nGlobal phase invariance: measuring e^{iφ}(α|0⟩ + β|1⟩) gives the same probabilities as measuring α|0⟩ + β|1⟩",
+      "INTUITION_ANALOGY": "Imagine a spinning coin balanced on its edge — while it spins it isn't simply heads or tails, it's a mix of both possibilities. The instant you slap your hand down on the table (measure it), it's forced to land on one face or the other, and it stays that way afterward. Which face you get is random, but a lopsided coin (uneven weighting, like unequal α and β) will land on one face more often than the other — just as unequal amplitudes make one measurement outcome more likely than the other.",
+      "EXAMPLES": [
+        {
+          "EXAMPLE_ID": "Example 1",
+          "DESCRIPTION": "Equal superposition state — computing probabilities",
+          "STATE": "|ψ⟩ = (1/√2)|0⟩ + (1/√2)|1⟩",
+          "CALCULATION": "P(0) = |1/√2|² = 1/2 = 50%, P(1) = |1/√2|² = 1/2 = 50%",
+          "EXPECTED_SIMULATION": "Over many repeated measurements (shots), roughly half the results are 0 and half are 1."
+        },
+        {
+          "EXAMPLE_ID": "Example 2",
+          "DESCRIPTION": "Unequal amplitudes — computing probabilities",
+          "STATE": "|ψ⟩ = (√3/2)|0⟩ + (1/2)|1⟩",
+          "CALCULATION": "P(0) = (√3/2)² = 3/4 = 75%, P(1) = (1/2)² = 1/4 = 25%",
+          "EXPECTED_SIMULATION": "Over many shots, about 75% of outcomes are 0 and about 25% are 1."
+        },
+        {
+          "EXAMPLE_ID": "Example 3",
+          "DESCRIPTION": "Certain outcome — a classical basis state",
+          "STATE": "|ψ⟩ = |0⟩  (i.e., α = 1, β = 0)",
+          "CALCULATION": "P(0) = |1|² = 1 = 100%, P(1) = |0|² = 0 = 0%",
+          "EXPECTED_SIMULATION": "Every single measurement yields 0; the state is unchanged by measurement."
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Bar chart: probability of measuring 0 vs. 1 for a given (α, β) pair",
+        "Animation: superposition state collapsing to |0⟩ or |1⟩ upon measurement",
+        "Histogram of simulated measurement outcomes over many shots (e.g., 1000 shots)"
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "The qubit is not 'physically half 0 and half 1' before measurement — it is in one single, well-defined quantum state that yields random classical outcomes only when measured.",
+        "The amplitudes α and β themselves are not probabilities — only their squared magnitudes are.",
+        "A global phase (an overall e^{iφ} factor) does not change measurement outcomes, even though it changes the numbers in the vector."
+      ],
+      "RELATED_CONCEPTS": [
+        "Superposition",
+        "Bits vs Qubits",
+        "Quantum state vector",
+        "Global phase",
+        "Bloch sphere"
+      ],
+      "ASSESSMENT_IDS": [
+        "Q_PM_01",
+        "Q_PM_02",
+        "Q_PM_03",
+        "Q_PM_04",
+        "Q_PM_05"
+      ],
+      "SOURCE_REFERENCES": [
+        "Microsoft Learn — The qubit in quantum computing (Azure Quantum): https://learn.microsoft.com/en-us/azure/quantum/concepts-the-qubit"
+      ],
+      "MCQS": [
+        {
+          "QUESTION_ID": "Q_PM_01",
+          "QUESTION": "For a qubit |ψ⟩ = α|0⟩ + β|1⟩, what is the probability of measuring the outcome 1?",
+          "OPTIONS": {
+            "A": "α",
+            "B": "β",
+            "C": "|β|²",
+            "D": "|α|²"
+          },
+          "CORRECT_ANSWER": "C",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_PROB_MEASUREMENT"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_PM_02",
+          "QUESTION": "A qubit is in state |ψ⟩ = (√3/2)|0⟩ + (1/2)|1⟩. What is the probability of measuring 0?",
+          "OPTIONS": {
+            "A": "25%",
+            "B": "50%",
+            "C": "75%",
+            "D": "100%"
+          },
+          "CORRECT_ANSWER": "C",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_PROB_MEASUREMENT",
+            "C_BITS_QUBITS"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_PM_03",
+          "QUESTION": "What happens to a qubit's quantum state immediately after it is measured?",
+          "OPTIONS": {
+            "A": "It stays in superposition forever",
+            "B": "It collapses to the classical basis state corresponding to the observed outcome",
+            "C": "It becomes entangled with the measuring device permanently",
+            "D": "It resets to |0⟩ regardless of the outcome"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_PROB_MEASUREMENT"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_PM_04",
+          "QUESTION": "If a qubit starts exactly in state |0⟩ (α = 1, β = 0), what happens when it is measured?",
+          "OPTIONS": {
+            "A": "The result is random between 0 and 1",
+            "B": "The result is always 0, and the state remains |0⟩",
+            "C": "The result is always 1",
+            "D": "Measurement is not possible on this state"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_PROB_MEASUREMENT"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_PM_05",
+          "QUESTION": "Why does multiplying a qubit's state vector by a global phase e^{iφ} not affect measurement results?",
+          "OPTIONS": {
+            "A": "Because global phases are always equal to 1",
+            "B": "Because measurement probabilities depend on squared magnitudes, which are unchanged by an overall phase factor",
+            "C": "Because global phases only apply to classical bits",
+            "D": "Because measurement ignores the β amplitude entirely"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Hard",
+          "TOPIC_MAP": [
+            "C_PROB_MEASUREMENT",
+            "C_BITS_QUBITS"
+          ]
+        }
+      ]
+    }
+  ],
+  "FINAL_MODULE_ASSESSMENT": {
+    "ASSESSMENT_ID": "MODULE1_FINAL",
+    "INSTRUCTIONS": "10 questions covering all of Module 1. Some questions require integrating concepts from multiple subtopics.",
+    "QUESTIONS": [
+      {
+        "QUESTION_ID": "F1_Q01",
+        "QUESTION": "What is the fundamental reason quantum computers can efficiently simulate certain quantum systems that classical computers cannot?",
+        "OPTIONS": {
+          "A": "Quantum computers run at higher clock speeds",
+          "B": "Quantum computers use qubits, whose number needed grows linearly with system size, unlike the exponential memory classical computers need",
+          "C": "Quantum computers have more transistors",
+          "D": "Quantum computers use liquid cooling"
+        },
+        "CORRECT_ANSWER": "B",
+        "DIFFICULTY": "Medium",
+        "TOPIC_MAP": [
+          "C_QC_INTRO"
+        ]
+      },
+      {
+        "QUESTION_ID": "F1_Q02",
+        "QUESTION": "Which historical result directly motivated concern about quantum computers breaking modern encryption?",
+        "OPTIONS": {
+          "A": "Feynman's 1980s observation about simulation difficulty",
+          "B": "Deutsch's 1985 universality result",
+          "C": "Shor's 1994 factoring algorithm",
+          "D": "The invention of the Bloch sphere"
+        },
+        "CORRECT_ANSWER": "C",
+        "DIFFICULTY": "Easy",
+        "TOPIC_MAP": [
+          "C_QC_INTRO"
+        ]
+      },
+      {
+        "QUESTION_ID": "F1_Q03",
+        "QUESTION": "How does a qubit differ structurally from a classical bit?",
+        "OPTIONS": {
+          "A": "A qubit is simply a bit stored using less electricity",
+          "B": "A qubit is described by a unit-norm 2D complex vector and can be in a superposition of |0⟩ and |1⟩",
+          "C": "A qubit always represents two classical bits at once with certainty",
+          "D": "A qubit cannot represent the values 0 or 1 at all"
+        },
+        "CORRECT_ANSWER": "B",
+        "DIFFICULTY": "Easy",
+        "TOPIC_MAP": [
+          "C_BITS_QUBITS"
+        ]
+      },
+      {
+        "QUESTION_ID": "F1_Q04",
+        "QUESTION": "Which pair of vectors forms the computational basis for a single qubit?",
+        "OPTIONS": {
+          "A": "[1,1] and [0,0]",
+          "B": "[1,0] and [0,1]",
+          "C": "[0.5,0.5] and [0.5,-0.5]",
+          "D": "[1,-1] and [-1,1]"
+        },
+        "CORRECT_ANSWER": "B",
+        "DIFFICULTY": "Easy",
+        "TOPIC_MAP": [
+          "C_BITS_QUBITS"
+        ]
+      },
+      {
+        "QUESTION_ID": "F1_Q05",
+        "QUESTION": "A qubit is given by |ψ⟩ = (0.8)|0⟩ + (0.6)|1⟩. Is this a valid qubit state, and why?",
+        "OPTIONS": {
+          "A": "Yes, because 0.8² + 0.6² = 0.64 + 0.36 = 1",
+          "B": "No, because 0.8 + 0.6 = 1.4 ≠ 1",
+          "C": "Yes, because both numbers are positive",
+          "D": "No, amplitudes must always be equal"
+        },
+        "CORRECT_ANSWER": "A",
+        "DIFFICULTY": "Medium",
+        "TOPIC_MAP": [
+          "C_BITS_QUBITS",
+          "C_PROB_MEASUREMENT"
+        ]
+      },
+      {
+        "QUESTION_ID": "F1_Q06",
+        "QUESTION": "Using the state from the previous question, |ψ⟩ = 0.8|0⟩ + 0.6|1⟩, what is the probability of measuring outcome 1?",
+        "OPTIONS": {
+          "A": "80%",
+          "B": "60%",
+          "C": "36%",
+          "D": "64%"
+        },
+        "CORRECT_ANSWER": "C",
+        "DIFFICULTY": "Medium",
+        "TOPIC_MAP": [
+          "C_PROB_MEASUREMENT",
+          "C_BITS_QUBITS"
+        ]
+      },
+      {
+        "QUESTION_ID": "F1_Q07",
+        "QUESTION": "What happens immediately after a qubit in superposition is measured?",
+        "OPTIONS": {
+          "A": "It remains in superposition",
+          "B": "It collapses to a definite classical state (|0⟩ or |1⟩) matching the observed outcome",
+          "C": "It becomes a new superposition of |0⟩ and |1⟩ with equal weights",
+          "D": "It is destroyed and cannot be used again in any way"
+        },
+        "CORRECT_ANSWER": "B",
+        "DIFFICULTY": "Easy",
+        "TOPIC_MAP": [
+          "C_PROB_MEASUREMENT"
+        ]
+      },
+      {
+        "QUESTION_ID": "F1_Q08",
+        "QUESTION": "Why can't a classical bit represent a genuine superposition the way a qubit can?",
+        "OPTIONS": {
+          "A": "Classical bits are restricted to exactly one of two discrete values at any time, with no concept of complex amplitudes",
+          "B": "Classical bits are too small physically",
+          "C": "Classical bits can represent superposition, but engineers choose not to use it",
+          "D": "Classical bits only exist in quantum computers"
+        },
+        "CORRECT_ANSWER": "A",
+        "DIFFICULTY": "Easy",
+        "TOPIC_MAP": [
+          "C_BITS_QUBITS",
+          "C_QC_INTRO"
+        ]
+      },
+      {
+        "QUESTION_ID": "F1_Q09",
+        "QUESTION": "A researcher claims: 'Since a qubit can be in superposition, it must physically be half in state 0 and half in state 1 simultaneously, like two separate bits.' What is wrong with this claim?",
+        "OPTIONS": {
+          "A": "Nothing, this is an accurate description of superposition",
+          "B": "Superposition means the qubit is in one single, well-defined quantum state; upon measurement it randomly yields one definite classical outcome with probability given by the squared amplitude, not a literal half-and-half physical split",
+          "C": "Qubits are always in state 0, never state 1",
+          "D": "Qubits cannot be in superposition at all"
+        },
+        "CORRECT_ANSWER": "B",
+        "DIFFICULTY": "Hard",
+        "TOPIC_MAP": [
+          "C_PROB_MEASUREMENT",
+          "C_BITS_QUBITS"
+        ]
+      },
+      {
+        "QUESTION_ID": "F1_Q10",
+        "QUESTION": "Which sequence best describes the overall story connecting Module 1's three subtopics?",
+        "OPTIONS": {
+          "A": "Quantum computing exploits systems whose full description requires resources that grow exponentially for classical computers (1.1); a qubit is the basic quantum unit that can hold a superposition described by complex amplitudes obeying a normalization rule, unlike a classical bit (1.2); and measuring a qubit yields a random classical outcome with probability equal to the squared magnitude of the corresponding amplitude (1.3)",
+          "B": "Quantum computing is only about cooling hardware to near absolute zero, qubits are just faster bits, and measurement always gives a fixed, non-random result",
+          "C": "Classical bits and qubits are identical concepts with different names, and probability plays no role in quantum computing",
+          "D": "Quantum computers work by running classical algorithms twice as fast, and superposition is a marketing term with no mathematical meaning"
+        },
+        "CORRECT_ANSWER": "A",
+        "DIFFICULTY": "Hard",
+        "TOPIC_MAP": [
+          "C_QC_INTRO",
+          "C_BITS_QUBITS",
+          "C_PROB_MEASUREMENT"
+        ]
+      }
+    ]
+  }
+}

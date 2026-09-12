@@ -1,0 +1,873 @@
+{
+  "MODULE": "Module 2 — Single-Qubit States & Bloch Sphere",
+  "MODULE_GOAL": "Comfort with single-qubit states and visual representation.",
+  "SUBTOPICS": [
+    {
+      "CONCEPT": "State Vectors and Normalization",
+      "SUBTOPIC_ID": "2.1",
+      "CONCEPT_ID": "C_STATE_VECTOR",
+      "PREREQUISITES": [
+        "Qubit (C_BITS_QUBITS, Module 1)",
+        "Basic complex numbers",
+        "Probabilities and measurement (C_PROB_MEASUREMENT, Module 1)"
+      ],
+      "DIFFICULTY_LEVEL": "Beginner",
+      "LEARNING_OBJECTIVES": [
+        "Write a single-qubit state in the form |ψ⟩ = α|0⟩ + β|1⟩.",
+        "State and apply the normalization condition |α|² + |β|² = 1.",
+        "Identify the computational basis vectors |0⟩ and |1⟩ as column vectors.",
+        "Determine whether a given pair (α, β) represents a valid qubit state."
+      ],
+      "SKILLS_TAGGED": [
+        "S_STATE_VECTOR_DEF",
+        "S_NORMALIZATION_CHECK",
+        "S_BASIS_ID"
+      ],
+      "CORE_EXPLANATION": "The state of a single qubit is fully described by a two-dimensional column vector of unit norm — that is, a vector whose entries, when squared in magnitude, sum to exactly 1. This vector is called the quantum state vector, and it holds all the information needed to describe the qubit, just as a single classical bit's value holds all the information needed to describe a classical binary variable. Any two-dimensional column vector of real or complex numbers with norm 1 is a valid quantum state for a qubit; concretely, a vector [α, β]^T represents a qubit state whenever α and β are complex numbers satisfying |α|² + |β|² = 1.\n\nTwo special vectors, [1, 0]^T and [0, 1]^T, are singled out because they correspond exactly to the two classical bit values 0 and 1. By standard convention, 0 ≡ [1, 0]^T and 1 ≡ [0, 1]^T, written |0⟩ and |1⟩ in Dirac notation. Together these two vectors form a basis for the qubit's vector space — meaning every other valid quantum state can be written as a weighted sum of them. Specifically, the general vector [x, y]^T can always be written as x|0⟩ + y|1⟩. This particular choice of basis is called the computational basis; although any rotation of these two vectors would work equally well as a basis, the computational basis is the one chosen by convention because it lines up with the classical 0/1 outcomes we eventually measure. Out of the infinitely many valid single-qubit state vectors, only |0⟩ and |1⟩ themselves correspond to definite classical bit values — every other valid vector represents a genuine superposition of the two.",
+      "MATHEMATICAL_REPRESENTATION": "|ψ⟩ = α|0⟩ + β|1⟩ = [α, β]^T,  with  |α|² + |β|² = 1\nComputational basis: |0⟩ = [1, 0]^T,  |1⟩ = [0, 1]^T\nGeneral decomposition: [x, y]^T = x|0⟩ + y|1⟩",
+      "INTUITION_ANALOGY": "Think of the qubit's state vector like a recipe that must always use exactly '100% of the ingredients' — no more, no less. α and β tell you how much of |0⟩-flavor and |1⟩-flavor go into the mix, but the squared amounts must always add up to a whole (1), the same way two tinted paints mixed in different proportions must still add up to one full can of paint.",
+      "EXAMPLES": [
+        {
+          "EXAMPLE_ID": "Example 1",
+          "DESCRIPTION": "The two computational basis states",
+          "STATEVECTORS": {
+            "|0>": [
+              1,
+              0
+            ],
+            "|1>": [
+              0,
+              1
+            ]
+          },
+          "NORMALIZATION_CHECK": "|1|² + |0|² = 1 for |0⟩;  |0|² + |1|² = 1 for |1⟩ — both valid."
+        },
+        {
+          "EXAMPLE_ID": "Example 2",
+          "DESCRIPTION": "A valid equal-superposition state",
+          "STATE": "|ψ⟩ = (1/√2)|0⟩ + (1/√2)|1⟩",
+          "STATEVECTOR": [
+            "1/√2",
+            "1/√2"
+          ],
+          "NORMALIZATION_CHECK": "(1/√2)² + (1/√2)² = 1/2 + 1/2 = 1  (valid)"
+        },
+        {
+          "EXAMPLE_ID": "Example 3",
+          "DESCRIPTION": "An invalid vector that fails normalization",
+          "STATE": "v = 0.5|0⟩ + 0.5|1⟩",
+          "NORMALIZATION_CHECK": "0.5² + 0.5² = 0.25 + 0.25 = 0.5 ≠ 1  (NOT a valid qubit state; would need to be rescaled)"
+        },
+        {
+          "EXAMPLE_ID": "Example 4",
+          "DESCRIPTION": "A valid state with complex amplitudes",
+          "STATE": "|ψ⟩ = (1/√2)|0⟩ + (i/√2)|1⟩",
+          "NORMALIZATION_CHECK": "|1/√2|² + |i/√2|² = 1/2 + 1/2 = 1  (valid — complex amplitudes are allowed)"
+        }
+      ],
+      "VISUALIZATIONS": [
+        "2D axis diagram showing |0⟩ and |1⟩ as orthogonal basis vectors with an example superposition vector between them",
+        "Interactive slider for α and β showing a live-updated normalization check (|α|²+|β|² displayed)",
+        "Statevector display: complex vector shown as [α, β] alongside a normalization badge (valid/invalid)"
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "Not every pair of numbers (α, β) is a valid qubit state — the pair must satisfy |α|² + |β|² = 1.",
+        "α and β can be complex numbers, not just real numbers; the normalization condition uses their squared magnitudes, not the numbers themselves.",
+        "The computational basis (|0⟩, |1⟩) is a convention, not the only possible basis — but it is the one aligned with classical measurement outcomes."
+      ],
+      "RELATED_CONCEPTS": [
+        "Qubit",
+        "Superposition",
+        "Probability amplitudes",
+        "Computational basis",
+        "Measurement"
+      ],
+      "ASSESSMENT_IDS": [
+        "Q_SV_01",
+        "Q_SV_02",
+        "Q_SV_03",
+        "Q_SV_04",
+        "Q_SV_05"
+      ],
+      "SOURCE_REFERENCES": [
+        "Microsoft Learn — The qubit in quantum computing (Azure Quantum), section 'Representing a qubit': https://learn.microsoft.com/en-us/azure/quantum/concepts-the-qubit"
+      ],
+      "MCQS": [
+        {
+          "QUESTION_ID": "Q_SV_01",
+          "QUESTION": "Which condition must α and β satisfy for [α, β]^T to be a valid single-qubit state?",
+          "OPTIONS": {
+            "A": "α = β",
+            "B": "α + β = 1",
+            "C": "|α|² + |β|² = 1",
+            "D": "α and β must be real"
+          },
+          "CORRECT_ANSWER": "C",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_STATE_VECTOR"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_SV_02",
+          "QUESTION": "What is the standard convention for the vector representing the qubit state |1⟩?",
+          "OPTIONS": {
+            "A": "[1, 0]",
+            "B": "[0, 1]",
+            "C": "[1, 1]",
+            "D": "[1/√2, 1/√2]"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_STATE_VECTOR"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_SV_03",
+          "QUESTION": "Is the vector [0.5, 0.5] a valid qubit state?",
+          "OPTIONS": {
+            "A": "Yes, since 0.5 + 0.5 = 1",
+            "B": "No, since 0.5² + 0.5² = 0.5, not 1",
+            "C": "Yes, since both entries are equal",
+            "D": "No, because negative numbers are required"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_STATE_VECTOR"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_SV_04",
+          "QUESTION": "Why are |0⟩ and |1⟩ called the 'computational basis' rather than just 'a' basis?",
+          "OPTIONS": {
+            "A": "Because they are the only mathematically possible basis vectors",
+            "B": "Because by convention they are chosen to correspond to the classical bit values 0 and 1, even though other rotated bases would work equally well mathematically",
+            "C": "Because they cannot be used in superposition",
+            "D": "Because they are always measured with probability 0.5 each"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_STATE_VECTOR"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_SV_05",
+          "QUESTION": "Which of the following is a valid qubit state with complex amplitudes?",
+          "OPTIONS": {
+            "A": "(1/√2)|0⟩ + (i/√2)|1⟩",
+            "B": "1|0⟩ + 1|1⟩",
+            "C": "2|0⟩ + 0|1⟩",
+            "D": "0.9|0⟩ + 0.9|1⟩"
+          },
+          "CORRECT_ANSWER": "A",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_STATE_VECTOR"
+          ]
+        }
+      ]
+    },
+    {
+      "CONCEPT": "Global vs Relative Phase (Conceptual)",
+      "SUBTOPIC_ID": "2.2",
+      "CONCEPT_ID": "C_PHASE",
+      "PREREQUISITES": [
+        "State vectors and normalization (C_STATE_VECTOR)",
+        "Probabilities and measurement (C_PROB_MEASUREMENT, Module 1)"
+      ],
+      "DIFFICULTY_LEVEL": "Beginner",
+      "LEARNING_OBJECTIVES": [
+        "Define global phase as an overall factor e^(iφ) multiplying the entire state vector.",
+        "Explain why global phase has no effect on measurement probabilities.",
+        "Define relative phase as the phase difference between the α and β amplitudes.",
+        "Explain, at a conceptual level, why relative phase is physically meaningful (it affects interference and distinguishes otherwise similar-looking states)."
+      ],
+      "SKILLS_TAGGED": [
+        "S_GLOBAL_PHASE_DEF",
+        "S_RELATIVE_PHASE_DEF",
+        "S_PHASE_DISTINCTION"
+      ],
+      "CORE_EXPLANATION": "Measurement outcomes for a qubit depend only on the squared magnitudes of its amplitudes: P(0) = |α|² and P(1) = |β|². Because of this, multiplying the entire state vector by an overall sign or, more generally, by a phase factor e^(iφ) (where φ is any real number) does not change either probability at all — negating both α and β, for instance, leaves |α|² and |β|² exactly the same. This kind of overall, whole-state multiplier is called a global phase, and it is considered physically unobservable: two state vectors that differ only by a global phase describe the exact same physical state, and no experiment can tell them apart.\n\nRelative phase is a different, and physically meaningful, concept. It refers to the phase difference between the α and β amplitudes within a single state — for example, the states (1/√2)|0⟩ + (1/√2)|1⟩ and (1/√2)|0⟩ − (1/√2)|1⟩ have identical measurement probabilities in the computational basis (50/50 for each), yet they are genuinely different quantum states, because the relative sign (a relative phase of π) between the two amplitudes changes how the state behaves under further operations, such as passing through another gate, or how it interferes with itself. This distinction — global phase is invisible and irrelevant, while relative phase is real and observable through interference — is one of the more subtle but important ideas in single-qubit quantum mechanics, and it becomes especially visible once gates like the Hadamard (H) gate are applied to states that only differ by relative phase.",
+      "MATHEMATICAL_REPRESENTATION": "Global phase: e^(iφ)(α|0⟩ + β|1⟩) describes the SAME physical state as α|0⟩ + β|1⟩, for any real φ\nP(0), P(1) unchanged by global phase, since |e^(iφ) α|² = |α|² and |e^(iφ) β|² = |β|²\nRelative phase example: |0⟩ + |1⟩ (relative phase 0) vs. |0⟩ − |1⟩ (relative phase π) — DIFFERENT physical states",
+      "INTUITION_ANALOGY": "Global phase is like rotating an entire clock face (numbers and all) by the same fixed amount — the relationships between the hands don't change, so it still tells the same time; no outside observer looking only at 'what time is it' can detect the rotation. Relative phase, on the other hand, is like changing the angle between the hour and minute hands themselves — that really does change what time the clock shows, and it's something you can actually observe and act on.",
+      "EXAMPLES": [
+        {
+          "EXAMPLE_ID": "Example 1",
+          "DESCRIPTION": "Global phase leaves probabilities unchanged",
+          "STATE_A": "|ψ⟩ = (1/√2)|0⟩ + (1/√2)|1⟩",
+          "STATE_B": "−|ψ⟩ = −(1/√2)|0⟩ − (1/√2)|1⟩  (global phase e^(iπ) = −1 applied)",
+          "RESULT": "Both states give P(0) = 0.5, P(1) = 0.5 — physically indistinguishable"
+        },
+        {
+          "EXAMPLE_ID": "Example 2",
+          "DESCRIPTION": "Relative phase distinguishes two states with identical basis-measurement probabilities",
+          "STATE_PLUS": "|+⟩ = (1/√2)|0⟩ + (1/√2)|1⟩  (relative phase 0)",
+          "STATE_MINUS": "|−⟩ = (1/√2)|0⟩ − (1/√2)|1⟩  (relative phase π)",
+          "RESULT": "Both give P(0) = P(1) = 0.5 when measured in the computational basis, but applying an H gate sends |+⟩ → |0⟩ and |−⟩ → |1⟩ — proving they were different states all along"
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Bloch sphere: two points that coincide despite different global phase multipliers on their vectors",
+        "Bloch sphere: |+⟩ and |−⟩ shown as distinct points on the equator differing only in relative phase",
+        "Side-by-side probability bar charts showing identical P(0)/P(1) for |+⟩ and |−⟩, contrasted with an H-gate output diagram showing they diverge"
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "Global phase is NOT the same as relative phase — global phase multiplies the whole vector and is unobservable; relative phase is a difference between amplitudes and is observable.",
+        "Two states with identical measurement probabilities in the computational basis are not necessarily the same state — relative phase can still distinguish them under other operations or measurement bases.",
+        "'Unobservable' does not mean 'unimportant' in calculations — global phase can still matter for bookkeeping during multi-step derivations, it simply never affects final measurement statistics."
+      ],
+      "RELATED_CONCEPTS": [
+        "State vector",
+        "Measurement",
+        "Bloch sphere",
+        "Hadamard (H) gate",
+        "Interference"
+      ],
+      "ASSESSMENT_IDS": [
+        "Q_PH_01",
+        "Q_PH_02",
+        "Q_PH_03",
+        "Q_PH_04",
+        "Q_PH_05"
+      ],
+      "SOURCE_REFERENCES": [
+        "Microsoft Learn — The qubit in quantum computing (Azure Quantum), section 'Measuring a qubit': https://learn.microsoft.com/en-us/azure/quantum/concepts-the-qubit",
+        "Supplementary note: the distinction between global and relative phase, and the |+⟩/|−⟩ example, is standard quantum-computing theory used here to make the concept concrete; it is not verbatim content from the linked article."
+      ],
+      "MCQS": [
+        {
+          "QUESTION_ID": "Q_PH_01",
+          "QUESTION": "What is a 'global phase' applied to a qubit state?",
+          "OPTIONS": {
+            "A": "A change to only the β amplitude",
+            "B": "A factor e^(iφ) multiplying the entire state vector",
+            "C": "A measurement outcome",
+            "D": "A change in the normalization condition"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_PHASE"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_PH_02",
+          "QUESTION": "Why doesn't a global phase affect measurement probabilities?",
+          "OPTIONS": {
+            "A": "Because measurement is random anyway",
+            "B": "Because probabilities depend on squared magnitudes, and |e^(iφ)α|² = |α|²",
+            "C": "Because global phase only applies to |1⟩, never |0⟩",
+            "D": "Because global phase changes the normalization condition to no longer equal 1"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_PHASE",
+            "C_PROB_MEASUREMENT"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_PH_03",
+          "QUESTION": "The states |+⟩ = (1/√2)|0⟩ + (1/√2)|1⟩ and |−⟩ = (1/√2)|0⟩ − (1/√2)|1⟩ give identical measurement probabilities in the computational basis. What distinguishes them?",
+          "OPTIONS": {
+            "A": "Nothing — they are physically identical states",
+            "B": "Their relative phase (the sign/phase difference between the amplitudes), which is observable through other operations such as the H gate",
+            "C": "Their normalization — only one of them is normalized",
+            "D": "Their global phase"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Hard",
+          "TOPIC_MAP": [
+            "C_PHASE"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_PH_04",
+          "QUESTION": "Which statement correctly compares global and relative phase?",
+          "OPTIONS": {
+            "A": "Both are unobservable and irrelevant to physics",
+            "B": "Global phase is unobservable and irrelevant to measurement statistics; relative phase is observable and physically meaningful",
+            "C": "Relative phase is unobservable; global phase determines measurement outcomes",
+            "D": "They are two names for the same concept"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_PHASE"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_PH_05",
+          "QUESTION": "If two qubit state vectors differ only by an overall factor of −1, what can you conclude?",
+          "OPTIONS": {
+            "A": "They represent different physical states with different measurement statistics",
+            "B": "They represent the same physical state, since −1 is a global phase (e^(iπ))",
+            "C": "One of the two vectors must not be normalized",
+            "D": "They will always give opposite measurement outcomes"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_PHASE"
+          ]
+        }
+      ]
+    },
+    {
+      "CONCEPT": "Bloch Sphere Representation",
+      "SUBTOPIC_ID": "2.3",
+      "CONCEPT_ID": "C_BLOCH_SPHERE",
+      "PREREQUISITES": [
+        "State vectors and normalization (C_STATE_VECTOR)",
+        "Global vs relative phase (C_PHASE)"
+      ],
+      "DIFFICULTY_LEVEL": "Beginner",
+      "LEARNING_OBJECTIVES": [
+        "Describe the Bloch sphere as a way of representing a single-qubit state as a point on (or in) a 3D sphere.",
+        "Identify the north and south poles of the Bloch sphere as |0⟩ and |1⟩ respectively.",
+        "Explain why the Bloch sphere works for single qubits but not directly for multi-qubit systems.",
+        "Qualitatively map a given single-qubit state to an approximate location on the Bloch sphere."
+      ],
+      "SKILLS_TAGGED": [
+        "S_BLOCH_MAPPING",
+        "S_BLOCH_POLES",
+        "S_BLOCH_LIMITATIONS"
+      ],
+      "CORE_EXPLANATION": "A single qubit's state vector is a two-dimensional complex vector, which is hard to visualize directly. The Bloch sphere solves this by giving a way to picture that same state as a point on the surface of an ordinary three-dimensional sphere, using a real-valued 3D vector (an arrow from the center of the sphere to a point on its surface) instead of two complex numbers. By convention, the north pole of the Bloch sphere represents the state |0⟩ and the south pole represents the state |1⟩; every other point on the sphere's surface represents some superposition of |0⟩ and |1⟩, with points along the equator representing equal-superposition states such as |+⟩ and |−⟩ that differ only in relative phase.\n\nThe value of this picture is that it turns quantum operations into intuitive geometric rotations: each valid transformation applied to a qubit corresponds to rotating the arrow about one of the sphere's axes. This makes it possible to reason about a sequence of operations as a sequence of physical rotations, which is a powerful and intuitive way to think about single-qubit quantum computation, even though translating this intuition into precise algorithm design still requires the underlying mathematics. One important limitation is that the Bloch sphere works only for a single qubit; for systems of two or more entangled qubits, the neat correspondence between quantum states and points on a 3D sphere breaks down, since multi-qubit states generally can't be captured by a small number of real-valued coordinates in the same simple way.",
+      "MATHEMATICAL_REPRESENTATION": "General single-qubit state (up to global phase): |ψ⟩ = cos(θ/2)|0⟩ + e^(iφ) sin(θ/2)|1⟩\nθ ∈ [0, π]: polar angle (θ=0 → north pole → |0⟩; θ=π → south pole → |1⟩)\nφ ∈ [0, 2π): azimuthal angle, encodes the relative phase between α and β\nPoles: |0⟩ at (θ=0), |1⟩ at (θ=π); equator (θ=π/2) contains equal-superposition states",
+      "INTUITION_ANALOGY": "Picture a globe: the North Pole is labeled |0⟩ and the South Pole is labeled |1⟩. A qubit in a 'pure' classical state sits exactly at one of the poles. As you move away from a pole toward the equator, the qubit becomes more and more an even mix of |0⟩ and |1⟩; the equator itself is 'home' to all the perfectly balanced 50/50 superpositions, which differ from each other only by their longitude — corresponding exactly to relative phase. Applying a quantum gate is like spinning the globe around some axis: the labels on the globe don't move, but the arrow pointing to your qubit's location does.",
+      "EXAMPLES": [
+        {
+          "EXAMPLE_ID": "Example 1",
+          "DESCRIPTION": "Poles of the Bloch sphere",
+          "STATE": "|0⟩",
+          "BLOCH_LOCATION": "North pole (θ = 0)"
+        },
+        {
+          "EXAMPLE_ID": "Example 2",
+          "DESCRIPTION": "South pole",
+          "STATE": "|1⟩",
+          "BLOCH_LOCATION": "South pole (θ = π)"
+        },
+        {
+          "EXAMPLE_ID": "Example 3",
+          "DESCRIPTION": "Equator points differing by relative phase",
+          "STATE": "|+⟩ = (1/√2)(|0⟩ + |1⟩)",
+          "BLOCH_LOCATION": "Equator, φ = 0 (points along +x axis by common convention)"
+        },
+        {
+          "EXAMPLE_ID": "Example 4",
+          "DESCRIPTION": "Another equator point",
+          "STATE": "|−⟩ = (1/√2)(|0⟩ − |1⟩)",
+          "BLOCH_LOCATION": "Equator, φ = π (points along −x axis by common convention) — opposite side of the sphere from |+⟩"
+        }
+      ],
+      "VISUALIZATIONS": [
+        "3D Bloch sphere diagram with |0⟩ labeled at the north pole and |1⟩ at the south pole",
+        "Equator ring highlighted, showing |+⟩ and |−⟩ (and other equal-superposition states) at different longitudes",
+        "Animated arrow showing a state vector sweeping from the north pole to the equator as it moves from |0⟩ toward a balanced superposition"
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "The Bloch sphere shows a *single* qubit's state; it does not directly generalize to multi-qubit or entangled systems.",
+        "Points on the Bloch sphere already account for global phase (which is discarded), so two vectors differing only by global phase map to the exact same point.",
+        "The 'inside' of the sphere is not used for pure states — valid pure single-qubit states always lie exactly on the surface (norm 1); points strictly inside represent mixed states, a more advanced topic."
+      ],
+      "RELATED_CONCEPTS": [
+        "State vector",
+        "Global vs relative phase",
+        "Single-qubit gates",
+        "Measurement",
+        "Pure vs mixed states"
+      ],
+      "ASSESSMENT_IDS": [
+        "Q_BS_01",
+        "Q_BS_02",
+        "Q_BS_03",
+        "Q_BS_04",
+        "Q_BS_05"
+      ],
+      "SOURCE_REFERENCES": [
+        "Microsoft Learn — The qubit in quantum computing (Azure Quantum), section 'Visualizing qubits and transformations using the Bloch sphere': https://learn.microsoft.com/en-us/azure/quantum/concepts-the-qubit",
+        "Supplementary note: the explicit θ, φ parametrization formula is standard quantum-computing convention added here for clarity; it is not quoted from the linked article, which describes the sphere qualitatively."
+      ],
+      "MCQS": [
+        {
+          "QUESTION_ID": "Q_BS_01",
+          "QUESTION": "On the Bloch sphere, which state is located at the north pole?",
+          "OPTIONS": {
+            "A": "|1⟩",
+            "B": "|+⟩",
+            "C": "|0⟩",
+            "D": "|−⟩"
+          },
+          "CORRECT_ANSWER": "C",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_BLOCH_SPHERE"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_BS_02",
+          "QUESTION": "Why is the Bloch sphere a useful way to think about single-qubit states?",
+          "OPTIONS": {
+            "A": "Because it turns quantum gate operations into intuitive geometric rotations of a 3D arrow",
+            "B": "Because it can represent any number of entangled qubits at once",
+            "C": "Because it eliminates the need for normalization",
+            "D": "Because it only works for classical bits"
+          },
+          "CORRECT_ANSWER": "A",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_BLOCH_SPHERE"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_BS_03",
+          "QUESTION": "What is a key limitation of the Bloch sphere representation?",
+          "OPTIONS": {
+            "A": "It cannot represent |0⟩ or |1⟩",
+            "B": "It does not directly generalize to multi-qubit (especially entangled) systems",
+            "C": "It only works for classical bits, not qubits",
+            "D": "It requires more than 3 dimensions to draw"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_BLOCH_SPHERE"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_BS_04",
+          "QUESTION": "Where on the Bloch sphere would you expect to find equal-superposition states like |+⟩ and |−⟩?",
+          "OPTIONS": {
+            "A": "At the north pole",
+            "B": "At the south pole",
+            "C": "On the equator",
+            "D": "Outside the sphere"
+          },
+          "CORRECT_ANSWER": "C",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_BLOCH_SPHERE",
+            "C_PHASE"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_BS_05",
+          "QUESTION": "Two state vectors differ only by a global phase. Where do they map on the Bloch sphere?",
+          "OPTIONS": {
+            "A": "To two different points, one near each pole",
+            "B": "To the exact same point, since the Bloch sphere representation discards global phase",
+            "C": "To antipodal (opposite) points on the sphere",
+            "D": "The Bloch sphere cannot represent either of them"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Hard",
+          "TOPIC_MAP": [
+            "C_BLOCH_SPHERE",
+            "C_PHASE"
+          ]
+        }
+      ]
+    },
+    {
+      "CONCEPT": "Single-Qubit Gates as Rotations",
+      "SUBTOPIC_ID": "2.4",
+      "CONCEPT_ID": "C_GATES_ROTATIONS",
+      "PREREQUISITES": [
+        "Bloch sphere representation (C_BLOCH_SPHERE)",
+        "State vectors and normalization (C_STATE_VECTOR)",
+        "Global vs relative phase (C_PHASE)"
+      ],
+      "DIFFICULTY_LEVEL": "Beginner-Intermediate",
+      "LEARNING_OBJECTIVES": [
+        "List the standard single-qubit gates: X, Y, Z, H, S, T and their matrices.",
+        "Describe each gate's effect as a rotation of the Bloch sphere arrow.",
+        "Predict how X, H, and Z transform a given basis or superposition state.",
+        "Distinguish Clifford gates (X, Y, Z, H, S) from the non-Clifford T gate."
+      ],
+      "SKILLS_TAGGED": [
+        "S_GATE_MATRICES",
+        "S_GATE_AS_ROTATION",
+        "S_GATE_STATE_PREDICTION"
+      ],
+      "CORE_EXPLANATION": "Quantum computers process information by applying gates — unitary transformations — to qubits, and every single-qubit gate can be understood as some rotation of the Bloch sphere arrow. Single-qubit gates split into two families: Clifford gates and non-Clifford gates. The standard Clifford gates are the Pauli operators X, Y, and Z, together with the Hadamard gate H and the phase gate S (where S = T², i.e., applying T twice gives S). The only standard non-Clifford gate is the T gate (also called the π/8 gate). Together, the Clifford gates plus T form a set that can approximate any single-qubit unitary transformation, which is why they are often taught as the essential building blocks.\n\nGeometrically: the Pauli X gate flips the qubit (it swaps |0⟩ and |1⟩) and corresponds to a 180° rotation about the Bloch sphere's x-axis. The Pauli Z gate leaves |0⟩ unchanged but flips the sign of |1⟩ (a relative-phase flip), corresponding to a 180° rotation about the z-axis; Y is a combined bit-and-phase flip, rotating 180° about the y-axis. The Hadamard gate H creates or removes superposition: it sends |0⟩ to the equal-superposition state |+⟩ and |1⟩ to |−⟩, corresponding to a 180° rotation about an axis diagonally between the x- and z-axes. The S gate applies a 90° phase rotation about the z-axis (multiplying the |1⟩ amplitude by i), and the T gate applies a smaller 45° phase rotation about the z-axis (multiplying the |1⟩ amplitude by e^(iπ/4)). More generally, continuous rotation gates R_x(θ), R_y(θ), and R_z(θ) rotate the Bloch arrow by an angle θ about the x, y, or z axis respectively, and any single-qubit unitary can be built from a sequence of such rotations.",
+      "MATHEMATICAL_REPRESENTATION": "X = [[0,1],[1,0]]              (bit flip; 180° rotation about x-axis)\nY = [[0,-i],[i,0]]              (bit+phase flip; 180° rotation about y-axis)\nZ = [[1,0],[0,-1]]              (phase flip; 180° rotation about z-axis)\nH = (1/√2)[[1,1],[1,-1]]        (creates/removes superposition; 180° rotation about the (x+z)/√2 axis)\nS = [[1,0],[0,i]] = T²          (90° phase rotation about z-axis)\nT = [[1,0],[0,e^(iπ/4)]]        (45° phase rotation about z-axis; non-Clifford)\nR_x(θ) = [[cos(θ/2), -i sin(θ/2)], [-i sin(θ/2), cos(θ/2)]]\nR_y(θ) = [[cos(θ/2), -sin(θ/2)], [sin(θ/2), cos(θ/2)]]\nR_z(θ) = [[e^(-iθ/2), 0], [0, e^(iθ/2)]]",
+      "INTUITION_ANALOGY": "If the Bloch sphere is a globe with |0⟩ at the North Pole and |1⟩ at the South Pole, then X is like flipping the globe upside down (pole swaps with pole) by spinning it 180° around an equatorial axis. Z is like giving the globe a half-twist around its own polar axis — the poles stay put, but anything on the equator ends up on the opposite side. H is the trickiest: it's like tipping the globe onto its side around a diagonal axis, so the North Pole ends up somewhere on the equator (superposition) and vice versa. S and T are gentle twists around the polar axis — S a quarter turn, T a smaller one-eighth turn — that leave the poles fixed but rotate anything already on the equator part-way around.",
+      "EXAMPLES": [
+        {
+          "EXAMPLE_ID": "Example 1",
+          "DESCRIPTION": "X gate applied to |0⟩ (bit flip)",
+          "CIRCUIT": [
+            "q0: |0⟩ ──X──"
+          ],
+          "STATEVECTOR": {
+            "before": [
+              1,
+              0
+            ],
+            "after": [
+              0,
+              1
+            ]
+          },
+          "RESULT": "|0⟩ → |1⟩ (180° rotation about the Bloch x-axis)"
+        },
+        {
+          "EXAMPLE_ID": "Example 2",
+          "DESCRIPTION": "H gate applied to |0⟩ (creating superposition)",
+          "CIRCUIT": [
+            "q0: |0⟩ ──H──"
+          ],
+          "STATEVECTOR": {
+            "before": [
+              1,
+              0
+            ],
+            "after": [
+              "1/√2",
+              "1/√2"
+            ]
+          },
+          "RESULT": "|0⟩ → |+⟩; measurement now gives 0 or 1 with 50/50 probability"
+        },
+        {
+          "EXAMPLE_ID": "Example 3",
+          "DESCRIPTION": "Z gate applied to |1⟩ (phase flip)",
+          "CIRCUIT": [
+            "q0: |1⟩ ──Z──"
+          ],
+          "STATEVECTOR": {
+            "before": [
+              0,
+              1
+            ],
+            "after": [
+              0,
+              -1
+            ]
+          },
+          "RESULT": "|1⟩ → −|1⟩; measurement probabilities are unchanged (still certainly 1), but the relative phase has flipped, which matters for later gates"
+        },
+        {
+          "EXAMPLE_ID": "Example 4",
+          "DESCRIPTION": "H gate applied to |+⟩ (H is self-inverse)",
+          "CIRCUIT": [
+            "q0: |+⟩ ──H──"
+          ],
+          "STATEVECTOR": {
+            "before": [
+              "1/√2",
+              "1/√2"
+            ],
+            "after": [
+              1,
+              0
+            ]
+          },
+          "RESULT": "|+⟩ → |0⟩ (H undoes itself: applying H twice returns the original state)"
+        },
+        {
+          "EXAMPLE_ID": "Example 5",
+          "DESCRIPTION": "Combining gates: H then Z then H (demonstrates X = HZH)",
+          "CIRCUIT": [
+            "q0: |0⟩ ──H────Z────H──"
+          ],
+          "STATEVECTOR": {
+            "before": [
+              1,
+              0
+            ],
+            "after_H": [
+              "1/√2",
+              "1/√2"
+            ],
+            "after_HZ": [
+              "1/√2",
+              "-1/√2"
+            ],
+            "after_HZH": [
+              0,
+              1
+            ]
+          },
+          "RESULT": "|0⟩ → |1⟩, showing that the sequence H, Z, H has the same overall effect as a single X gate"
+        }
+      ],
+      "VISUALIZATIONS": [
+        "Bloch sphere animation: X gate rotating the arrow 180° about the x-axis, swapping poles",
+        "Bloch sphere animation: H gate rotating the arrow 180° about the diagonal (x+z)/√2 axis, sending |0⟩ to the equator",
+        "Bloch sphere animation: Z, S, and T gates shown as increasingly smaller rotations (180°, 90°, 45°) about the z-axis",
+        "Side-by-side matrix + Bloch-sphere-rotation view for each gate (X, Y, Z, H, S, T)"
+      ],
+      "COMMON_MISCONCEPTIONS": [
+        "The Z gate does not change the probability of measuring |1⟩ when starting from |1⟩ — it only changes the relative phase, which is invisible until further gates or interference are involved.",
+        "H is its own inverse (applying it twice returns the original state) — it is not a 'one-way' operation.",
+        "S and T are not the same gate: T is the more 'fundamental' non-Clifford building block, and S = T² (applying T twice equals one S)."
+      ],
+      "RELATED_CONCEPTS": [
+        "Bloch sphere",
+        "Global vs relative phase",
+        "Superposition",
+        "Measurement",
+        "Universal gate set"
+      ],
+      "ASSESSMENT_IDS": [
+        "Q_GR_01",
+        "Q_GR_02",
+        "Q_GR_03",
+        "Q_GR_04",
+        "Q_GR_05"
+      ],
+      "SOURCE_REFERENCES": [
+        "Microsoft Learn — The qubit in quantum computing (Azure Quantum), section 'Single-qubit operations': https://learn.microsoft.com/en-us/azure/quantum/concepts-the-qubit"
+      ],
+      "MCQS": [
+        {
+          "QUESTION_ID": "Q_GR_01",
+          "QUESTION": "What does the X gate do to a qubit, both algebraically and geometrically?",
+          "OPTIONS": {
+            "A": "It swaps |0⟩ and |1⟩; geometrically a 180° rotation about the Bloch x-axis",
+            "B": "It creates a superposition; geometrically a 90° rotation about the z-axis",
+            "C": "It leaves the qubit unchanged",
+            "D": "It applies a phase of i to |1⟩"
+          },
+          "CORRECT_ANSWER": "A",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_GATES_ROTATIONS"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_GR_02",
+          "QUESTION": "What state results from applying the H gate to |0⟩?",
+          "OPTIONS": {
+            "A": "|1⟩",
+            "B": "|+⟩ = (1/√2)(|0⟩ + |1⟩)",
+            "C": "|0⟩ (unchanged)",
+            "D": "−|0⟩"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Easy",
+          "TOPIC_MAP": [
+            "C_GATES_ROTATIONS",
+            "C_BLOCH_SPHERE"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_GR_03",
+          "QUESTION": "Applying the Z gate to |1⟩ gives −|1⟩. What happens to the measurement probability of outcome 1?",
+          "OPTIONS": {
+            "A": "It becomes 0",
+            "B": "It stays 1 (100%), since |−1|² = 1, even though the relative phase has changed",
+            "C": "It becomes 0.5",
+            "D": "It is undefined"
+          },
+          "CORRECT_ANSWER": "B",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_GATES_ROTATIONS",
+            "C_PHASE",
+            "C_PROB_MEASUREMENT"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_GR_04",
+          "QUESTION": "Which of these single-qubit gates is the non-Clifford gate?",
+          "OPTIONS": {
+            "A": "X",
+            "B": "H",
+            "C": "S",
+            "D": "T"
+          },
+          "CORRECT_ANSWER": "D",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_GATES_ROTATIONS"
+          ]
+        },
+        {
+          "QUESTION_ID": "Q_GR_05",
+          "QUESTION": "What is the effect of applying the H gate twice in a row to any state |ψ⟩?",
+          "OPTIONS": {
+            "A": "It returns the state to |ψ⟩ (H is self-inverse)",
+            "B": "It always results in |0⟩",
+            "C": "It applies a T gate",
+            "D": "It measures the qubit"
+          },
+          "CORRECT_ANSWER": "A",
+          "DIFFICULTY": "Medium",
+          "TOPIC_MAP": [
+            "C_GATES_ROTATIONS"
+          ]
+        }
+      ]
+    }
+  ],
+  "FINAL_MODULE_ASSESSMENT": {
+    "ASSESSMENT_ID": "MODULE2_FINAL",
+    "INSTRUCTIONS": "10 questions covering all of Module 2. Some questions require integrating concepts from multiple subtopics.",
+    "QUESTIONS": [
+      {
+        "QUESTION_ID": "F2_Q01",
+        "QUESTION": "A qubit state is given as [0.6, 0.8]. Is this a valid state vector?",
+        "OPTIONS": {
+          "A": "Yes, because 0.6² + 0.8² = 0.36 + 0.64 = 1",
+          "B": "No, because 0.6 + 0.8 = 1.4",
+          "C": "Yes, because both numbers are positive",
+          "D": "No, because the entries must be equal"
+        },
+        "CORRECT_ANSWER": "A",
+        "DIFFICULTY": "Easy",
+        "TOPIC_MAP": [
+          "C_STATE_VECTOR"
+        ]
+      },
+      {
+        "QUESTION_ID": "F2_Q02",
+        "QUESTION": "Two qubit states differ only by an overall multiplication by −1. What is true about them?",
+        "OPTIONS": {
+          "A": "They are physically distinguishable states",
+          "B": "They are the same physical state, differing only by an unobservable global phase",
+          "C": "One of them is not normalized",
+          "D": "They will map to opposite poles on the Bloch sphere"
+        },
+        "CORRECT_ANSWER": "B",
+        "DIFFICULTY": "Medium",
+        "TOPIC_MAP": [
+          "C_PHASE"
+        ]
+      },
+      {
+        "QUESTION_ID": "F2_Q03",
+        "QUESTION": "Where on the Bloch sphere does the state |1⟩ map to?",
+        "OPTIONS": {
+          "A": "North pole",
+          "B": "South pole",
+          "C": "Equator",
+          "D": "Center of the sphere"
+        },
+        "CORRECT_ANSWER": "B",
+        "DIFFICULTY": "Easy",
+        "TOPIC_MAP": [
+          "C_BLOCH_SPHERE"
+        ]
+      },
+      {
+        "QUESTION_ID": "F2_Q04",
+        "QUESTION": "Which gate, when applied to |0⟩, produces a state located on the equator of the Bloch sphere?",
+        "OPTIONS": {
+          "A": "Z",
+          "B": "X",
+          "C": "H",
+          "D": "Identity (no gate)"
+        },
+        "CORRECT_ANSWER": "C",
+        "DIFFICULTY": "Medium",
+        "TOPIC_MAP": [
+          "C_GATES_ROTATIONS",
+          "C_BLOCH_SPHERE"
+        ]
+      },
+      {
+        "QUESTION_ID": "F2_Q05",
+        "QUESTION": "The states |+⟩ and |−⟩ both give 50/50 probabilities when measured in the computational basis. Why are they still considered different states, and how does this connect to the Bloch sphere?",
+        "OPTIONS": {
+          "A": "They aren't actually different states",
+          "B": "They differ by relative phase, which places them at different points (different longitudes) on the Bloch sphere equator, even though measurement in the computational basis can't tell them apart",
+          "C": "They differ by global phase, so they map to the same Bloch sphere point",
+          "D": "One of them is not normalized"
+        },
+        "CORRECT_ANSWER": "B",
+        "DIFFICULTY": "Hard",
+        "TOPIC_MAP": [
+          "C_PHASE",
+          "C_BLOCH_SPHERE"
+        ]
+      },
+      {
+        "QUESTION_ID": "F2_Q06",
+        "QUESTION": "Which gate corresponds to a 180° rotation about the Bloch sphere's z-axis, leaving |0⟩ and |1⟩'s probabilities unchanged but flipping the sign of the |1⟩ amplitude?",
+        "OPTIONS": {
+          "A": "X",
+          "B": "Z",
+          "C": "H",
+          "D": "S"
+        },
+        "CORRECT_ANSWER": "B",
+        "DIFFICULTY": "Medium",
+        "TOPIC_MAP": [
+          "C_GATES_ROTATIONS",
+          "C_PHASE"
+        ]
+      },
+      {
+        "QUESTION_ID": "F2_Q07",
+        "QUESTION": "A student says: 'Since the Bloch sphere can represent one qubit as a point in 3D, it must also be able to represent two entangled qubits as two points.' What is wrong with this claim?",
+        "OPTIONS": {
+          "A": "Nothing, the claim is correct",
+          "B": "The Bloch sphere representation is specific to single qubits; it does not straightforwardly extend to multi-qubit or entangled systems",
+          "C": "The Bloch sphere can only represent |0⟩ and |1⟩, not superpositions",
+          "D": "Entangled qubits cannot be represented mathematically at all"
+        },
+        "CORRECT_ANSWER": "B",
+        "DIFFICULTY": "Medium",
+        "TOPIC_MAP": [
+          "C_BLOCH_SPHERE"
+        ]
+      },
+      {
+        "QUESTION_ID": "F2_Q08",
+        "QUESTION": "Starting from |0⟩, apply H, then Z, then H (i.e., H, Z, H in sequence). What is the final state, and which single gate has the same overall effect?",
+        "OPTIONS": {
+          "A": "Final state |1⟩; same overall effect as a single X gate",
+          "B": "Final state |0⟩; same overall effect as identity",
+          "C": "Final state |+⟩; same overall effect as H alone",
+          "D": "Final state |−⟩; same overall effect as Z alone"
+        },
+        "CORRECT_ANSWER": "A",
+        "DIFFICULTY": "Hard",
+        "TOPIC_MAP": [
+          "C_GATES_ROTATIONS",
+          "C_STATE_VECTOR"
+        ]
+      },
+      {
+        "QUESTION_ID": "F2_Q09",
+        "QUESTION": "Which single-qubit gate among X, Y, Z, H, S, T is the non-Clifford gate, and what fraction of a full z-axis turn does it correspond to?",
+        "OPTIONS": {
+          "A": "T; a 1/8 turn (45°) about the z-axis",
+          "B": "S; a 1/4 turn (90°) about the z-axis",
+          "C": "H; a 1/2 turn about a diagonal axis",
+          "D": "Z; a 1/2 turn (180°) about the z-axis"
+        },
+        "CORRECT_ANSWER": "A",
+        "DIFFICULTY": "Hard",
+        "TOPIC_MAP": [
+          "C_GATES_ROTATIONS"
+        ]
+      },
+      {
+        "QUESTION_ID": "F2_Q10",
+        "QUESTION": "Which statement best ties together state vectors, phase, the Bloch sphere, and gates from this module?",
+        "OPTIONS": {
+          "A": "A qubit's normalized state vector (α, β) can be pictured as a point on the Bloch sphere fixed by θ (from α, β magnitudes) and φ (from their relative phase); gates such as X, Z, and H move this point by rotating it about specific axes, while global phase changes leave the point's location on the sphere completely unchanged",
+          "B": "State vectors, phase, the Bloch sphere, and gates are unrelated topics that happen to appear in the same module",
+          "C": "Only the H gate can be represented on the Bloch sphere; all other gates require a different representation",
+          "D": "Global phase determines the point's location on the Bloch sphere, while relative phase has no visual representation at all"
+        },
+        "CORRECT_ANSWER": "A",
+        "DIFFICULTY": "Hard",
+        "TOPIC_MAP": [
+          "C_STATE_VECTOR",
+          "C_PHASE",
+          "C_BLOCH_SPHERE",
+          "C_GATES_ROTATIONS"
+        ]
+      }
+    ]
+  }
+}
