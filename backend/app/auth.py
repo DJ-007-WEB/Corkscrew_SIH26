@@ -26,6 +26,11 @@ JWT_SECRET = os.getenv("JWT_SECRET")
 VALID_ROLES = ("student", "instructor")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
+# Instructor accounts are never self-signed-up — there is exactly one,
+# seeded on startup so it always works out of the box.
+INSTRUCTOR_EMAIL = "quantumlab@gmail.com"
+INSTRUCTOR_DEFAULT_PASSWORD = "Quantumlab"
+
 _client = None
 _db = None
 _users = None
@@ -35,6 +40,8 @@ _xp_events = None
 _assessment_results = None
 _learner_mastery = None
 _item_stats = None
+_assessments = None
+_assessment_submissions = None
 
 
 # --- Password hashing (dependency-free PBKDF2-HMAC-SHA256) -----------------
@@ -189,6 +196,25 @@ def get_item_stats_collection():
     if db is not None:
         _item_stats = db["assessment_item_stats"]
         return _item_stats
+def get_assessments_collection():
+    global _assessments
+    if _assessments is not None:
+        return _assessments
+    db = get_db()
+    if db is not None:
+        _assessments = db["assessments"]
+        return _assessments
+    return None
+
+
+def get_assessment_submissions_collection():
+    global _assessment_submissions
+    if _assessment_submissions is not None:
+        return _assessment_submissions
+    db = get_db()
+    if db is not None:
+        _assessment_submissions = db["assessment_submissions"]
+        return _assessment_submissions
     return None
 
 
@@ -218,10 +244,6 @@ def _issue_token(user_id: str, email: str | None, name: str, role: str) -> str:
     )
 
 
-def _normalize_role(role: str | None) -> str:
-    return role if role in VALID_ROLES else "student"
-
-
 def touch_last_active(user_id: str) -> None:
     """Best-effort activity ping used to approximate 'active learners'."""
     users = get_users_collection()
@@ -233,7 +255,36 @@ def touch_last_active(user_id: str) -> None:
         pass
 
 
-def google_login(credential: str, role: str | None = None) -> dict:
+def ensure_instructor_account() -> None:
+    """Idempotently seed the single instructor account so instructor login
+    works out of the box, with no signup flow of its own. Safe to call on
+    every startup — a no-op once the account exists."""
+    users = get_users_collection()
+    if users is None:
+        return
+    try:
+        if users.find_one({"email": INSTRUCTOR_EMAIL}):
+            return
+        now = datetime.now(timezone.utc)
+        users.insert_one(
+            {
+                "google_id": "local:instructor-seed",
+                "email": INSTRUCTOR_EMAIL,
+                "name": "QuantumLab Instructor",
+                "role": "instructor",
+                "auth_provider": "password",
+                "password_hash": hash_password(INSTRUCTOR_DEFAULT_PASSWORD),
+                "picture": None,
+                "created_at": now,
+                "updated_at": now,
+                "last_active": now,
+            }
+        )
+    except Exception as exc:
+        print(f"[auth] Could not seed instructor account: {exc}")
+
+
+def google_login(credential: str) -> dict:
     if not GOOGLE_CLIENT_ID:
         raise HTTPException(500, "GOOGLE_CLIENT_ID is not configured")
     if not JWT_SECRET:
@@ -263,8 +314,11 @@ def google_login(credential: str, role: str | None = None) -> dict:
     users.update_one(
         {"google_id": user["google_id"]},
         {
+            # Google sign-up always creates a student account — instructor
+            # accounts are never self-provisioned. $setOnInsert only applies
+            # the first time, so an existing account's role is untouched.
             "$set": user,
-            "$setOnInsert": {"created_at": now, "role": _normalize_role(role)},
+            "$setOnInsert": {"created_at": now, "role": "student"},
         },
         upsert=True,
     )
@@ -274,7 +328,9 @@ def google_login(credential: str, role: str | None = None) -> dict:
     return {"token": token, "user": _public_user(stored)}
 
 
-def signup(name: str, email: str, password: str, role: str | None) -> dict:
+def signup(name: str, email: str, password: str) -> dict:
+    """Self-serve signup always creates a student account. There is no
+    instructor signup — the one instructor account is seeded separately."""
     if not JWT_SECRET:
         raise HTTPException(500, "JWT_SECRET is not configured")
     users = get_users_collection()
@@ -299,7 +355,7 @@ def signup(name: str, email: str, password: str, role: str | None) -> dict:
         "google_id": user_id,
         "email": email,
         "name": name,
-        "role": _normalize_role(role),
+        "role": "student",
         "auth_provider": "password",
         "password_hash": hash_password(password),
         "picture": None,
@@ -308,7 +364,7 @@ def signup(name: str, email: str, password: str, role: str | None) -> dict:
         "last_active": now,
     }
     users.insert_one(document)
-    token = _issue_token(user_id, email, name, document["role"])
+    token = _issue_token(user_id, email, name, "student")
     return {"token": token, "user": _public_user(document)}
 
 
@@ -339,6 +395,22 @@ def current_user(request: Request) -> dict:
         payload = jwt.decode(authorization[7:], JWT_SECRET, algorithms=["HS256"])
     except jwt.PyJWTError as exc:
         raise HTTPException(401, "Invalid or expired session") from exc
+    payload.setdefault("role", "student")
+    touch_last_active(payload["sub"])
+    return payload
+
+
+def optional_user(request: Request) -> dict | None:
+    """Same as current_user but returns None instead of raising when there is
+    no (or an invalid) session — used by endpoints anonymous visitors may
+    still use, e.g. taking a public assessment without saving a score."""
+    authorization = request.headers.get("Authorization", "")
+    if not JWT_SECRET or not authorization.startswith("Bearer "):
+        return None
+    try:
+        payload = jwt.decode(authorization[7:], JWT_SECRET, algorithms=["HS256"])
+    except jwt.PyJWTError:
+        return None
     payload.setdefault("role", "student")
     touch_last_active(payload["sub"])
     return payload

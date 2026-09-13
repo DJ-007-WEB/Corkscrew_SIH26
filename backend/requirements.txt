@@ -14,3 +14,5 @@ google-auth>=2.35
 requests>=2.32
 python-dotenv>=1.0
 pytest>=8.0
+python-multipart>=0.0.9
+pypdf>=4.0

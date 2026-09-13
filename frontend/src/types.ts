@@ -323,6 +323,19 @@ export interface TopPerformer {
   best_percentage: number;
 }
 
+export interface AssessmentBreakdown {
+  id: string;
+  title: string;
+  published: boolean;
+  attempts: number;
+  average_percentage: number;
+}
+
+export interface DailyCount {
+  date: string;
+  count: number;
+}
+
 export interface InstructorDashboard {
   generated_at: string;
   total_signups: number;
@@ -331,5 +344,83 @@ export interface InstructorDashboard {
   total_assessment_attempts: number;
   average_assessment_score: number;
   top_performers: TopPerformer[];
+  assessment_breakdown: AssessmentBreakdown[];
+  signup_trend: DailyCount[];
+  score_distribution: Record<string, number>;
+  xp_leaderboard: LeaderboardEntry[];
   note?: string | null;
+}
+
+// --- Instructor-authored assessments ---------------------------------------
+
+export interface AssessmentQuestionIn {
+  question: string;
+  options: string[];
+  answer: number;
+  tag: string;
+  explanation: string;
+}
+
+export interface AssessmentQuestionPublic {
+  id: string;
+  question: string;
+  options: string[];
+  tag: string;
+}
+
+export interface AssessmentQuestionWithAnswer extends AssessmentQuestionPublic {
+  answer: number;
+  explanation: string;
+}
+
+export interface AssessmentSummary {
+  id: string;
+  title: string;
+  description: string;
+  question_count: number;
+  published: boolean;
+  created_at: string;
+  updated_at: string;
+  attempts: number;
+  average_percentage: number;
+}
+
+export interface AssessmentInstructorDetail extends AssessmentSummary {
+  questions: AssessmentQuestionWithAnswer[];
+}
+
+export interface AssessmentStudentDetail {
+  id: string;
+  title: string;
+  description: string;
+  questions: AssessmentQuestionPublic[];
+}
+
+export interface AssessmentQuestionResult {
+  id: string;
+  tag: string;
+  question: string;
+  options: string[];
+  your_option: number | null;
+  correct_option: number;
+  is_correct: boolean;
+  answered: boolean;
+  explanation: string;
+}
+
+export interface AssessmentAttemptResult {
+  id: string;
+  assessment_id: string;
+  assessment_title: string;
+  score: number;
+  total: number;
+  percentage: number;
+  saved: boolean;
+  created_at: string;
+  results: AssessmentQuestionResult[];
+}
+
+export interface ParsedQuestions {
+  questions: AssessmentQuestionIn[];
+  warnings: string[];
 }

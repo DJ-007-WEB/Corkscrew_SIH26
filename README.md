@@ -93,17 +93,20 @@ npm run dev
 
 ## 👤 Role-based Auth, Assessments & Instructor Dashboard
 
-- **Login / Signup (top-right)**: email+password accounts with a Student/Instructor role picker at signup, alongside the existing Google sign-in (Google sign-up also uses the selected role for first-time accounts).
-- **Assessment tracking**: logged-in learners have their `/assessment` score persisted to MongoDB (`assessment_results` collection); anonymous attempts are still graded client-side but not saved.
-- **Instructor Dashboard** (`/api/instructor/dashboard`, instructor-role only): total sign-ups, active learners (active in the last 7 days by default), cumulative average assessment score, and a top-performers leaderboard — all computed live from the database, nothing hardcoded.
-  - A dedicated contest engine (see `ContestPage`) is still a roadmap item, so "top performers" is currently powered by the assessment leaderboard until that ships.
-  - Instructor-editable Learning-module topics were intentionally left out of this round — flagged as a future enhancement on the dashboard.
+- **Login / Signup (top-right)**: signup is student-only (email+password, or Google) — there is no instructor signup. The single instructor account is seeded automatically on backend startup: `Quantumlab@gmail.com` / `Quantumlab` (change `INSTRUCTOR_DEFAULT_PASSWORD` in `auth.py` before a real deployment).
+- **Instructor Dashboard** (instructor-role only) is a hub with four sub-tabs:
+  - **Overview** — total sign-ups, active learners (last 7 days), cumulative average assessment score, a 14-day sign-up trend line, a score-distribution histogram, the assessment leaderboard, a per-assessment breakdown, and a real contest/XP leaderboard pulled from the gamification system. All computed live — nothing hardcoded.
+  - **Circuit Builder** and **Visualizations** — the same components students use, embedded directly so instructors don't have to leave the dashboard.
+  - **Assessments** — create assessments by adding questions one-by-one (with per-question tag/explanation and 2–6 options), or upload a PDF of questions for the backend to parse (`pypdf` + a heuristic block parser expecting `"1. Question"`, `"A) option"`, `"Answer: B"`); parsed questions are added to the editable form for review before publishing, never auto-published blind. Publishing an assessment makes it appear immediately on students' Assessment page.
+- **Student Assessment page**: lists published instructor assessments; answers are graded server-side (the answer key is never sent to the client) and, when logged in, saved for the instructor dashboard. Falls back to a built-in practice quiz when no assessments have been published yet.
+- Instructor-editable Learning-module topics remain out of scope for this round.
 
 ## 📊 Configurable Shots (Bloch Sphere & Q-Sphere)
 
 The Visualization Lab now includes a shots selector (128–8192) under both the Bloch Sphere and Q-Sphere panels. Each draws that many samples from the current step's exact statevector probabilities (client-side multinomial sampling — the same distribution Qiskit Aer's `shots=` measurement would produce) and renders a live histogram of the sampled outcomes. Bloch Sphere shows the marginal 0/1 counts for the selected qubit; Q-Sphere shows counts per full basis state. Both resample on shot-count change or via the "Run shots" button.
 
 ## 📡 API Reference
+
 
 ### Tutor Chat Endpoint: `POST /api/tutor/chat`
 
@@ -155,7 +158,8 @@ Corkscrew_SIH26/
 │   │   ├── quantum_tools.py    # Deterministic Qiskit factual extraction tools
 │   │   ├── tutor_service.py    # Grounding prompt builder, Gemini API, offline fallbacks
 │   │   ├── tutor_store.py      # Conversation turn persistence & learning signals
-│   │   ├── auth.py             # Google OAuth & JWT token verification
+│   │   ├── auth.py             # Google OAuth, password auth, JWT, seeded instructor account
+│   │   ├── assessments.py      # Assessment grading + heuristic PDF question parser
 │   │   ├── schemas.py          # Shared Pydantic data models & contracts
 │   │   └── main.py             # FastAPI routing & rate limiting
 │   ├── tests/
@@ -179,7 +183,9 @@ Corkscrew_SIH26/
 │   │   ├── AuthForm.tsx        # Shared role-based login/signup form (+ Google)
 │   │   ├── AuthModal.tsx       # Top-right header Login/Signup modal
 │   │   ├── AuthPage.tsx        # Full-page auth gate for Learning/My Works tabs
-│   │   ├── InstructorDashboard.tsx # Live cohort stats for instructor accounts
+│   │   ├── InstructorDashboard.tsx # Instructor hub: overview + builder + visualizations + assessments
+│   │   ├── InstructorAssessments.tsx # Create/edit assessments, one-by-one or via PDF upload
+│   │   ├── MiniCharts.tsx      # Dependency-free SVG bar/line charts for the dashboard
 │   │   ├── api.ts              # Typed backend client
 │   │   └── types.ts            # TypeScript interfaces & IR contracts
 │   ├── package.json

@@ -1,6 +1,11 @@
 import type {
+  AssessmentAttemptResult,
+  AssessmentInstructorDetail,
+  AssessmentQuestionIn,
   AssessmentResult,
   AdaptiveAssessment,
+  AssessmentStudentDetail,
+  AssessmentSummary,
   AuthResponse,
   BackendId,
   BackendInfo,
@@ -14,7 +19,7 @@ import type {
   GateDefinition,
   InstructorDashboard,
   LeaderboardEntry,
-  Role,
+  ParsedQuestions,
   SavedWork,
   SimulationResult,
   SprintResult,
@@ -227,11 +232,11 @@ export function cancelDuel(token: string, code: string): Promise<{ ok: boolean }
   });
 }
 
-export function signup(name: string, email: string, password: string, role: Role): Promise<AuthResponse> {
+export function signup(name: string, email: string, password: string): Promise<AuthResponse> {
   return request<AuthResponse>("/api/auth/signup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, email, password, role }),
+    body: JSON.stringify({ name, email, password }),
   });
 }
 
@@ -243,11 +248,11 @@ export function login(email: string, password: string): Promise<AuthResponse> {
   });
 }
 
-export function googleAuth(credential: string, role?: Role): Promise<AuthResponse> {
+export function googleAuth(credential: string): Promise<AuthResponse> {
   return request<AuthResponse>("/api/auth/google", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ credential, role }),
+    body: JSON.stringify({ credential }),
   });
 }
 
@@ -301,5 +306,74 @@ export async function reportLearningQuiz(token: string | null, quizId: string, a
 
 export function getInstructorDashboard(token: string): Promise<InstructorDashboard> {
   return request<InstructorDashboard>("/api/instructor/dashboard", { headers: authHeaders(token) });
+}
+
+// --- Instructor-authored assessments ---------------------------------------
+
+export function createAssessment(
+  token: string,
+  title: string,
+  description: string,
+  questions: AssessmentQuestionIn[],
+  published: boolean,
+): Promise<AssessmentSummary> {
+  return request<AssessmentSummary>("/api/instructor/assessments", {
+    method: "POST",
+    headers: { ...authHeaders(token), "Content-Type": "application/json" },
+    body: JSON.stringify({ title, description, questions, published }),
+  });
+}
+
+export function listInstructorAssessments(token: string): Promise<AssessmentSummary[]> {
+  return request<AssessmentSummary[]>("/api/instructor/assessments", { headers: authHeaders(token) });
+}
+
+export function getInstructorAssessment(token: string, id: string): Promise<AssessmentInstructorDetail> {
+  return request<AssessmentInstructorDetail>(`/api/instructor/assessments/${id}`, { headers: authHeaders(token) });
+}
+
+export function updateAssessment(
+  token: string,
+  id: string,
+  patch: Partial<{ title: string; description: string; questions: AssessmentQuestionIn[]; published: boolean }>,
+): Promise<AssessmentSummary> {
+  return request<AssessmentSummary>(`/api/instructor/assessments/${id}`, {
+    method: "PATCH",
+    headers: { ...authHeaders(token), "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+}
+
+export function deleteAssessment(token: string, id: string): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>(`/api/instructor/assessments/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+}
+
+export function parseAssessmentPdf(token: string, file: File): Promise<ParsedQuestions> {
+  const form = new FormData();
+  form.append("file", file);
+  return request<ParsedQuestions>("/api/instructor/assessments/parse-pdf", {
+    method: "POST",
+    headers: authHeaders(token),
+    body: form,
+  });
+}
+
+export function listStudentAssessments(): Promise<AssessmentSummary[]> {
+  return request<AssessmentSummary[]>("/api/assessments");
+}
+
+export function getStudentAssessment(id: string): Promise<AssessmentStudentDetail> {
+  return request<AssessmentStudentDetail>(`/api/assessments/${id}`);
+}
+
+export function submitStudentAssessment(token: string | null, id: string, answers: Record<string, number>): Promise<AssessmentAttemptResult> {
+  return request<AssessmentAttemptResult>(`/api/assessments/${id}/submit`, {
+    method: "POST",
+    headers: { ...(token ? authHeaders(token) : {}), "Content-Type": "application/json" },
+    body: JSON.stringify({ answers }),
+  });
 }
 

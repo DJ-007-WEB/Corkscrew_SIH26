@@ -299,10 +299,10 @@ Role = Literal["student", "instructor"]
 
 
 class SignupRequest(BaseModel):
+    """Self-serve signup is student-only — there is no instructor signup."""
     name: str = Field(min_length=1, max_length=120)
     email: str = Field(min_length=3, max_length=200)
     password: str = Field(min_length=8, max_length=200)
-    role: Role = "student"
 
 
 class LoginRequest(BaseModel):
@@ -312,7 +312,6 @@ class LoginRequest(BaseModel):
 
 class GoogleAuthRequest(BaseModel):
     credential: str
-    role: Optional[Role] = None
 
 
 class PublicUser(BaseModel):
@@ -413,6 +412,96 @@ class LearningQuizSubmitResponse(BaseModel):
 
 class AssessmentHistoryResponse(BaseModel):
     assessments: list[AdaptiveAssessment]
+# --- Instructor-authored assessments ----------------------------------------
+
+class AssessmentQuestionIn(BaseModel):
+    question: str = Field(min_length=1, max_length=1000)
+    options: list[str] = Field(min_length=2, max_length=6)
+    answer: int = Field(ge=0)
+    tag: str = Field(default="General", max_length=60)
+    explanation: str = Field(default="", max_length=500)
+
+
+class AssessmentCreateRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=150)
+    description: str = Field(default="", max_length=500)
+    questions: list[AssessmentQuestionIn] = Field(min_length=1, max_length=100)
+    published: bool = True
+
+
+class AssessmentUpdateRequest(BaseModel):
+    title: Optional[str] = Field(default=None, min_length=1, max_length=150)
+    description: Optional[str] = Field(default=None, max_length=500)
+    questions: Optional[list[AssessmentQuestionIn]] = Field(default=None, min_length=1, max_length=100)
+    published: Optional[bool] = None
+
+
+class AssessmentQuestionPublic(BaseModel):
+    id: str
+    question: str
+    options: list[str]
+    tag: str = "General"
+
+
+class AssessmentQuestionWithAnswer(AssessmentQuestionPublic):
+    answer: int
+    explanation: str = ""
+
+
+class AssessmentSummary(BaseModel):
+    id: str
+    title: str
+    description: str = ""
+    question_count: int
+    published: bool
+    created_at: str
+    updated_at: str
+    attempts: int = 0
+    average_percentage: float = 0.0
+
+
+class AssessmentInstructorDetail(AssessmentSummary):
+    questions: list[AssessmentQuestionWithAnswer]
+
+
+class AssessmentStudentDetail(BaseModel):
+    id: str
+    title: str
+    description: str = ""
+    questions: list[AssessmentQuestionPublic]
+
+
+class AssessmentAnswerSubmit(BaseModel):
+    answers: dict[str, int] = Field(default_factory=dict)
+
+
+class AssessmentQuestionResult(BaseModel):
+    id: str
+    tag: str
+    question: str
+    options: list[str]
+    your_option: Optional[int] = None
+    correct_option: int
+    is_correct: bool
+    answered: bool
+    explanation: str = ""
+
+
+class AssessmentAttemptResult(BaseModel):
+    id: str
+    assessment_id: str
+    assessment_title: str
+    score: int
+    total: int
+    percentage: float
+    saved: bool
+    created_at: str
+    results: list[AssessmentQuestionResult]
+
+
+class ParsedQuestions(BaseModel):
+    questions: list[AssessmentQuestionIn]
+    warnings: list[str] = Field(default_factory=list)
 
 
 # --- Instructor dashboard ----------------------------------------------------
@@ -425,6 +514,19 @@ class TopPerformer(BaseModel):
     best_percentage: float
 
 
+class AssessmentBreakdown(BaseModel):
+    id: str
+    title: str
+    published: bool
+    attempts: int
+    average_percentage: float
+
+
+class DailyCount(BaseModel):
+    date: str
+    count: int
+
+
 class InstructorDashboard(BaseModel):
     generated_at: str
     total_signups: int
@@ -433,4 +535,8 @@ class InstructorDashboard(BaseModel):
     total_assessment_attempts: int
     average_assessment_score: float
     top_performers: list[TopPerformer]
+    assessment_breakdown: list[AssessmentBreakdown] = Field(default_factory=list)
+    signup_trend: list[DailyCount] = Field(default_factory=list)
+    score_distribution: dict[str, int] = Field(default_factory=dict)
+    xp_leaderboard: list[LeaderboardEntry] = Field(default_factory=list)
     note: Optional[str] = None

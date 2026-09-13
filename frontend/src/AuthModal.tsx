@@ -17,7 +17,7 @@ export default function AuthModal({ initialMode, onAuthenticated, onClose }: Pro
         <AuthForm
           initialMode={initialMode}
           title="QuantumLab access"
-          description="Log in or create a role-based account — pick Student or Instructor when signing up."
+          description="Log in, or sign up for a free student account. Instructors log in with their provided instructor credentials."
           onAuthenticated={onAuthenticated}
         />
       </div>

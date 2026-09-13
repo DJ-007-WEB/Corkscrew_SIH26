@@ -1,7 +1,7 @@
 import { GoogleLogin } from "@react-oauth/google";
 import { useState } from "react";
 import { googleAuth, login, signup } from "./api";
-import type { AuthResponse, Role } from "./types";
+import type { AuthResponse } from "./types";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -16,7 +16,6 @@ type Props = {
 
 export default function AuthForm({ onAuthenticated, initialMode = "signin", title, description }: Props) {
   const [mode, setMode] = useState<Mode>(initialMode);
-  const [role, setRole] = useState<Role>("student");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,7 +31,7 @@ export default function AuthForm({ onAuthenticated, initialMode = "signin", titl
     setLoading(true);
     setError("");
     try {
-      const auth = await googleAuth(credential, role);
+      const auth = await googleAuth(credential);
       localStorage.setItem("quantum-token", auth.token);
       localStorage.setItem("quantum-user", JSON.stringify(auth.user));
       onAuthenticated(auth);
@@ -48,7 +47,7 @@ export default function AuthForm({ onAuthenticated, initialMode = "signin", titl
     setLoading(true);
     setError("");
     try {
-      const auth = mode === "signup" ? await signup(name, email, password, role) : await login(email, password);
+      const auth = mode === "signup" ? await signup(name, email, password) : await login(email, password);
       localStorage.setItem("quantum-token", auth.token);
       localStorage.setItem("quantum-user", JSON.stringify(auth.user));
       onAuthenticated(auth);
@@ -72,20 +71,6 @@ export default function AuthForm({ onAuthenticated, initialMode = "signin", titl
           Sign up
         </button>
       </div>
-
-      {mode === "signup" && (
-        <div className="mt-5 text-left max-w-sm mx-auto">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--bp-text-faint)] mb-1.5">I am a…</p>
-          <div className="flex gap-1 rounded-md border border-[var(--bp-border)] p-1">
-            <button type="button" onClick={() => setRole("student")} className="flex-1 px-3 py-1.5 rounded text-xs font-mono transition-colors" style={{ background: role === "student" ? "var(--bp-cyan)" : "transparent", color: role === "student" ? "#081527" : "var(--bp-text-dim)" }}>
-              Student
-            </button>
-            <button type="button" onClick={() => setRole("instructor")} className="flex-1 px-3 py-1.5 rounded text-xs font-mono transition-colors" style={{ background: role === "instructor" ? "var(--bp-cyan)" : "transparent", color: role === "instructor" ? "#081527" : "var(--bp-text-dim)" }}>
-              Instructor
-            </button>
-          </div>
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="mt-5 text-left max-w-sm mx-auto space-y-3">
         {mode === "signup" && (
@@ -123,7 +108,9 @@ export default function AuthForm({ onAuthenticated, initialMode = "signin", titl
           </div>
         )}
       </div>
-      {mode === "signup" && <p className="mt-2 text-[10px] font-mono text-[var(--bp-text-faint)]">Google sign-up uses the role selected above.</p>}
+      <p className="mt-2 text-[10px] font-mono text-[var(--bp-text-faint)]">
+        {mode === "signup" ? "New accounts are always student accounts." : "Instructors: log in with your provided instructor email and password."}
+      </p>
 
       {loading && <p className="mt-4 text-xs font-mono text-[var(--bp-cyan)]">AUTHENTICATING...</p>}
       {error && <p className="mt-4 text-xs text-[var(--bp-coral)]">{error}</p>}

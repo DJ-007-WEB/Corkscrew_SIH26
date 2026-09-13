@@ -1,3 +1,4 @@
+import io
 import logging
 import time
 from datetime import datetime, timedelta, timezone
@@ -15,14 +16,17 @@ def _as_aware(value) -> datetime:
         return value.replace(tzinfo=timezone.utc)
     return value
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import backends, contests, dns_fix, gamification
 from . import assessment_service
 from .auth import (
     current_user,
+    ensure_instructor_account,
     get_assessment_results_collection,
+    get_assessment_submissions_collection,
+    get_assessments_collection,
     get_challenge_solves_collection,
     get_contest_attempts_collection,
     get_duel_rooms_collection,
@@ -35,9 +39,11 @@ from .auth import (
     get_xp_events_collection,
     google_login,
     login as password_login,
+    optional_user,
     require_instructor,
     signup as password_signup,
 )
+from . import assessments as assessments_logic
 from .circuit_builder import circuit_from_qiskit, circuit_to_qasm, circuit_to_qiskit, gate_catalog, validate_circuit
 from .circuit_diagnostics import diagnose_circuit
 from .gamification import ACTIVITY_XP
@@ -54,7 +60,16 @@ from .schemas import (
     AssessmentHistoryResponse,
     AssessmentResult,
     AssessmentSubmitAnswersRequest,
+    AssessmentAnswerSubmit,
+    AssessmentAttemptResult,
+    AssessmentBreakdown,
+    AssessmentCreateRequest,
+    AssessmentInstructorDetail,
+    AssessmentResult,
+    AssessmentStudentDetail,
     AssessmentSubmitRequest,
+    AssessmentSummary,
+    AssessmentUpdateRequest,
     AuthResponse,
     BackendInfo,
     ChallengeSubmitRequest,
@@ -65,6 +80,7 @@ from .schemas import (
     Circuit,
     CircuitDiagnosis,
     CodeRequest,
+    DailyCount,
     DuelAnswerRequest,
     DuelCreateResponse,
     DuelJoinRequest,
@@ -76,6 +92,7 @@ from .schemas import (
     LearningQuizSubmitRequest,
     LearningQuizSubmitResponse,
     LoginRequest,
+    ParsedQuestions,
     QuizQuestion,
     SavedWork,
     SavedWorkRequest,
@@ -92,6 +109,12 @@ from .schemas import (
 )
 from .tutor_service import answer as tutor_answer
 
+try:
+    from pypdf import PdfReader
+    PDF_SUPPORT = True
+except ImportError:
+    PDF_SUPPORT = False
+
 app = FastAPI(title="Quantum Learning Platform API")
 logger = logging.getLogger("quantum_tutor")
 _chat_limits: dict[str, list[float]] = {}
@@ -104,6 +127,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+def _seed_instructor_account() -> None:
+    """Ensure the single instructor login always works, even on a fresh DB."""
+    ensure_instructor_account()
+
+
 
 
 @app.get("/api/health")
@@ -120,12 +151,12 @@ def gates():
 def auth_google(payload: GoogleAuthRequest):
     if not payload.credential:
         raise HTTPException(400, "Google credential is required")
-    return google_login(payload.credential, payload.role)
+    return google_login(payload.credential)
 
 
 @app.post("/api/auth/signup", response_model=AuthResponse)
 def auth_signup(payload: SignupRequest):
-    return password_signup(payload.name, payload.email, payload.password, payload.role)
+    return password_signup(payload.name, payload.email, payload.password)
 
 
 @app.post("/api/auth/login", response_model=AuthResponse)
@@ -1144,27 +1175,305 @@ def learning_quiz_submit(payload: LearningQuizSubmitRequest, request: Request):
     }
 
 
+def _assessment_doc_to_summary(doc: dict, attempts: int, average_percentage: float) -> dict:
+    return {
+        "id": str(doc["_id"]),
+        "title": doc["title"],
+        "description": doc.get("description", ""),
+        "question_count": len(doc.get("questions", [])),
+        "published": bool(doc.get("published", False)),
+        "created_at": doc["created_at"].isoformat(),
+        "updated_at": doc["updated_at"].isoformat(),
+        "attempts": attempts,
+        "average_percentage": average_percentage,
+    }
+
+
+def _submission_stats_by_assessment(submissions_collection) -> dict[str, dict]:
+    """{assessment_id: {"attempts": n, "average_percentage": x}} from every submission."""
+    pipeline = [
+        {"$group": {"_id": "$assessment_id", "attempts": {"$sum": 1}, "avg": {"$avg": "$percentage"}}},
+    ]
+    out: dict[str, dict] = {}
+    for row in submissions_collection.aggregate(pipeline):
+        out[row["_id"]] = {"attempts": row["attempts"], "average_percentage": round(row["avg"], 2)}
+    return out
+
+
+@app.post("/api/instructor/assessments", response_model=AssessmentSummary)
+def create_assessment(payload: AssessmentCreateRequest, request: Request):
+    user = require_instructor(request)
+    collection = get_assessments_collection()
+    if collection is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    now = datetime.now(timezone.utc)
+    questions = [
+        {
+            "id": assessments_logic.new_question_id(),
+            "question": q.question.strip(),
+            "options": [o.strip() for o in q.options],
+            "answer": q.answer,
+            "tag": q.tag.strip() or "General",
+            "explanation": q.explanation.strip(),
+        }
+        for q in payload.questions
+    ]
+    for q in questions:
+        if q["answer"] >= len(q["options"]):
+            raise HTTPException(400, f'"{q["question"][:50]}" has an answer index out of range for its options')
+    document = {
+        "title": payload.title.strip(),
+        "description": payload.description.strip(),
+        "questions": questions,
+        "published": payload.published,
+        "created_by": user["sub"],
+        "created_by_name": user.get("name", "Instructor"),
+        "created_at": now,
+        "updated_at": now,
+    }
+    result = collection.insert_one(document)
+    document["_id"] = result.inserted_id
+    return _assessment_doc_to_summary(document, 0, 0.0)
+
+
+@app.get("/api/instructor/assessments", response_model=list[AssessmentSummary])
+def list_instructor_assessments(request: Request):
+    require_instructor(request)
+    collection = get_assessments_collection()
+    submissions = get_assessment_submissions_collection()
+    if collection is None or submissions is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    stats_by_id = _submission_stats_by_assessment(submissions)
+    docs = list(collection.find({}).sort("created_at", -1))
+    return [
+        _assessment_doc_to_summary(
+            doc,
+            stats_by_id.get(str(doc["_id"]), {}).get("attempts", 0),
+            stats_by_id.get(str(doc["_id"]), {}).get("average_percentage", 0.0),
+        )
+        for doc in docs
+    ]
+
+
+@app.get("/api/instructor/assessments/{assessment_id}", response_model=AssessmentInstructorDetail)
+def get_instructor_assessment(assessment_id: str, request: Request):
+    from bson import ObjectId
+
+    require_instructor(request)
+    collection = get_assessments_collection()
+    submissions = get_assessment_submissions_collection()
+    if collection is None or submissions is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    try:
+        doc = collection.find_one({"_id": ObjectId(assessment_id)})
+    except Exception as exc:
+        raise HTTPException(400, "Invalid assessment id") from exc
+    if doc is None:
+        raise HTTPException(404, "Assessment not found")
+    stats = _submission_stats_by_assessment(submissions).get(assessment_id, {"attempts": 0, "average_percentage": 0.0})
+    summary = _assessment_doc_to_summary(doc, stats["attempts"], stats["average_percentage"])
+    return {**summary, "questions": doc.get("questions", [])}
+
+
+@app.patch("/api/instructor/assessments/{assessment_id}", response_model=AssessmentSummary)
+def update_assessment(assessment_id: str, payload: AssessmentUpdateRequest, request: Request):
+    from bson import ObjectId
+
+    require_instructor(request)
+    collection = get_assessments_collection()
+    submissions = get_assessment_submissions_collection()
+    if collection is None or submissions is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    try:
+        oid = ObjectId(assessment_id)
+    except Exception as exc:
+        raise HTTPException(400, "Invalid assessment id") from exc
+
+    update: dict = {"updated_at": datetime.now(timezone.utc)}
+    if payload.title is not None:
+        update["title"] = payload.title.strip()
+    if payload.description is not None:
+        update["description"] = payload.description.strip()
+    if payload.published is not None:
+        update["published"] = payload.published
+    if payload.questions is not None:
+        update["questions"] = [
+            {
+                "id": assessments_logic.new_question_id(),
+                "question": q.question.strip(),
+                "options": [o.strip() for o in q.options],
+                "answer": q.answer,
+                "tag": q.tag.strip() or "General",
+                "explanation": q.explanation.strip(),
+            }
+            for q in payload.questions
+        ]
+        for q in update["questions"]:
+            if q["answer"] >= len(q["options"]):
+                raise HTTPException(400, f'"{q["question"][:50]}" has an answer index out of range for its options')
+
+    doc = collection.find_one_and_update({"_id": oid}, {"$set": update}, return_document=True)
+    if doc is None:
+        raise HTTPException(404, "Assessment not found")
+    stats = _submission_stats_by_assessment(submissions).get(assessment_id, {"attempts": 0, "average_percentage": 0.0})
+    return _assessment_doc_to_summary(doc, stats["attempts"], stats["average_percentage"])
+
+
+@app.delete("/api/instructor/assessments/{assessment_id}")
+def delete_assessment(assessment_id: str, request: Request):
+    from bson import ObjectId
+
+    require_instructor(request)
+    collection = get_assessments_collection()
+    if collection is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    try:
+        oid = ObjectId(assessment_id)
+    except Exception as exc:
+        raise HTTPException(400, "Invalid assessment id") from exc
+    result = collection.delete_one({"_id": oid})
+    if result.deleted_count == 0:
+        raise HTTPException(404, "Assessment not found")
+    return {"ok": True}
+
+
+@app.post("/api/instructor/assessments/parse-pdf", response_model=ParsedQuestions)
+async def parse_assessment_pdf(request: Request):
+    require_instructor(request)
+    if not PDF_SUPPORT:
+        raise HTTPException(501, "PDF parsing is unavailable — install pypdf on the backend")
+    form = await request.form()
+    upload = form.get("file")
+    if upload is None or not isinstance(upload, UploadFile):
+        raise HTTPException(400, "Upload a PDF file as multipart form field 'file'")
+    raw = await upload.read()
+    try:
+        reader = PdfReader(io.BytesIO(raw))
+        text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    except Exception as exc:
+        raise HTTPException(400, f"Could not read PDF: {exc}") from exc
+    questions, warnings = assessments_logic.parse_questions_from_text(text)
+    return {"questions": questions, "warnings": warnings}
+
+
+@app.get("/api/assessments", response_model=list[AssessmentSummary])
+def list_student_assessments():
+    """Published assessments any learner can see and take. No answer keys."""
+    collection = get_assessments_collection()
+    submissions = get_assessment_submissions_collection()
+    if collection is None or submissions is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    stats_by_id = _submission_stats_by_assessment(submissions)
+    docs = list(collection.find({"published": True}).sort("created_at", -1))
+    return [
+        _assessment_doc_to_summary(
+            doc,
+            stats_by_id.get(str(doc["_id"]), {}).get("attempts", 0),
+            stats_by_id.get(str(doc["_id"]), {}).get("average_percentage", 0.0),
+        )
+        for doc in docs
+    ]
+
+
+@app.get("/api/assessments/{assessment_id}", response_model=AssessmentStudentDetail)
+def get_student_assessment(assessment_id: str):
+    from bson import ObjectId
+
+    collection = get_assessments_collection()
+    if collection is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    try:
+        doc = collection.find_one({"_id": ObjectId(assessment_id), "published": True})
+    except Exception as exc:
+        raise HTTPException(400, "Invalid assessment id") from exc
+    if doc is None:
+        raise HTTPException(404, "Assessment not found")
+    return {
+        "id": str(doc["_id"]),
+        "title": doc["title"],
+        "description": doc.get("description", ""),
+        "questions": [
+            {"id": q["id"], "question": q["question"], "options": q["options"], "tag": q.get("tag", "General")}
+            for q in doc.get("questions", [])
+        ],
+    }
+
+
+@app.post("/api/assessments/{assessment_id}/submit", response_model=AssessmentAttemptResult)
+def submit_student_assessment(assessment_id: str, payload: AssessmentAnswerSubmit, request: Request):
+    from bson import ObjectId
+
+    collection = get_assessments_collection()
+    submissions = get_assessment_submissions_collection()
+    if collection is None or submissions is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    try:
+        doc = collection.find_one({"_id": ObjectId(assessment_id), "published": True})
+    except Exception as exc:
+        raise HTTPException(400, "Invalid assessment id") from exc
+    if doc is None:
+        raise HTTPException(404, "Assessment not found")
+
+    correct, total, results = assessments_logic.grade_assessment(doc.get("questions", []), payload.answers)
+    percentage = round((correct / total) * 100, 2) if total else 0.0
+
+    # Anonymous visitors can still take and get graded; only logged-in
+    # learners have the attempt persisted for the instructor dashboard.
+    user = optional_user(request)
+    now = datetime.now(timezone.utc)
+    saved = False
+    submission_id = ""
+    if user is not None:
+        submission = {
+            "assessment_id": assessment_id,
+            "assessment_title": doc["title"],
+            "user_id": user["sub"],
+            "user_name": user.get("name", "Quantum Learner"),
+            "user_email": user.get("email"),
+            "score": correct,
+            "total": total,
+            "percentage": percentage,
+            "created_at": now,
+        }
+        submission_id = str(submissions.insert_one(submission).inserted_id)
+        saved = True
+
+    return {
+        "id": submission_id,
+        "assessment_id": assessment_id,
+        "assessment_title": doc["title"],
+        "score": correct,
+        "total": total,
+        "percentage": percentage,
+        "saved": saved,
+        "created_at": now.isoformat(),
+        "results": results,
+    }
+
+
 @app.get("/api/instructor/dashboard", response_model=InstructorDashboard)
 def instructor_dashboard(request: Request, active_window_days: int = 7):
-    """Live instructor overview. Every figure is computed on read from the
-    users and assessment_results collections — nothing here is cached or
-    hardcoded, so it reflects real signups/attempts as they happen.
-
-    Note: a dedicated contest engine (submissions, timed challenges, ranking
-    history) is still a roadmap item — see ContestPage. Until it ships,
-    "top performers" is powered by the assessment leaderboard below."""
+    """Live instructor overview. Every figure is computed on read — nothing
+    here is cached or hardcoded, so it reflects real signups, assessment
+    attempts and contest/XP activity as they happen."""
     require_instructor(request)
 
     users = get_users_collection()
-    results = get_assessment_results_collection()
-    if users is None or results is None:
+    legacy_results = get_assessment_results_collection()
+    submissions = get_assessment_submissions_collection()
+    assessments_collection = get_assessments_collection()
+    stats_collection = get_user_stats_collection()
+    if users is None or legacy_results is None or submissions is None or assessments_collection is None:
         raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
 
     total_signups = users.count_documents({})
     cutoff = datetime.now(timezone.utc) - timedelta(days=active_window_days)
     active_learners = users.count_documents({"last_active": {"$gte": cutoff}})
 
-    attempts = list(results.find({}))
+    # Combine the legacy fixed-quiz results with the new per-assessment
+    # submissions so historical data isn't lost while new instructor-authored
+    # content flows straight into the same overall figures.
+    attempts: list[dict] = list(legacy_results.find({})) + list(submissions.find({}))
     total_attempts = len(attempts)
     average_score = round(sum(a["percentage"] for a in attempts) / total_attempts, 2) if total_attempts else 0.0
 
@@ -1176,7 +1485,7 @@ def instructor_dashboard(request: Request, active_window_days: int = 7):
         )
         bucket["scores"].append(attempt["percentage"])
 
-    leaderboard = [
+    top_performers = [
         TopPerformer(
             name=bucket["name"],
             email=bucket["email"],
@@ -1186,7 +1495,65 @@ def instructor_dashboard(request: Request, active_window_days: int = 7):
         )
         for bucket in by_user.values()
     ]
-    leaderboard.sort(key=lambda p: (p.average_percentage, p.attempts), reverse=True)
+    top_performers.sort(key=lambda p: (p.average_percentage, p.attempts), reverse=True)
+
+    # Score distribution across 20-point buckets, for a histogram.
+    buckets = {"0-20": 0, "21-40": 0, "41-60": 0, "61-80": 0, "81-100": 0}
+    for attempt in attempts:
+        pct = attempt["percentage"]
+        if pct <= 20:
+            buckets["0-20"] += 1
+        elif pct <= 40:
+            buckets["21-40"] += 1
+        elif pct <= 60:
+            buckets["41-60"] += 1
+        elif pct <= 80:
+            buckets["61-80"] += 1
+        else:
+            buckets["81-100"] += 1
+
+    # Per-assessment breakdown, real instructor content only.
+    stats_by_id = _submission_stats_by_assessment(submissions)
+    assessment_breakdown = [
+        AssessmentBreakdown(
+            id=str(doc["_id"]),
+            title=doc["title"],
+            published=bool(doc.get("published", False)),
+            attempts=stats_by_id.get(str(doc["_id"]), {}).get("attempts", 0),
+            average_percentage=stats_by_id.get(str(doc["_id"]), {}).get("average_percentage", 0.0),
+        )
+        for doc in assessments_collection.find({}).sort("created_at", -1)
+    ]
+
+    # Sign-up trend, last 14 days.
+    trend_days = 14
+    counts: dict[str, int] = {}
+    today = datetime.now(timezone.utc).date()
+    for offset in range(trend_days - 1, -1, -1):
+        day = today - timedelta(days=offset)
+        counts[day.isoformat()] = 0
+    trend_cutoff = datetime.now(timezone.utc) - timedelta(days=trend_days)
+    for doc in users.find({"created_at": {"$gte": trend_cutoff}}, {"created_at": 1}):
+        day = _as_aware(doc["created_at"]).date().isoformat()
+        if day in counts:
+            counts[day] += 1
+    signup_trend = [DailyCount(date=day, count=count) for day, count in counts.items()]
+
+    # Real contest/XP leaderboard, when the gamification system has data.
+    xp_leaderboard: list[LeaderboardEntry] = []
+    if stats_collection is not None:
+        docs = list(stats_collection.find().sort("total_xp", -1).limit(5))
+        xp_leaderboard = [
+            LeaderboardEntry(
+                rank=index,
+                user_id=doc.get("user_id", ""),
+                name=doc.get("name", "Quantum Learner"),
+                total_xp=int(doc.get("total_xp", 0)),
+                level=gamification.level_for_xp(int(doc.get("total_xp", 0))),
+                streak_count=int(doc.get("streak_count", 0)),
+            )
+            for index, doc in enumerate(docs, start=1)
+        ]
 
     return InstructorDashboard(
         generated_at=datetime.now(timezone.utc).isoformat(),
@@ -1195,8 +1562,12 @@ def instructor_dashboard(request: Request, active_window_days: int = 7):
         active_window_days=active_window_days,
         total_assessment_attempts=total_attempts,
         average_assessment_score=average_score,
-        top_performers=leaderboard[:10],
-        note="Contest engine not built yet — top performers reflect the assessment leaderboard.",
+        top_performers=top_performers[:10],
+        assessment_breakdown=assessment_breakdown,
+        signup_trend=signup_trend,
+        score_distribution=buckets,
+        xp_leaderboard=xp_leaderboard,
+        note=None if assessment_breakdown else "No instructor-authored assessments yet — create one to see per-assessment stats.",
     )
 
 

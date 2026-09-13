@@ -1,7 +1,7 @@
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { useEffect, useRef, useState } from "react";
 import VisualizationPage from "./VisualizationPage";
-import type { Circuit, PublicUser, SimulationResult } from "./types";
+import type { AuthResponse, Circuit, PublicUser, SimulationResult } from "./types";
 import CircuitBuilder from "./CircuitBuilder";
 import LandingPage from "./LandingPage";
 import AuthPage from "./AuthPage";
@@ -15,7 +15,7 @@ import HowToUsePage from "./HowToUsePage";
 import InstructorDashboard from "./InstructorDashboard";
 import AboutPage from "./AboutPage";
 
-type Tab = "home" | "builder" | "learn" | "waves" | "works" | "assessment" | "contests" | "howtouse" | "about" | "dashboard";
+type Tab = "home" | "builder" | "learn" | "waves" | "works" | "assessment" | "contests" | "howtouse" | "about" | "dashboard" | "instructor-overview" | "instructor-builder" | "instructor-visualizations" | "instructor-assessments";
 
 const BASE_TABS: { id: Tab; label: string }[] = [
   { id: "home", label: "Home" },
@@ -58,7 +58,7 @@ function lessonKeyFor(sub: string | null): string {
   return sub ? `quantum-lesson:${sub}` : "quantum-lesson";
 }
 
-const VALID_TABS: Tab[] = ["home", "builder", "learn", "waves", "works", "assessment", "contests", "howtouse", "about"];
+const VALID_TABS: Tab[] = ["home", "builder", "learn", "waves", "works", "assessment", "contests", "howtouse", "about", "dashboard", "instructor-overview", "instructor-builder", "instructor-visualizations", "instructor-assessments"];
 
 function storedTab(): Tab {
   const saved = localStorage.getItem("quantum-tab");
@@ -83,7 +83,20 @@ export default function App() {
   const prevSub = useRef<string | null>(tokenSub(localStorage.getItem("quantum-token")));
 
   const isInstructor = user?.role === "instructor";
-  const TABS = isInstructor ? [...BASE_TABS, { id: "dashboard" as Tab, label: "Instructor Dashboard" }] : BASE_TABS;
+
+  // Instructors have a deliberately isolated navigation surface. Their dashboard
+  // contains the instructor-only tools (Overview, Circuit Builder, Visualizations
+  // and Assessments), while My Works remains available as a separate workspace.
+  const INSTRUCTOR_TABS: { id: Tab; label: string }[] = [
+    { id: "instructor-overview", label: "Overview" },
+    { id: "instructor-builder", label: "Circuit Builder" },
+    { id: "instructor-visualizations", label: "Visualizations" },
+    { id: "instructor-assessments", label: "Assessments" },
+    { id: "works", label: "My Works" },
+  ];
+  const TABS = isInstructor ? INSTRUCTOR_TABS : BASE_TABS;
+
+  const instructorSection = tab.startsWith("instructor-") ? tab.replace("instructor-", "") as "overview" | "builder" | "visualizations" | "assessments" : "overview";
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -93,6 +106,17 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("quantum-tab", tab);
   }, [tab]);
+
+  // Keep the current page valid for the authenticated role. This also handles
+  // stale tab state left in localStorage from a previous session.
+  useEffect(() => {
+    if (!user) return;
+    if (isInstructor && !["instructor-overview", "instructor-builder", "instructor-visualizations", "instructor-assessments", "works"].includes(tab)) {
+      setTab("instructor-overview");
+    } else if (!isInstructor && (tab === "dashboard" || tab.startsWith("instructor-"))) {
+      setTab("home");
+    }
+  }, [user, isInstructor, tab]);
 
   useEffect(() => {
     const saved = localStorage.getItem("quantum-theme") as "dark" | "light" | null;
@@ -124,10 +148,17 @@ export default function App() {
     }
   }, [token]);
 
-  function handleAuthenticated(auth: { token: string; user: PublicUser }) {
+  function handleAuthenticated(auth: AuthResponse) {
+    // AuthForm already persists both values, but keep the React auth state in
+    // sync too so login is global across every page in this SPA.
     setToken(auth.token);
     setUser(auth.user);
     setAuthModal(null);
+
+    // Never leave an instructor on a student-facing page after login.
+    if (auth.user.role === "instructor") {
+      setTab("instructor-overview");
+    }
   }
 
   function handleLessonChange(id: string) {
@@ -202,13 +233,22 @@ export default function App() {
           {tab === "home" && <LandingPage onOpenBuilder={(preset?: Circuit) => { if (preset) setPresetCircuit(preset); setBuilderOrigin(null); setTab("builder"); }} onOpenCode={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} onOpenHowToUse={() => setTab("howtouse")} />}
           {tab === "builder" && <CircuitBuilder circuit={circuit} onCircuitChange={setCircuit} presetCircuit={presetCircuit} onPresetClear={() => setPresetCircuit(null)} theme={theme} token={token} onRequireLogin={() => setTab("works")} returnLabel={builderOrigin ? LESSON_TITLES[builderOrigin] ?? builderOrigin : null} onReturn={builderOrigin ? () => setTab("learn") : undefined} />}
           {tab === "waves" && <VisualizationPage result={latestResult} />}
-          {tab === "learn" && (token ? <LearningPage activeLessonId={activeLessonId} onLessonChange={handleLessonChange} onOpenBuilder={openBuilderFromLesson} onOpenVisualizations={() => setTab("waves")} token={token} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("learn"); }} />)}
-          {tab === "works" && (token ? <MyWorksPage token={token} onOpenCircuit={(nextCircuit) => { setCircuit(nextCircuit); setTab("builder"); }} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("works"); }} />)}
+          {tab === "learn" && (token ? <LearningPage activeLessonId={activeLessonId} onLessonChange={handleLessonChange} onOpenBuilder={openBuilderFromLesson} onOpenVisualizations={() => setTab("waves")} /> : <AuthPage onAuthenticated={(auth) => { handleAuthenticated(auth); setTab("learn"); }} />)}
+          {tab === "works" && (token ? <MyWorksPage token={token} onOpenCircuit={(nextCircuit) => { setCircuit(nextCircuit); setTab("builder"); }} /> : <AuthPage onAuthenticated={(auth) => { handleAuthenticated(auth); setTab("works"); }} />)}
           {tab === "assessment" && <AssessmentPage token={token} />}
-          {tab === "contests" && (token ? <ContestPage token={token} circuit={circuit} onOpenBuilder={() => setTab("builder")} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("contests"); }} />)}
+          {tab === "contests" && (token ? <ContestPage token={token} circuit={circuit} onOpenBuilder={() => setTab("builder")} /> : <AuthPage onAuthenticated={(auth) => { handleAuthenticated(auth); setTab("contests"); }} />)}
           {tab === "howtouse" && <HowToUsePage onOpenLearn={() => setTab("learn")} />}
           {tab === "about" && <AboutPage />}
-          {tab === "dashboard" && (token && isInstructor ? <InstructorDashboard token={token} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setUser(loadStoredUser()); setTab("dashboard"); }} />)}
+          {["instructor-overview", "instructor-builder", "instructor-visualizations", "instructor-assessments"].includes(tab) && (token && isInstructor ? (
+            <InstructorDashboard
+              token={token}
+              circuit={circuit}
+              onCircuitChange={setCircuit}
+              latestResult={latestResult}
+              theme={theme}
+              activeSubTab={instructorSection}
+            />
+          ) : <AuthPage onAuthenticated={(auth) => { handleAuthenticated(auth); setTab("instructor-overview"); }} />)}
         </main>
       </div>
       <QuantumTutor circuit={circuit} isOpen={tutorOpen} onToggle={setTutorOpen} />
