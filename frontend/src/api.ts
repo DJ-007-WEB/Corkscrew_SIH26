@@ -1,5 +1,6 @@
 import type {
   AssessmentResult,
+  AdaptiveAssessment,
   AuthResponse,
   BackendId,
   BackendInfo,
@@ -256,6 +257,46 @@ export function submitAssessment(token: string, score: number, total: number): P
     headers: { ...authHeaders(token), "Content-Type": "application/json" },
     body: JSON.stringify({ score, total }),
   });
+}
+
+export function getCurrentAssessment(token: string): Promise<AdaptiveAssessment | null> {
+  return request<AdaptiveAssessment | null>("/api/assessment/current", { headers: authHeaders(token) });
+}
+
+export function startAdaptiveAssessment(token: string): Promise<AdaptiveAssessment> {
+  return request<AdaptiveAssessment>("/api/assessment/start", {
+    method: "POST",
+    headers: authHeaders(token),
+  });
+}
+
+export function submitAdaptiveAssessment(token: string, assessmentId: string, answers: Record<string, string>): Promise<AdaptiveAssessment> {
+  return request<AdaptiveAssessment>(`/api/assessment/${assessmentId}/submit`, {
+    method: "POST",
+    headers: { ...authHeaders(token), "Content-Type": "application/json" },
+    body: JSON.stringify({ answers }),
+  });
+}
+
+export function getAssessmentHistory(token: string): Promise<{ assessments: AdaptiveAssessment[] }> {
+  return request<{ assessments: AdaptiveAssessment[] }>("/api/assessment/history", { headers: authHeaders(token) });
+}
+
+export function getAssessmentDetail(token: string, assessmentId: string): Promise<AdaptiveAssessment> {
+  return request<AdaptiveAssessment>(`/api/assessment/${assessmentId}`, { headers: authHeaders(token) });
+}
+
+export async function reportLearningQuiz(token: string | null, quizId: string, answers: Record<string, string>): Promise<void> {
+  if (!token) return;
+  try {
+    await request("/api/learning/quiz/submit", {
+      method: "POST",
+      headers: { ...authHeaders(token), "Content-Type": "application/json" },
+      body: JSON.stringify({ quiz_id: quizId, answers }),
+    });
+  } catch {
+    // Learning progression should not fail if adaptive analytics are unavailable.
+  }
 }
 
 export function getInstructorDashboard(token: string): Promise<InstructorDashboard> {

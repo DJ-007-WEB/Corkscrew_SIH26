@@ -262,6 +262,57 @@ export interface AssessmentResult {
   created_at: string;
 }
 
+export interface AdaptiveQuestion {
+  id: string;
+  module_id: string;
+  subtopic_id: string;
+  assessment_type: string;
+  question_type: string;
+  question: string;
+  options: Record<"A" | "B" | "C" | "D", string>;
+  difficulty_level: string;
+  irt_difficulty: number;
+  irt_status: string;
+  primary_concept_id: string;
+  related_topics: unknown[];
+  learning_objectives: unknown[];
+  correct_answer?: string | null;
+  explanation?: string | null;
+}
+
+export interface Recommendation {
+  module_id: string;
+  subtopic_id: string;
+  concept_id: string;
+  title: string;
+  reason: string;
+  suggested_question_concepts: string[];
+}
+
+export interface AssessmentQuestionResult extends AdaptiveQuestion {
+  selected_answer?: string | null;
+  is_correct: boolean;
+  irt_response_count: number;
+}
+
+export interface AdaptiveAssessment {
+  assessment_id: string;
+  created_at: string;
+  completed_at?: string | null;
+  questions: AdaptiveQuestion[];
+  selected_answers: Record<string, string>;
+  score: number;
+  total: number;
+  percentage: number;
+  results: AssessmentQuestionResult[];
+  recommendation?: Recommendation | null;
+  bkt_before: Record<string, number>;
+  bkt_after: Record<string, number>;
+  irt_ability_before: number;
+  irt_ability_after?: number | null;
+  submitted: boolean;
+}
+
 export interface TopPerformer {
   name: string;
   email?: string | null;

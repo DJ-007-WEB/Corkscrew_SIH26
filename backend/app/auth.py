@@ -33,6 +33,8 @@ _saved_works = None
 _user_stats = None
 _xp_events = None
 _assessment_results = None
+_learner_mastery = None
+_item_stats = None
 
 
 # --- Password hashing (dependency-free PBKDF2-HMAC-SHA256) -----------------
@@ -165,6 +167,28 @@ def get_assessment_results_collection():
     if db is not None:
         _assessment_results = db["assessment_results"]
         return _assessment_results
+    return None
+
+
+def get_learner_mastery_collection():
+    global _learner_mastery
+    if _learner_mastery is not None:
+        return _learner_mastery
+    db = get_db()
+    if db is not None:
+        _learner_mastery = db["learner_mastery"]
+        return _learner_mastery
+    return None
+
+
+def get_item_stats_collection():
+    global _item_stats
+    if _item_stats is not None:
+        return _item_stats
+    db = get_db()
+    if db is not None:
+        _item_stats = db["assessment_item_stats"]
+        return _item_stats
     return None
 
 

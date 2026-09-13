@@ -61,7 +61,7 @@ function question(raw: RawRecord): ModuleQuestion {
     : -1;
 
   return {
-    id: text(raw.ID),
+    id: text(raw.ID) || text(raw.QUESTION_ID),
     question: text(raw.QUESTION),
     options,
     answer: answer >= 0 ? answer : keyedAnswer,

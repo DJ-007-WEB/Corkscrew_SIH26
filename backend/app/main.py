@@ -19,12 +19,15 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import backends, contests, dns_fix, gamification
+from . import assessment_service
 from .auth import (
     current_user,
     get_assessment_results_collection,
     get_challenge_solves_collection,
     get_contest_attempts_collection,
     get_duel_rooms_collection,
+    get_item_stats_collection,
+    get_learner_mastery_collection,
     get_saved_works_collection,
     get_sprint_solves_collection,
     get_user_stats_collection,
@@ -47,7 +50,10 @@ from .quantum_engine import (
 )
 from .schemas import (
     ActivityRequest,
+    AdaptiveAssessment,
+    AssessmentHistoryResponse,
     AssessmentResult,
+    AssessmentSubmitAnswersRequest,
     AssessmentSubmitRequest,
     AuthResponse,
     BackendInfo,
@@ -67,6 +73,8 @@ from .schemas import (
     GoogleAuthRequest,
     InstructorDashboard,
     LeaderboardEntry,
+    LearningQuizSubmitRequest,
+    LearningQuizSubmitResponse,
     LoginRequest,
     QuizQuestion,
     SavedWork,
@@ -1044,6 +1052,95 @@ def submit_assessment(payload: AssessmentSubmitRequest, request: Request):
         "total": payload.total,
         "percentage": percentage,
         "created_at": now.isoformat(),
+    }
+
+
+@app.get("/api/assessment/current", response_model=AdaptiveAssessment | None)
+def adaptive_assessment_current(request: Request):
+    user = current_user(request)
+    collection = get_assessment_results_collection()
+    if collection is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    doc = collection.find_one({"user_id": user["sub"], "submitted": {"$ne": True}, "assessment_id": {"$exists": True}}, sort=[("created_at", -1)])
+    if doc is None:
+        return None
+    return assessment_service.assessment_response(doc)
+
+
+@app.post("/api/assessment/start", response_model=AdaptiveAssessment)
+def adaptive_assessment_start(request: Request):
+    user = current_user(request)
+    collection = get_assessment_results_collection()
+    mastery = get_learner_mastery_collection()
+    if collection is None or mastery is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    try:
+        return assessment_service.start_assessment(collection, mastery, user)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.post("/api/assessment/{assessment_id}/submit", response_model=AdaptiveAssessment)
+def adaptive_assessment_submit(assessment_id: str, payload: AssessmentSubmitAnswersRequest, request: Request):
+    user = current_user(request)
+    collection = get_assessment_results_collection()
+    mastery = get_learner_mastery_collection()
+    item_stats = get_item_stats_collection()
+    if collection is None or mastery is None or item_stats is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    try:
+        return assessment_service.submit_assessment(collection, mastery, item_stats, user, assessment_id, payload.answers)
+    except KeyError as exc:
+        raise HTTPException(404, "Assessment not found") from exc
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.get("/api/assessment/history", response_model=AssessmentHistoryResponse)
+def adaptive_assessment_history(request: Request):
+    user = current_user(request)
+    collection = get_assessment_results_collection()
+    if collection is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    docs = list(collection.find({"user_id": user["sub"], "assessment_id": {"$exists": True}, "submitted": True}).sort("created_at", -1).limit(25))
+    return {"assessments": [assessment_service.assessment_response(doc, include_answers=True) for doc in docs]}
+
+
+@app.get("/api/assessment/{assessment_id}", response_model=AdaptiveAssessment)
+def adaptive_assessment_detail(assessment_id: str, request: Request):
+    user = current_user(request)
+    collection = get_assessment_results_collection()
+    if collection is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    doc = collection.find_one({"assessment_id": assessment_id, "user_id": user["sub"]})
+    if doc is None:
+        raise HTTPException(404, "Assessment not found")
+    return assessment_service.assessment_response(doc, include_answers=True)
+
+
+@app.get("/api/recommendations/current")
+def current_recommendation(request: Request):
+    user = current_user(request)
+    collection = get_assessment_results_collection()
+    if collection is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    doc = collection.find_one({"user_id": user["sub"], "recommendation": {"$ne": None}}, sort=[("completed_at", -1)])
+    return doc.get("recommendation") if doc else None
+
+
+@app.post("/api/learning/quiz/submit", response_model=LearningQuizSubmitResponse)
+def learning_quiz_submit(payload: LearningQuizSubmitRequest, request: Request):
+    user = current_user(request)
+    mastery = get_learner_mastery_collection()
+    item_stats = get_item_stats_collection()
+    if mastery is None or item_stats is None:
+        raise HTTPException(500, "Database connection is unavailable or MONGODB_URI is not configured")
+    before, after, results = assessment_service.apply_responses(mastery, item_stats, user, payload.answers)
+    return {
+        "updated": len(results),
+        "bkt_before": before,
+        "bkt_after": after.get("concepts", {}),
+        "irt_ability_after": float(after.get("ability", 0.0)),
     }
 
 

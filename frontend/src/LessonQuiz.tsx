@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { reportLearningQuiz } from "./api";
 import type { ModuleQuestion } from "./moduleData";
 
 type Props = {
@@ -8,9 +9,12 @@ type Props = {
   locked: boolean;
   completed: boolean;
   onComplete: (quizId: string) => void;
+  token?: string | null;
 };
 
-export default function LessonQuiz({ quizId, title, questions, locked, completed, onComplete }: Props) {
+const OPTION_KEYS = ["A", "B", "C", "D"];
+
+export default function LessonQuiz({ quizId, title, questions, locked, completed, onComplete, token }: Props) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [showReview, setShowReview] = useState(false);
@@ -37,6 +41,7 @@ export default function LessonQuiz({ quizId, title, questions, locked, completed
     if (last) {
       setShowReview(true);
       onComplete(quizId);
+      void reportLearningQuiz(token ?? null, quizId, Object.fromEntries(questions.map((item, itemIndex) => [item.id, OPTION_KEYS[answers[itemIndex]] ?? ""])));
       return;
     }
     setIndex((current) => current + 1);

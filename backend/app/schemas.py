@@ -3,7 +3,7 @@ Circuit IR and simulation response contracts shared by the builder,
 code builder, simulator and results UI.
 """
 
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 from pydantic import BaseModel, Field
 
 GateType = Literal["H", "X", "Y", "Z", "S", "T", "RX", "RY", "RZ", "CNOT", "CZ", "SWAP"]
@@ -340,6 +340,77 @@ class AssessmentResult(BaseModel):
     total: int
     percentage: float
     created_at: str
+
+
+class AdaptiveQuestion(BaseModel):
+    id: str
+    module_id: str
+    subtopic_id: str
+    assessment_type: str = ""
+    question_type: str = "MCQ"
+    question: str
+    options: dict[str, str]
+    difficulty_level: str
+    irt_difficulty: float
+    irt_status: str
+    primary_concept_id: str
+    related_topics: list[Any] = Field(default_factory=list)
+    learning_objectives: list[Any] = Field(default_factory=list)
+    correct_answer: Optional[str] = None
+    explanation: Optional[str] = None
+
+
+class Recommendation(BaseModel):
+    module_id: str
+    subtopic_id: str
+    concept_id: str
+    title: str
+    reason: str
+    suggested_question_concepts: list[str] = Field(default_factory=list)
+
+
+class AssessmentQuestionResult(AdaptiveQuestion):
+    selected_answer: Optional[str] = None
+    is_correct: bool = False
+    irt_response_count: int = 0
+
+
+class AdaptiveAssessment(BaseModel):
+    assessment_id: str
+    created_at: str
+    completed_at: Optional[str] = None
+    questions: list[AdaptiveQuestion]
+    selected_answers: dict[str, str] = Field(default_factory=dict)
+    score: int = 0
+    total: int = 7
+    percentage: float = 0.0
+    results: list[AssessmentQuestionResult] = Field(default_factory=list)
+    recommendation: Optional[Recommendation] = None
+    bkt_before: dict[str, float] = Field(default_factory=dict)
+    bkt_after: dict[str, float] = Field(default_factory=dict)
+    irt_ability_before: float = 0.0
+    irt_ability_after: Optional[float] = None
+    submitted: bool = False
+
+
+class AssessmentSubmitAnswersRequest(BaseModel):
+    answers: dict[str, str] = Field(default_factory=dict)
+
+
+class LearningQuizSubmitRequest(BaseModel):
+    quiz_id: str = Field(min_length=1, max_length=80)
+    answers: dict[str, str] = Field(default_factory=dict)
+
+
+class LearningQuizSubmitResponse(BaseModel):
+    updated: int
+    bkt_before: dict[str, float] = Field(default_factory=dict)
+    bkt_after: dict[str, float] = Field(default_factory=dict)
+    irt_ability_after: float
+
+
+class AssessmentHistoryResponse(BaseModel):
+    assessments: list[AdaptiveAssessment]
 
 
 # --- Instructor dashboard ----------------------------------------------------

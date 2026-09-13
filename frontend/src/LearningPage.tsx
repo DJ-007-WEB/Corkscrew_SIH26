@@ -159,7 +159,7 @@ const LESSONS: Lesson[] = [
 const QUIZ_ORDER = learningModules.flatMap((module) => [...module.topics.map((topic) => `${module.id}-${topic.id}`), `${module.id}-final`]);
 const QUIZ_PROGRESS_KEY = "quantum-completed-module-quizzes";
 
-export default function LearningPage({ activeLessonId, onLessonChange, onOpenBuilder, onOpenVisualizations }: { activeLessonId?: string; onLessonChange?: (id: string) => void; onOpenBuilder: (preset?: Circuit, originLessonId?: string) => void; onOpenVisualizations: () => void }) {
+export default function LearningPage({ activeLessonId, onLessonChange, onOpenBuilder, onOpenVisualizations, token }: { activeLessonId?: string; onLessonChange?: (id: string) => void; onOpenBuilder: (preset?: Circuit, originLessonId?: string) => void; onOpenVisualizations: () => void; token?: string | null }) {
   const [uncontrolled, setUncontrolled] = useState(BASE_LESSONS.length);
   const [expandedModuleId, setExpandedModuleId] = useState<string | null>(learningModules[0].id);
   const [finalModuleId, setFinalModuleId] = useState<string | null>(null);
@@ -256,7 +256,7 @@ export default function LearningPage({ activeLessonId, onLessonChange, onOpenBui
 
             <div className="mt-10 pt-5 border-t border-[var(--bp-border)] flex justify-between gap-3"><button disabled={selected === 0} onClick={() => setSelected(selected - 1)} className="px-4 py-2 rounded border border-[var(--bp-border)] text-xs font-mono disabled:opacity-30">← Previous</button><button disabled={selected === LESSONS.length - 1} onClick={() => setSelected(selected + 1)} className="px-4 py-2 rounded border border-[var(--bp-border)] text-xs font-mono disabled:opacity-30">Next →</button></div>
             </>}
-            {activeQuiz && <LessonQuiz quizId={activeQuiz.id} title={activeQuiz.title} questions={activeQuiz.questions} locked={!isQuizUnlocked(activeQuiz.id)} completed={completedQuizIds.has(activeQuiz.id)} onComplete={completeQuiz} />}
+            {activeQuiz && <LessonQuiz quizId={activeQuiz.id} title={activeQuiz.title} questions={activeQuiz.questions} locked={!isQuizUnlocked(activeQuiz.id)} completed={completedQuizIds.has(activeQuiz.id)} onComplete={completeQuiz} token={token} />}
           </div>
         </section>
       </article>
