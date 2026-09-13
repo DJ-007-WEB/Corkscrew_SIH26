@@ -1272,7 +1272,7 @@ function QuestionReview({
                 {key}
               </span>
 
-              {result.options[key]}
+              {result.options[key.charCodeAt(0) - 65]}
 
               {correct && (
                 <span className="ml-2 text-xs">
