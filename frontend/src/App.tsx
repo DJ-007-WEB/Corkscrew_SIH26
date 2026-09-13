@@ -13,8 +13,9 @@ import AssessmentPage from "./AssessmentPage";
 import ContestPage from "./ContestPage";
 import HowToUsePage from "./HowToUsePage";
 import InstructorDashboard from "./InstructorDashboard";
+import AboutPage from "./AboutPage";
 
-type Tab = "home" | "builder" | "learn" | "waves" | "works" | "assessment" | "contests" | "howtouse" | "dashboard";
+type Tab = "home" | "builder" | "learn" | "waves" | "works" | "assessment" | "contests" | "howtouse" | "about" | "dashboard";
 
 const BASE_TABS: { id: Tab; label: string }[] = [
   { id: "home", label: "Home" },
@@ -25,6 +26,7 @@ const BASE_TABS: { id: Tab; label: string }[] = [
   { id: "works", label: "My Works" },
   { id: "assessment", label: "Assessment" },
   { id: "contests", label: "Contests" },
+  { id: "about", label: "About" },
 ];
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
@@ -56,7 +58,7 @@ function lessonKeyFor(sub: string | null): string {
   return sub ? `quantum-lesson:${sub}` : "quantum-lesson";
 }
 
-const VALID_TABS: Tab[] = ["home", "builder", "learn", "waves", "works", "assessment", "contests", "howtouse"];
+const VALID_TABS: Tab[] = ["home", "builder", "learn", "waves", "works", "assessment", "contests", "howtouse", "about"];
 
 function storedTab(): Tab {
   const saved = localStorage.getItem("quantum-tab");
@@ -205,6 +207,7 @@ export default function App() {
           {tab === "assessment" && <AssessmentPage token={token} />}
           {tab === "contests" && (token ? <ContestPage token={token} circuit={circuit} onOpenBuilder={() => setTab("builder")} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setTab("contests"); }} />)}
           {tab === "howtouse" && <HowToUsePage onOpenLearn={() => setTab("learn")} />}
+          {tab === "about" && <AboutPage />}
           {tab === "dashboard" && (token && isInstructor ? <InstructorDashboard token={token} /> : <AuthPage onAuthenticated={(newToken) => { setToken(newToken); setUser(loadStoredUser()); setTab("dashboard"); }} />)}
         </main>
       </div>

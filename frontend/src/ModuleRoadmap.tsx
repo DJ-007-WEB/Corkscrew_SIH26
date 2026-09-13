@@ -7,9 +7,11 @@ type Props = {
   onExpandModule: (moduleId: string | null) => void;
   onSelectTopic: (module: LearningModule, topicId: string) => void;
   onSelectFinal?: (module: LearningModule) => void;
+  completedQuizIds?: Set<string>;
+  isQuizUnlocked?: (quizId: string) => boolean;
 };
 
-export default function ModuleRoadmap({ modules, expandedModuleId, selectedTopicId, onExpandModule, onSelectTopic, onSelectFinal }: Props) {
+export default function ModuleRoadmap({ modules, expandedModuleId, selectedTopicId, onExpandModule, onSelectTopic, onSelectFinal, completedQuizIds = new Set(), isQuizUnlocked = () => true }: Props) {
   return (
     <aside className="scrollbar-hidden bp-panel p-4 lg:sticky lg:top-5 lg:self-start max-h-[calc(100vh-120px)] overflow-y-auto">
       <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-cyan)]">Learning roadmap</p>
@@ -21,16 +23,17 @@ export default function ModuleRoadmap({ modules, expandedModuleId, selectedTopic
             <section key={module.id} className="rounded border border-[var(--bp-border)] bg-[var(--bp-panel-raised)]">
               <button onClick={() => onExpandModule(open ? null : module.id)} className="w-full flex items-center justify-between gap-2 p-3 text-left">
                 <span className="text-xs font-semibold leading-snug">{module.title}</span>
-                <span className="font-mono text-xs text-[var(--bp-cyan)]">{open ? "−" : "+"}</span>
+                <span className="flex items-center gap-2 font-mono text-xs text-[var(--bp-cyan)]">{completedQuizIds.has(`${module.id}-final`) && <span className="text-[var(--bp-mint)]">✓</span>}{open ? "−" : "+"}</span>
               </button>
               {open && <div className="border-t border-[var(--bp-border)] p-2">
                 <p className="px-1 pb-2 text-[11px] leading-relaxed text-[var(--bp-text-dim)]">{module.goal}</p>
                 <div className="space-y-1">
                   {module.topics.map((topic) => {
                     const topicKey = `${module.id}-${topic.id}`;
-                    return <button key={topicKey} onClick={() => onSelectTopic(module, topic.id)} className={`w-full rounded px-2 py-2 text-left text-xs leading-snug transition-colors ${selectedTopicId === topicKey ? "bg-[var(--bp-cyan-dim)] text-[var(--bp-cyan)]" : "text-[var(--bp-text-dim)] hover:bg-[var(--bp-border)]/40 hover:text-[var(--bp-text)]"}`}>{topic.id} · {topic.title}</button>;
+                    const completed = completedQuizIds.has(topicKey);
+                    return <button key={topicKey} onClick={() => onSelectTopic(module, topic.id)} className={`w-full flex items-start gap-1 rounded px-2 py-2 text-left text-xs leading-snug transition-colors ${selectedTopicId === topicKey ? "bg-[var(--bp-cyan-dim)] text-[var(--bp-cyan)]" : "text-[var(--bp-text-dim)] hover:bg-[var(--bp-border)]/40 hover:text-[var(--bp-text)]"}`}><span>{completed ? "✓" : isQuizUnlocked(topicKey) ? "○" : "🔒"}</span><span>{topic.id} · {topic.title}</span></button>;
                   })}
-                  {onSelectFinal && <button onClick={() => onSelectFinal(module)} className="w-full rounded border border-[var(--bp-amber)]/40 px-2 py-2 text-left text-xs font-mono text-[var(--bp-amber)] hover:bg-[var(--bp-amber)]/10">Module final assessment →</button>}
+                  {onSelectFinal && <button onClick={() => onSelectFinal(module)} className="w-full rounded border border-[var(--bp-amber)]/40 px-2 py-2 text-left text-xs font-mono text-[var(--bp-amber)] hover:bg-[var(--bp-amber)]/10">{completedQuizIds.has(`${module.id}-final`) ? "✓ " : isQuizUnlocked(`${module.id}-final`) ? "○ " : "🔒 "}Module final assessment →</button>}
                 </div>
               </div>}
             </section>

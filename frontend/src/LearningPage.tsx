@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Circuit } from "./types";
 import YouTubeVideo from "./YouTubeVideo";
 import { fetchBellPreset, fetchDjPreset, fetchGroverPreset, fetchTeleportPreset } from "./presets";
 import type { BellVariant, DjOracle, TeleportPayload } from "./presets";
 import ModuleRoadmap from "./ModuleRoadmap";
 import { learningModules } from "./moduleData";
+import LessonQuiz from "./LessonQuiz";
 
 const SELECT_CLASS = "bg-[var(--bp-bg)] border border-[var(--bp-border)] rounded px-2 py-1.5 text-xs outline-none focus:border-[var(--bp-cyan)]";
 
@@ -155,9 +156,16 @@ const LESSONS: Lesson[] = [
   }))),
 ];
 
+const QUIZ_ORDER = learningModules.flatMap((module) => [...module.topics.map((topic) => `${module.id}-${topic.id}`), `${module.id}-final`]);
+const QUIZ_PROGRESS_KEY = "quantum-completed-module-quizzes";
+
 export default function LearningPage({ activeLessonId, onLessonChange, onOpenBuilder, onOpenVisualizations }: { activeLessonId?: string; onLessonChange?: (id: string) => void; onOpenBuilder: (preset?: Circuit, originLessonId?: string) => void; onOpenVisualizations: () => void }) {
   const [uncontrolled, setUncontrolled] = useState(BASE_LESSONS.length);
   const [expandedModuleId, setExpandedModuleId] = useState<string | null>(learningModules[0].id);
+  const [finalModuleId, setFinalModuleId] = useState<string | null>(null);
+  const [completedQuizIds, setCompletedQuizIds] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem(QUIZ_PROGRESS_KEY) ?? "[]") as string[]); } catch { return new Set(); }
+  });
   const [bellVariant, setBellVariant] = useState<BellVariant>("phi_plus");
   const [djN, setDjN] = useState<1 | 2>(1);
   const [djOracle, setDjOracle] = useState<DjOracle>("balanced");
@@ -173,6 +181,20 @@ export default function LearningPage({ activeLessonId, onLessonChange, onOpenBui
     else setUncontrolled(index);
   };
   const lesson = LESSONS[selected];
+  const activeTopic = learningModules.flatMap((module) => module.topics.map((topic) => ({ module, topic }))).find(({ module, topic }) => `${module.id}-${topic.id}` === lesson.id);
+  const finalModule = finalModuleId ? learningModules.find((module) => module.id === finalModuleId) : undefined;
+  const activeQuiz = finalModule ? { id: `${finalModule.id}-final`, title: `${finalModule.title} · Final assessment`, questions: finalModule.finalQuestions } : activeTopic ? { id: `${activeTopic.module.id}-${activeTopic.topic.id}`, title: `${activeTopic.topic.id} · ${activeTopic.topic.title}`, questions: activeTopic.topic.questions } : undefined;
+
+  useEffect(() => { localStorage.setItem(QUIZ_PROGRESS_KEY, JSON.stringify([...completedQuizIds])); }, [completedQuizIds]);
+
+  function isQuizUnlocked(quizId: string) {
+    const index = QUIZ_ORDER.indexOf(quizId);
+    return index === 0 || (index > 0 && completedQuizIds.has(QUIZ_ORDER[index - 1]));
+  }
+
+  function completeQuiz(quizId: string) {
+    setCompletedQuizIds((current) => new Set([...current, quizId]));
+  }
 
   async function openPreset(lessonId: string) {
     if (!PRESETS[lessonId]) {
@@ -199,12 +221,13 @@ export default function LearningPage({ activeLessonId, onLessonChange, onOpenBui
     <div className="grid lg:grid-cols-[minmax(0,1fr)_300px] gap-5">
       <article className="min-w-0">
         <section className="bp-panel p-6 sm:p-8">
-          <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-cyan)]">Lesson {String(selected + 1).padStart(2, "0")} / {LESSONS.length}</p>
-          {lesson.moduleTitle && <p className="mt-2 text-xs font-mono text-[var(--bp-amber)]">{lesson.moduleTitle}</p>}
-          <h1 className="font-display text-3xl sm:text-4xl mt-2">{lesson.title}</h1>
-          <p className="whitespace-pre-line text-sm text-[var(--bp-text-dim)] mt-3 max-w-3xl leading-relaxed">{lesson.summary}</p>
+          <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-cyan)]">{finalModule ? "Module final assessment" : `Lesson ${String(selected + 1).padStart(2, "0")} / ${LESSONS.length}`}</p>
+          {!finalModule && lesson.moduleTitle && <p className="mt-2 text-xs font-mono text-[var(--bp-amber)]">{lesson.moduleTitle}</p>}
+          <h1 className="font-display text-3xl sm:text-4xl mt-2">{finalModule ? finalModule.title : lesson.title}</h1>
+          <p className="whitespace-pre-line text-sm text-[var(--bp-text-dim)] mt-3 max-w-3xl leading-relaxed">{finalModule ? `Complete the 10-question cumulative assessment after finishing every subtopic quiz in this module.` : lesson.summary}</p>
 
           <div className="mt-8 space-y-7">
+            {!finalModule && <>
             {lesson.sections.map((section) => <section key={section.heading}>
               <h2 className="font-display text-xl">{section.heading}</h2>
               <p className="whitespace-pre-line text-sm text-[var(--bp-text-dim)] leading-7 mt-2">{section.body}</p>
@@ -232,6 +255,8 @@ export default function LearningPage({ activeLessonId, onLessonChange, onOpenBui
             {lesson.id === "teleportation" && <div className="mt-8 space-y-4"><h3 className="font-display text-lg">Recommended videos</h3><YouTubeVideo videoId="jxqnzltpDdE" title="Quantum teleportation explanation" /><YouTubeVideo videoId="KsvNsY4cVvE" title="Quantum teleportation circuit walkthrough" /></div>}
 
             <div className="mt-10 pt-5 border-t border-[var(--bp-border)] flex justify-between gap-3"><button disabled={selected === 0} onClick={() => setSelected(selected - 1)} className="px-4 py-2 rounded border border-[var(--bp-border)] text-xs font-mono disabled:opacity-30">← Previous</button><button disabled={selected === LESSONS.length - 1} onClick={() => setSelected(selected + 1)} className="px-4 py-2 rounded border border-[var(--bp-border)] text-xs font-mono disabled:opacity-30">Next →</button></div>
+            </>}
+            {activeQuiz && <LessonQuiz quizId={activeQuiz.id} title={activeQuiz.title} questions={activeQuiz.questions} locked={!isQuizUnlocked(activeQuiz.id)} completed={completedQuizIds.has(activeQuiz.id)} onComplete={completeQuiz} />}
           </div>
         </section>
       </article>
@@ -239,12 +264,16 @@ export default function LearningPage({ activeLessonId, onLessonChange, onOpenBui
         <ModuleRoadmap
           modules={learningModules}
           expandedModuleId={expandedModuleId}
-          selectedTopicId={lesson.moduleTitle ? lesson.id : undefined}
+          selectedTopicId={finalModule ? undefined : lesson.moduleTitle ? lesson.id : undefined}
+          completedQuizIds={completedQuizIds}
+          isQuizUnlocked={isQuizUnlocked}
           onExpandModule={setExpandedModuleId}
           onSelectTopic={(module, topicId) => {
             setExpandedModuleId(module.id);
+            setFinalModuleId(null);
             setSelected(LESSONS.findIndex((item) => item.id === `${module.id}-${topicId}`));
           }}
+          onSelectFinal={(module) => { setExpandedModuleId(module.id); setFinalModuleId(module.id); }}
         />
         <details className="bp-panel p-4">
           <summary className="cursor-pointer text-xs font-mono text-[var(--bp-amber)]">Interactive circuit labs</summary>
