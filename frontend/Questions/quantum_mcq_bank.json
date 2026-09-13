@@ -1,0 +1,3215 @@
+{
+  "questions": [
+    {
+      "id": "M01-S01-Q001",
+      "module_id": "M01",
+      "subtopic_id": "M01-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What is a primary way quantum computing differs from classical computing?",
+      "options": {
+        "A": "Quantum computers use qubits that can exist in superposition, unlike classical bits",
+        "B": "Quantum computers use higher clock speeds",
+        "C": "Quantum computers use more transistors",
+        "D": "Quantum computers do not use binary logic at all"
+      },
+      "correct_answer": "A",
+      "explanation": "Qubits can exist in superposition of |0⟩ and |1⟩, a fundamentally non-classical property.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-CLASSICAL-VS-QUANTUM",
+      "related_topics": [],
+      "learning_objectives": [
+        "Distinguish quantum computing from classical computing"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M01-S01-Q002",
+      "module_id": "M01",
+      "subtopic_id": "M01-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "For which type of problem does quantum computing currently offer the most promising advantage?",
+      "options": {
+        "A": "Everyday word processing",
+        "B": "Certain problems like factoring large numbers and simulating quantum systems",
+        "C": "Simple arithmetic addition",
+        "D": "Displaying graphics on a screen"
+      },
+      "correct_answer": "B",
+      "explanation": "Quantum algorithms show advantage mainly on structured problems like factoring and quantum simulation.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-CLASSICAL-VS-QUANTUM",
+      "related_topics": [],
+      "learning_objectives": [
+        "Identify domains where quantum computing may help"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M01-S01-Q003",
+      "module_id": "M01",
+      "subtopic_id": "M01-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Which statement best describes a current limitation of quantum computing?",
+      "options": {
+        "A": "Quantum computers can already outperform classical computers on all tasks",
+        "B": "Quantum computers are error-prone and only outperform classical computers on specific, structured problems",
+        "C": "Quantum computers do not require any cooling or shielding",
+        "D": "Quantum algorithms have no use for classical computers at all"
+      },
+      "correct_answer": "B",
+      "explanation": "Current quantum devices are noisy and only offer advantage on select problem classes.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-CLASSICAL-VS-QUANTUM",
+      "related_topics": [],
+      "learning_objectives": [
+        "Recognize practical limitations of current quantum computing"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M01-S02-Q001",
+      "module_id": "M01",
+      "subtopic_id": "M01-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What are the two possible states of a classical bit?",
+      "options": {
+        "A": "0 and 1",
+        "B": "|0⟩ and |+⟩",
+        "C": "True and Superposition",
+        "D": "Up and Down only for qubits"
+      },
+      "correct_answer": "A",
+      "explanation": "A classical bit can only take the value 0 or 1.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-QUBIT",
+      "related_topics": [],
+      "learning_objectives": [
+        "Recall classical bit states"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M01-S02-Q002",
+      "module_id": "M01",
+      "subtopic_id": "M01-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "A qubit differs from a classical bit mainly because a qubit",
+      "options": {
+        "A": "Can only store the value 0",
+        "B": "Can exist in a superposition of |0⟩ and |1⟩ simultaneously before measurement",
+        "C": "Cannot be measured",
+        "D": "Is exactly the same as two classical bits"
+      },
+      "correct_answer": "B",
+      "explanation": "Superposition is the defining feature separating qubits from classical bits.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-QUBIT",
+      "related_topics": [],
+      "learning_objectives": [
+        "Explain how a qubit differs from a classical bit"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M01-S02-Q003",
+      "module_id": "M01",
+      "subtopic_id": "M01-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "In Dirac notation, which symbols represent the two basis states of a qubit?",
+      "options": {
+        "A": "|0⟩ and |1⟩",
+        "B": "[0] and [1]",
+        "C": "0% and 100%",
+        "D": "α and β"
+      },
+      "correct_answer": "A",
+      "explanation": "|0⟩ and |1⟩ are the standard computational basis states written in Dirac (bra-ket) notation.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-QUBIT",
+      "related_topics": [],
+      "learning_objectives": [
+        "Recognize Dirac notation for basis states"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M01-S02-Q004",
+      "module_id": "M01",
+      "subtopic_id": "M01-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Which of the following best explains why a single qubit can represent more information 'potential' than a single classical bit before measurement?",
+      "options": {
+        "A": "A qubit physically stores two classical bits at once",
+        "B": "A qubit's state is described by a superposition with continuous amplitudes, encoding richer information until measured, which collapses it to a definite classical outcome",
+        "C": "A qubit is simply larger in physical size",
+        "D": "A qubit has no defined state at all"
+      },
+      "correct_answer": "B",
+      "explanation": "Amplitudes carry continuous information pre-measurement, though only one classical bit of information is extracted upon measurement.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-QUBIT",
+      "related_topics": [
+        "QC-STATEVECTOR"
+      ],
+      "learning_objectives": [
+        "Explain the informational richness of a qubit before measurement"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M01-S03-Q001",
+      "module_id": "M01",
+      "subtopic_id": "M01-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "When a qubit in superposition is measured, what happens?",
+      "options": {
+        "A": "It stays in superposition",
+        "B": "It randomly collapses to one of the basis states, with probabilities determined by the state",
+        "C": "It always collapses to |0⟩",
+        "D": "It splits into two separate qubits"
+      },
+      "correct_answer": "B",
+      "explanation": "Measurement causes probabilistic collapse to a basis state according to the Born rule.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-MEASUREMENT",
+      "related_topics": [],
+      "learning_objectives": [
+        "Describe the effect of measurement on a superposition"
+      ],
+      "skills_tagged": [
+        "measurement_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M01-S03-Q002",
+      "module_id": "M01",
+      "subtopic_id": "M01-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "If a qubit has a 25% probability of measuring |1⟩, what is the probability of measuring |0⟩?",
+      "options": {
+        "A": "25%",
+        "B": "50%",
+        "C": "75%",
+        "D": "100%"
+      },
+      "correct_answer": "C",
+      "explanation": "Total probability must sum to 100%, so P(|0⟩) = 100% - 25% = 75%.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-PROBABILITY",
+      "related_topics": [],
+      "learning_objectives": [
+        "Compute complementary measurement probabilities"
+      ],
+      "skills_tagged": [
+        "probability_calculation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M01-S03-Q003",
+      "module_id": "M01",
+      "subtopic_id": "M01-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "A qubit is in state α|0⟩ + β|1⟩ with α = 0.6 and β real and positive. Given normalization, approximately what is the probability of measuring |1⟩?",
+      "options": {
+        "A": "0.36",
+        "B": "0.6",
+        "C": "0.64",
+        "D": "1.0"
+      },
+      "correct_answer": "C",
+      "explanation": "|α|² = 0.36, so |β|² = 1 - 0.36 = 0.64, which is the probability of measuring |1⟩.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-PROBABILITY",
+      "related_topics": [
+        "QC-NORMALIZATION"
+      ],
+      "learning_objectives": [
+        "Compute measurement probabilities from amplitudes using normalization"
+      ],
+      "skills_tagged": [
+        "probability_calculation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M02-S01-Q001",
+      "module_id": "M02",
+      "subtopic_id": "M02-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What condition must α and β satisfy for a valid qubit state α|0⟩+β|1⟩?",
+      "options": {
+        "A": "α + β = 1",
+        "B": "|α|² + |β|² = 1",
+        "C": "α = β",
+        "D": "α - β = 0"
+      },
+      "correct_answer": "B",
+      "explanation": "The normalization condition requires the sum of squared magnitudes of amplitudes to equal 1.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-NORMALIZATION",
+      "related_topics": [],
+      "learning_objectives": [
+        "State the normalization condition for a qubit"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M02-S01-Q002",
+      "module_id": "M02",
+      "subtopic_id": "M02-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Which of the following is a properly normalized qubit state?",
+      "options": {
+        "A": "0.5|0⟩ + 0.5|1⟩",
+        "B": "(1/√2)|0⟩ + (1/√2)|1⟩",
+        "C": "|0⟩ + |1⟩",
+        "D": "2|0⟩ + 2|1⟩"
+      },
+      "correct_answer": "B",
+      "explanation": "(1/√2)² + (1/√2)² = 0.5 + 0.5 = 1, satisfying normalization.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-NORMALIZATION",
+      "related_topics": [],
+      "learning_objectives": [
+        "Identify a normalized qubit state"
+      ],
+      "skills_tagged": [
+        "statevector_interpretation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M02-S01-Q003",
+      "module_id": "M02",
+      "subtopic_id": "M02-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "A qubit state is written as α|0⟩ + β|1⟩ with α = 1/2. If the state is normalized and β is real and positive, what is β?",
+      "options": {
+        "A": "1/2",
+        "B": "√3/2",
+        "C": "1/√2",
+        "D": "1"
+      },
+      "correct_answer": "B",
+      "explanation": "|β|² = 1 - (1/2)² = 3/4, so β = √3/2.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-NORMALIZATION",
+      "related_topics": [],
+      "learning_objectives": [
+        "Solve for an unknown amplitude using normalization"
+      ],
+      "skills_tagged": [
+        "probability_calculation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M02-S01-Q004",
+      "module_id": "M02",
+      "subtopic_id": "M02-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Why must a qubit's statevector be normalized?",
+      "options": {
+        "A": "To make the math easier to write",
+        "B": "So that the total probability of all measurement outcomes sums to 1",
+        "C": "Because unnormalized vectors cannot be plotted",
+        "D": "Because gates only work on unit vectors of length 2"
+      },
+      "correct_answer": "B",
+      "explanation": "Probabilities are |amplitude|², and they must sum to 1 across all outcomes.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-NORMALIZATION",
+      "related_topics": [
+        "QC-PROBABILITY"
+      ],
+      "learning_objectives": [
+        "Explain the physical reason for normalization"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M02-S02-Q001",
+      "module_id": "M02",
+      "subtopic_id": "M02-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Which best describes global phase in quantum mechanics?",
+      "options": {
+        "A": "A phase factor applied to the entire state vector that has no observable effect on measurement outcomes",
+        "B": "A phase that changes measurement probabilities",
+        "C": "Only applicable to two-qubit states",
+        "D": "The same as amplitude"
+      },
+      "correct_answer": "A",
+      "explanation": "Global phase multiplies the entire state and cannot be detected by any measurement.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-GLOBAL-PHASE",
+      "related_topics": [],
+      "learning_objectives": [
+        "Define global phase"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M02-S02-Q002",
+      "module_id": "M02",
+      "subtopic_id": "M02-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Why does relative phase matter even though global phase does not?",
+      "options": {
+        "A": "Relative phase affects interference between basis states and can change measurement outcomes when combined with other operations",
+        "B": "Relative phase has no physical meaning at all",
+        "C": "Relative phase is identical to global phase",
+        "D": "Relative phase only matters for classical bits"
+      },
+      "correct_answer": "A",
+      "explanation": "Relative phase influences interference effects, unlike global phase, and is physically significant.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-RELATIVE-PHASE",
+      "related_topics": [
+        "QC-GLOBAL-PHASE"
+      ],
+      "learning_objectives": [
+        "Distinguish relative phase from global phase in terms of observability"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M02-S02-Q003",
+      "module_id": "M02",
+      "subtopic_id": "M02-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Two states |ψ1⟩ = |0⟩ and |ψ2⟩ = e^(iπ)|0⟩ = -|0⟩ are related by:",
+      "options": {
+        "A": "A relative phase that changes measurement probabilities",
+        "B": "A global phase, so they are physically indistinguishable by measurement",
+        "C": "An entangling operation",
+        "D": "A normalization error"
+      },
+      "correct_answer": "B",
+      "explanation": "Multiplying an entire state by e^(iπ) = -1 is a global phase and produces no observable difference.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-GLOBAL-PHASE",
+      "related_topics": [],
+      "learning_objectives": [
+        "Identify global phase differences between states"
+      ],
+      "skills_tagged": [
+        "statevector_interpretation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M02-S03-Q001",
+      "module_id": "M02",
+      "subtopic_id": "M02-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "On the Bloch sphere, which point represents the state |0⟩?",
+      "options": {
+        "A": "North pole",
+        "B": "South pole",
+        "C": "Equator",
+        "D": "Center of the sphere"
+      },
+      "correct_answer": "A",
+      "explanation": "By convention, |0⟩ is placed at the north pole of the Bloch sphere.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-BLOCH-SPHERE",
+      "related_topics": [],
+      "learning_objectives": [
+        "Locate |0⟩ on the Bloch sphere"
+      ],
+      "skills_tagged": [
+        "bloch_sphere_interpretation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M02-S03-Q002",
+      "module_id": "M02",
+      "subtopic_id": "M02-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "On the Bloch sphere, which point represents the state |1⟩?",
+      "options": {
+        "A": "North pole",
+        "B": "South pole",
+        "C": "Equator",
+        "D": "Any point on the surface"
+      },
+      "correct_answer": "B",
+      "explanation": "By convention, |1⟩ is placed at the south pole of the Bloch sphere.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-BLOCH-SPHERE",
+      "related_topics": [],
+      "learning_objectives": [
+        "Locate |1⟩ on the Bloch sphere"
+      ],
+      "skills_tagged": [
+        "bloch_sphere_interpretation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M02-S03-Q003",
+      "module_id": "M02",
+      "subtopic_id": "M02-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "States on the equator of the Bloch sphere, such as |+⟩ = (|0⟩+|1⟩)/√2, represent:",
+      "options": {
+        "A": "States with 0% probability of either outcome",
+        "B": "Equal superposition states with 50/50 measurement probability in the Z-basis",
+        "C": "Only the state |1⟩",
+        "D": "Mixed classical states only"
+      },
+      "correct_answer": "B",
+      "explanation": "Equatorial states have equal |0⟩/|1⟩ population, giving 50/50 measurement probability in the Z-basis.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-BLOCH-SPHERE",
+      "related_topics": [
+        "QC-PROBABILITY"
+      ],
+      "learning_objectives": [
+        "Interpret equatorial Bloch sphere states"
+      ],
+      "skills_tagged": [
+        "bloch_sphere_interpretation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M02-S03-Q004",
+      "module_id": "M02",
+      "subtopic_id": "M02-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What does the radius (length) of the Bloch vector represent for a valid pure qubit state?",
+      "options": {
+        "A": "It varies depending on the qubit's energy",
+        "B": "It is always exactly 1 for a pure state",
+        "C": "It is always 0",
+        "D": "It represents the qubit's measured value directly"
+      },
+      "correct_answer": "B",
+      "explanation": "A pure state always corresponds to a Bloch vector of length 1 on the surface of the sphere.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-BLOCH-SPHERE",
+      "related_topics": [],
+      "learning_objectives": [
+        "Explain the significance of Bloch vector length"
+      ],
+      "skills_tagged": [
+        "bloch_sphere_interpretation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M02-S04-Q001",
+      "module_id": "M02",
+      "subtopic_id": "M02-S04",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "On the Bloch sphere, applying an X gate corresponds to:",
+      "options": {
+        "A": "A rotation of π radians about the X-axis",
+        "B": "No change to the state",
+        "C": "A reflection through the origin",
+        "D": "A translation along the Z-axis"
+      },
+      "correct_answer": "A",
+      "explanation": "The Pauli-X gate is equivalent to a π rotation about the X-axis of the Bloch sphere.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-PAULI-X",
+      "related_topics": [
+        "QC-BLOCH-SPHERE"
+      ],
+      "learning_objectives": [
+        "Relate the X gate to a Bloch sphere rotation"
+      ],
+      "skills_tagged": [
+        "bloch_sphere_interpretation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M02-S04-Q002",
+      "module_id": "M02",
+      "subtopic_id": "M02-S04",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Which gate corresponds to a rotation that maps |0⟩ to the equator of the Bloch sphere, creating an equal superposition?",
+      "options": {
+        "A": "Pauli-Z",
+        "B": "Hadamard (H)",
+        "C": "Identity",
+        "D": "Pauli-Y"
+      },
+      "correct_answer": "B",
+      "explanation": "The Hadamard gate rotates |0⟩ onto the equator, producing the equal-superposition state |+⟩.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-HADAMARD",
+      "related_topics": [
+        "QC-BLOCH-SPHERE"
+      ],
+      "learning_objectives": [
+        "Predict how H transforms a Bloch sphere state"
+      ],
+      "skills_tagged": [
+        "gate_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M02-S04-Q003",
+      "module_id": "M02",
+      "subtopic_id": "M02-S04",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "A qubit starts at |0⟩ (north pole). It is rotated using H, then Z, then H again. What is the resulting state?",
+      "options": {
+        "A": "|0⟩",
+        "B": "|1⟩",
+        "C": "(|0⟩+|1⟩)/√2",
+        "D": "(|0⟩-|1⟩)/√2"
+      },
+      "correct_answer": "B",
+      "explanation": "H|0⟩=|+⟩, Z|+⟩=|−⟩, H|−⟩=|1⟩. The sequence HZH implements an X-like flip on |0⟩.",
+      "difficulty_level": "Hard",
+      "initial_irt_difficulty": 1.5,
+      "irt_difficulty": 1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-HADAMARD",
+      "related_topics": [
+        "QC-PAULI-Z",
+        "QC-BLOCH-SPHERE"
+      ],
+      "learning_objectives": [
+        "Trace multi-gate transformations using Bloch sphere rotations"
+      ],
+      "skills_tagged": [
+        "gate_understanding",
+        "circuit_analysis"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M03-S01-Q001",
+      "module_id": "M03",
+      "subtopic_id": "M03-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "In a standard quantum circuit diagram, what does a horizontal line (wire) represent?",
+      "options": {
+        "A": "A classical bit only",
+        "B": "The evolution of a qubit over time, read left to right",
+        "C": "A measurement operation",
+        "D": "A gate"
+      },
+      "correct_answer": "B",
+      "explanation": "Each horizontal wire tracks a single qubit's evolution through the circuit over time.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-QUANTUM-CIRCUITS",
+      "related_topics": [],
+      "learning_objectives": [
+        "Interpret basic circuit diagram notation"
+      ],
+      "skills_tagged": [
+        "circuit_analysis"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M03-S01-Q002",
+      "module_id": "M03",
+      "subtopic_id": "M03-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "In a quantum circuit diagram, in which direction does time generally flow?",
+      "options": {
+        "A": "Right to left",
+        "B": "Top to bottom only",
+        "C": "Left to right",
+        "D": "There is no time direction"
+      },
+      "correct_answer": "C",
+      "explanation": "By convention, time flows from left to right in quantum circuit diagrams.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-QUANTUM-CIRCUITS",
+      "related_topics": [],
+      "learning_objectives": [
+        "Identify the time convention in circuit diagrams"
+      ],
+      "skills_tagged": [
+        "circuit_analysis"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M03-S01-Q003",
+      "module_id": "M03",
+      "subtopic_id": "M03-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Where is measurement typically placed in a simple quantum circuit, and why?",
+      "options": {
+        "A": "At the very beginning, because measurement must happen before gates",
+        "B": "At the end, because measurement collapses the state and is usually the final step to read out results",
+        "C": "In the middle, so gates can act on classical outcomes without additional circuitry",
+        "D": "Measurement is never included in circuit diagrams"
+      },
+      "correct_answer": "B",
+      "explanation": "Measurement collapses the quantum state, so it is typically placed at the end to read out final results.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-QUANTUM-CIRCUITS",
+      "related_topics": [
+        "QC-MEASUREMENT"
+      ],
+      "learning_objectives": [
+        "Explain the placement and purpose of measurement in circuits"
+      ],
+      "skills_tagged": [
+        "circuit_analysis",
+        "measurement_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M03-S02-Q001",
+      "module_id": "M03",
+      "subtopic_id": "M03-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What does the Pauli-X gate do to the state |0⟩?",
+      "options": {
+        "A": "Leaves it unchanged",
+        "B": "Converts it to |1⟩",
+        "C": "Converts it to (|0⟩+|1⟩)/√2",
+        "D": "Converts it to -|0⟩"
+      },
+      "correct_answer": "B",
+      "explanation": "The Pauli-X gate acts like a classical NOT gate, flipping |0⟩ to |1⟩.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-PAULI-X",
+      "related_topics": [],
+      "learning_objectives": [
+        "Recall the action of the X gate"
+      ],
+      "skills_tagged": [
+        "gate_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M03-S02-Q002",
+      "module_id": "M03",
+      "subtopic_id": "M03-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What is the effect of the Hadamard gate H on |0⟩?",
+      "options": {
+        "A": "|1⟩",
+        "B": "(|0⟩+|1⟩)/√2",
+        "C": "-|0⟩",
+        "D": "|0⟩ unchanged"
+      },
+      "correct_answer": "B",
+      "explanation": "H creates an equal superposition state (|0⟩+|1⟩)/√2 from |0⟩.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-HADAMARD",
+      "related_topics": [],
+      "learning_objectives": [
+        "Recall the action of the Hadamard gate"
+      ],
+      "skills_tagged": [
+        "gate_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M03-S02-Q003",
+      "module_id": "M03",
+      "subtopic_id": "M03-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What is the effect of the Pauli-Z gate on the state |1⟩?",
+      "options": {
+        "A": "It leaves |1⟩ unchanged",
+        "B": "It flips |1⟩ to |0⟩",
+        "C": "It multiplies |1⟩ by -1, giving -|1⟩",
+        "D": "It creates a superposition"
+      },
+      "correct_answer": "C",
+      "explanation": "The Z gate applies a phase flip, leaving |0⟩ unchanged but multiplying |1⟩ by -1.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-PAULI-Z",
+      "related_topics": [],
+      "learning_objectives": [
+        "Predict the effect of Z on a basis state"
+      ],
+      "skills_tagged": [
+        "gate_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M03-S02-Q004",
+      "module_id": "M03",
+      "subtopic_id": "M03-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "The S gate (phase gate) applies a phase of i to the |1⟩ component. What is the result of applying S to the state (|0⟩+|1⟩)/√2?",
+      "options": {
+        "A": "(|0⟩+|1⟩)/√2 unchanged",
+        "B": "(|0⟩+i|1⟩)/√2",
+        "C": "(|0⟩-|1⟩)/√2",
+        "D": "|1⟩"
+      },
+      "correct_answer": "B",
+      "explanation": "S multiplies only the |1⟩ amplitude by i, giving (|0⟩+i|1⟩)/√2.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-PHASE-GATES",
+      "related_topics": [],
+      "learning_objectives": [
+        "Apply the S gate to a superposition state"
+      ],
+      "skills_tagged": [
+        "gate_understanding",
+        "statevector_interpretation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M03-S02-Q005",
+      "module_id": "M03",
+      "subtopic_id": "M03-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Which gate applies a phase of e^(iπ/4) to the |1⟩ component?",
+      "options": {
+        "A": "Pauli-X",
+        "B": "Hadamard",
+        "C": "T gate",
+        "D": "CNOT"
+      },
+      "correct_answer": "C",
+      "explanation": "The T gate applies a π/4 phase rotation to the |1⟩ amplitude.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-PHASE-GATES",
+      "related_topics": [],
+      "learning_objectives": [
+        "Identify the T gate's phase action"
+      ],
+      "skills_tagged": [
+        "gate_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M03-S03-Q001",
+      "module_id": "M03",
+      "subtopic_id": "M03-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "When multiple gates are applied in sequence to a qubit, the overall transformation is represented by:",
+      "options": {
+        "A": "Adding the gate matrices together",
+        "B": "Multiplying the gate matrices together in the correct order",
+        "C": "Averaging the gate matrices",
+        "D": "Ignoring earlier gates and only using the last one"
+      },
+      "correct_answer": "B",
+      "explanation": "Sequential gate application corresponds to matrix multiplication in the order the gates are applied.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-UNITARY",
+      "related_topics": [
+        "QC-QUANTUM-CIRCUITS"
+      ],
+      "learning_objectives": [
+        "Understand circuit composition as matrix multiplication"
+      ],
+      "skills_tagged": [
+        "circuit_analysis"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M03-S03-Q002",
+      "module_id": "M03",
+      "subtopic_id": "M03-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "All valid quantum gates acting on a closed quantum system must be represented by what type of matrix?",
+      "options": {
+        "A": "Any square matrix",
+        "B": "A unitary matrix (preserves vector norm)",
+        "C": "A diagonal matrix only",
+        "D": "A matrix with all positive real entries"
+      },
+      "correct_answer": "B",
+      "explanation": "Quantum gates must be unitary to preserve the normalization of the statevector.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-UNITARY",
+      "related_topics": [],
+      "learning_objectives": [
+        "Explain the unitarity requirement for quantum gates"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M03-S03-Q003",
+      "module_id": "M03",
+      "subtopic_id": "M03-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "If gate A is applied first, followed by gate B, on a state |ψ⟩, what is the correct mathematical expression for the final state?",
+      "options": {
+        "A": "A·B·|ψ⟩",
+        "B": "B·A·|ψ⟩",
+        "C": "(A+B)|ψ⟩",
+        "D": "|ψ⟩·A·B"
+      },
+      "correct_answer": "B",
+      "explanation": "Matrices are applied right to left, so the gate applied first (A) sits closest to |ψ⟩: B·A·|ψ⟩.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-UNITARY",
+      "related_topics": [
+        "QC-QUANTUM-CIRCUITS"
+      ],
+      "learning_objectives": [
+        "Correctly order matrix multiplication for sequential gates"
+      ],
+      "skills_tagged": [
+        "circuit_analysis"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M03-S03-Q004",
+      "module_id": "M03",
+      "subtopic_id": "M03-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "A qubit starts in |0⟩. The circuit applies X, then H, then Z, in that order. What is the resulting state?",
+      "options": {
+        "A": "(|0⟩+|1⟩)/√2",
+        "B": "(|0⟩-|1⟩)/√2",
+        "C": "|1⟩",
+        "D": "|0⟩"
+      },
+      "correct_answer": "A",
+      "explanation": "X|0⟩=|1⟩, H|1⟩=(|0⟩-|1⟩)/√2, Z on that gives (|0⟩+|1⟩)/√2 since Z flips the sign of the |1⟩ term.",
+      "difficulty_level": "Hard",
+      "initial_irt_difficulty": 1.5,
+      "irt_difficulty": 1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-UNITARY",
+      "related_topics": [
+        "QC-PAULI-X",
+        "QC-HADAMARD",
+        "QC-PAULI-Z"
+      ],
+      "learning_objectives": [
+        "Trace a multi-gate circuit's final statevector"
+      ],
+      "skills_tagged": [
+        "circuit_analysis",
+        "statevector_interpretation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M03-S04-Q001",
+      "module_id": "M03",
+      "subtopic_id": "M03-S04",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Which single gate, applied to |0⟩, is the standard way to create an equal superposition?",
+      "options": {
+        "A": "Pauli-X",
+        "B": "Hadamard (H)",
+        "C": "Pauli-Z",
+        "D": "Identity"
+      },
+      "correct_answer": "B",
+      "explanation": "The Hadamard gate is the standard tool for creating equal superposition from |0⟩.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-HADAMARD",
+      "related_topics": [],
+      "learning_objectives": [
+        "Design a circuit for equal superposition"
+      ],
+      "skills_tagged": [
+        "circuit_analysis"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M03-S04-Q002",
+      "module_id": "M03",
+      "subtopic_id": "M03-S04",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "To prepare the state |1⟩ starting from |0⟩ using a single gate, which gate should be applied?",
+      "options": {
+        "A": "Hadamard",
+        "B": "Pauli-X",
+        "C": "Pauli-Z",
+        "D": "Identity"
+      },
+      "correct_answer": "B",
+      "explanation": "Applying X to |0⟩ flips it directly to |1⟩.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-PAULI-X",
+      "related_topics": [],
+      "learning_objectives": [
+        "Design a single-gate circuit to prepare a target state"
+      ],
+      "skills_tagged": [
+        "circuit_analysis"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M03-S04-Q003",
+      "module_id": "M03",
+      "subtopic_id": "M03-S04",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "To prepare the state (|0⟩−|1⟩)/√2 starting from |0⟩, which sequence of gates works?",
+      "options": {
+        "A": "Apply H only",
+        "B": "Apply X then H",
+        "C": "Apply H then Z",
+        "D": "Apply Z then H"
+      },
+      "correct_answer": "C",
+      "explanation": "H|0⟩=(|0⟩+|1⟩)/√2, then Z flips the sign of the |1⟩ term, giving (|0⟩−|1⟩)/√2.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-HADAMARD",
+      "related_topics": [
+        "QC-PAULI-Z"
+      ],
+      "learning_objectives": [
+        "Design a two-gate circuit to prepare a specified state"
+      ],
+      "skills_tagged": [
+        "circuit_analysis",
+        "statevector_interpretation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M03-S04-Q004",
+      "module_id": "M03",
+      "subtopic_id": "M03-S04",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Phase kickback: in a circuit where a control qubit in superposition controls a phase gate acting on a target qubit already in an eigenstate of that gate, the phase kickback effect causes:",
+      "options": {
+        "A": "The target qubit's state to change while the control remains unaffected",
+        "B": "The phase to appear on the control qubit instead of changing the target's state, since the target is in an eigenstate",
+        "C": "Both qubits to become entangled with equal probability outcomes",
+        "D": "No effect at all on either qubit"
+      },
+      "correct_answer": "B",
+      "explanation": "Phase kickback transfers phase information onto the control qubit when the target is an eigenstate of the controlled operation.",
+      "difficulty_level": "Hard",
+      "initial_irt_difficulty": 1.5,
+      "irt_difficulty": 1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-QUANTUM-CIRCUITS",
+      "related_topics": [
+        "QC-PHASE-GATES"
+      ],
+      "learning_objectives": [
+        "Explain the phase kickback phenomenon"
+      ],
+      "skills_tagged": [
+        "circuit_analysis",
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M04-S01-Q001",
+      "module_id": "M04",
+      "subtopic_id": "M04-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "How many basis states does a 2-qubit system have?",
+      "options": {
+        "A": "2",
+        "B": "3",
+        "C": "4",
+        "D": "8"
+      },
+      "correct_answer": "C",
+      "explanation": "A 2-qubit system has 2² = 4 basis states: |00⟩, |01⟩, |10⟩, |11⟩.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-TENSOR-PRODUCT",
+      "related_topics": [],
+      "learning_objectives": [
+        "Count basis states for a multi-qubit system"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M04-S01-Q002",
+      "module_id": "M04",
+      "subtopic_id": "M04-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Which of the following is a valid basis state for a 2-qubit system?",
+      "options": {
+        "A": "|01⟩",
+        "B": "|000⟩",
+        "C": "|0⟩ only",
+        "D": "|2⟩"
+      },
+      "correct_answer": "A",
+      "explanation": "|01⟩ is one of the four valid computational basis states for two qubits.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-TENSOR-PRODUCT",
+      "related_topics": [],
+      "learning_objectives": [
+        "Identify valid multi-qubit basis states"
+      ],
+      "skills_tagged": [
+        "statevector_interpretation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M04-S01-Q003",
+      "module_id": "M04",
+      "subtopic_id": "M04-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "The combined state of two independent qubits, each in a definite state, is formed using which mathematical operation?",
+      "options": {
+        "A": "Addition of the two state vectors",
+        "B": "Tensor product of the two state vectors",
+        "C": "Dot product of the two state vectors",
+        "D": "Subtraction of the two state vectors"
+      },
+      "correct_answer": "B",
+      "explanation": "Combining independent qubit states uses the tensor (Kronecker) product.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-TENSOR-PRODUCT",
+      "related_topics": [],
+      "learning_objectives": [
+        "Explain how the tensor product combines qubit states"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M04-S01-Q004",
+      "module_id": "M04",
+      "subtopic_id": "M04-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "If qubit 1 is in state (|0⟩+|1⟩)/√2 and qubit 2 is in state |0⟩, what is their combined (unentangled) two-qubit state?",
+      "options": {
+        "A": "(|00⟩+|11⟩)/√2",
+        "B": "(|00⟩+|10⟩)/√2",
+        "C": "|00⟩",
+        "D": "(|01⟩+|10⟩)/√2"
+      },
+      "correct_answer": "B",
+      "explanation": "Tensor product: (|0⟩+|1⟩)/√2 ⊗ |0⟩ = (|00⟩+|10⟩)/√2.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-TENSOR-PRODUCT",
+      "related_topics": [],
+      "learning_objectives": [
+        "Compute a tensor product of two single-qubit states"
+      ],
+      "skills_tagged": [
+        "statevector_interpretation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M04-S02-Q001",
+      "module_id": "M04",
+      "subtopic_id": "M04-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "In a CNOT gate, what determines whether the target qubit is flipped?",
+      "options": {
+        "A": "The state of the control qubit — flipped only if control is |1⟩",
+        "B": "The target is always flipped regardless of control",
+        "C": "The target is never flipped",
+        "D": "A random coin flip"
+      },
+      "correct_answer": "A",
+      "explanation": "CNOT flips the target qubit if and only if the control qubit is in state |1⟩.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-CNOT",
+      "related_topics": [],
+      "learning_objectives": [
+        "Describe the conditional action of CNOT"
+      ],
+      "skills_tagged": [
+        "gate_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M04-S02-Q002",
+      "module_id": "M04",
+      "subtopic_id": "M04-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What is the result of applying CNOT (control=q0, target=q1) to the state |10⟩ (q0=1, q1=0)?",
+      "options": {
+        "A": "|10⟩",
+        "B": "|11⟩",
+        "C": "|01⟩",
+        "D": "|00⟩"
+      },
+      "correct_answer": "B",
+      "explanation": "Since control q0=1, the target q1 flips from 0 to 1, giving |11⟩.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-CNOT",
+      "related_topics": [],
+      "learning_objectives": [
+        "Apply CNOT to a specific basis state"
+      ],
+      "skills_tagged": [
+        "gate_understanding",
+        "circuit_analysis"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M04-S02-Q003",
+      "module_id": "M04",
+      "subtopic_id": "M04-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Which gate flips the phase of the amplitude only when both control and target qubits are |1⟩, without changing basis populations?",
+      "options": {
+        "A": "CNOT",
+        "B": "SWAP",
+        "C": "CZ (controlled-Z)",
+        "D": "Hadamard"
+      },
+      "correct_answer": "C",
+      "explanation": "CZ applies a -1 phase to the |11⟩ component only, leaving populations unchanged.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-CZ-GATE",
+      "related_topics": [
+        "QC-CNOT"
+      ],
+      "learning_objectives": [
+        "Distinguish CZ from CNOT"
+      ],
+      "skills_tagged": [
+        "gate_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M04-S02-Q004",
+      "module_id": "M04",
+      "subtopic_id": "M04-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What does the SWAP gate do to a two-qubit state |q0 q1⟩?",
+      "options": {
+        "A": "It entangles the two qubits",
+        "B": "It exchanges the states of the two qubits, e.g., |01⟩ → |10⟩",
+        "C": "It measures both qubits",
+        "D": "It applies a Hadamard to both qubits"
+      },
+      "correct_answer": "B",
+      "explanation": "SWAP exchanges the quantum states held by two qubits.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-SWAP-GATE",
+      "related_topics": [],
+      "learning_objectives": [
+        "Describe the action of the SWAP gate"
+      ],
+      "skills_tagged": [
+        "gate_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M04-S03-Q001",
+      "module_id": "M04",
+      "subtopic_id": "M04-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Which of the following best defines entanglement?",
+      "options": {
+        "A": "Two qubits that are physically touching",
+        "B": "A correlation between qubits such that the combined state cannot be written as a simple tensor product of individual qubit states",
+        "C": "Any two-qubit state at all",
+        "D": "A state where both qubits are in |0⟩"
+      },
+      "correct_answer": "B",
+      "explanation": "Entanglement means the joint state cannot be factored into a tensor product of individual qubit states.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-ENTANGLEMENT",
+      "related_topics": [],
+      "learning_objectives": [
+        "Define quantum entanglement"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M04-S03-Q002",
+      "module_id": "M04",
+      "subtopic_id": "M04-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Which circuit is the standard way to create the Bell state (|00⟩+|11⟩)/√2 starting from |00⟩?",
+      "options": {
+        "A": "Apply H to q0, then CNOT with q0 as control and q1 as target",
+        "B": "Apply X to q0 only",
+        "C": "Apply H to both qubits independently",
+        "D": "Apply CNOT only, without any H gate"
+      },
+      "correct_answer": "A",
+      "explanation": "H creates superposition on q0, then CNOT entangles it with q1, producing the Bell state.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-BELL-STATES",
+      "related_topics": [
+        "QC-CNOT",
+        "QC-HADAMARD"
+      ],
+      "learning_objectives": [
+        "Build a circuit that creates a specific Bell state"
+      ],
+      "skills_tagged": [
+        "circuit_analysis"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M04-S03-Q003",
+      "module_id": "M04",
+      "subtopic_id": "M04-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "In the Bell state (|00⟩+|11⟩)/√2, if qubit 0 is measured and yields |1⟩, what is the certain outcome for qubit 1 if measured immediately after in the same basis?",
+      "options": {
+        "A": "|0⟩ with certainty",
+        "B": "|1⟩ with certainty",
+        "C": "50/50 chance of |0⟩ or |1⟩",
+        "D": "Cannot be determined even in principle"
+      },
+      "correct_answer": "B",
+      "explanation": "The Bell state's perfect correlation means measuring q0 as |1⟩ guarantees q1 measures |1⟩.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-BELL-STATES",
+      "related_topics": [
+        "QC-MEASUREMENT"
+      ],
+      "learning_objectives": [
+        "Predict measurement correlations in Bell states"
+      ],
+      "skills_tagged": [
+        "entanglement_reasoning",
+        "measurement_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M04-S03-Q004",
+      "module_id": "M04",
+      "subtopic_id": "M04-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Why can entanglement not be used to send information faster than light, even though measuring one entangled qubit instantly correlates with the other?",
+      "options": {
+        "A": "Because entanglement doesn't actually exist",
+        "B": "Because the measurement outcome on each qubit is random from the local observer's perspective; no controllable information is transmitted without classical communication to compare results",
+        "C": "Because entangled qubits must be in the same physical location",
+        "D": "Because entanglement collapses only one qubit, leaving the other unaffected"
+      },
+      "correct_answer": "B",
+      "explanation": "No-signaling holds because local measurement outcomes are random; correlations are only revealed by comparing results via classical channels.",
+      "difficulty_level": "Hard",
+      "initial_irt_difficulty": 1.5,
+      "irt_difficulty": 1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-ENTANGLEMENT",
+      "related_topics": [
+        "QC-MEASUREMENT"
+      ],
+      "learning_objectives": [
+        "Explain the no-signaling principle in entanglement"
+      ],
+      "skills_tagged": [
+        "entanglement_reasoning",
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M04-S03-Q005",
+      "module_id": "M04",
+      "subtopic_id": "M04-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Which of the following two-qubit states is entangled?",
+      "options": {
+        "A": "(|00⟩+|01⟩+|10⟩+|11⟩)/2",
+        "B": "(|00⟩+|11⟩)/√2",
+        "C": "|0⟩⊗|0⟩",
+        "D": "(|0⟩+|1⟩)/√2 ⊗ |0⟩"
+      },
+      "correct_answer": "B",
+      "explanation": "(|00⟩+|11⟩)/√2 cannot be factored into a tensor product of single-qubit states, making it entangled; the others factor cleanly.",
+      "difficulty_level": "Hard",
+      "initial_irt_difficulty": 1.5,
+      "irt_difficulty": 1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-ENTANGLEMENT",
+      "related_topics": [
+        "QC-BELL-STATES",
+        "QC-TENSOR-PRODUCT"
+      ],
+      "learning_objectives": [
+        "Identify whether a given 2-qubit state is entangled"
+      ],
+      "skills_tagged": [
+        "entanglement_reasoning",
+        "statevector_interpretation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M04-S04-Q001",
+      "module_id": "M04",
+      "subtopic_id": "M04-S04",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "To create a Bell state, which two types of gates are typically combined?",
+      "options": {
+        "A": "Only Pauli-X gates",
+        "B": "Hadamard and CNOT",
+        "C": "Only measurement gates",
+        "D": "Only SWAP gates"
+      },
+      "correct_answer": "B",
+      "explanation": "A Hadamard followed by a CNOT is the canonical way to generate a Bell state.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-BELL-STATES",
+      "related_topics": [],
+      "learning_objectives": [
+        "Recall the standard gates used to build Bell states"
+      ],
+      "skills_tagged": [
+        "circuit_analysis"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M04-S04-Q002",
+      "module_id": "M04",
+      "subtopic_id": "M04-S04",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "A circuit applies H to q0, then CNOT(control=q0, target=q1), then measures both qubits in the Z-basis over many shots. What outcomes should appear (ideally, with no noise)?",
+      "options": {
+        "A": "Only |00⟩",
+        "B": "Only |11⟩",
+        "C": "Approximately 50% |00⟩ and 50% |11⟩, with no |01⟩ or |10⟩",
+        "D": "A uniform 25% for all four outcomes"
+      },
+      "correct_answer": "C",
+      "explanation": "This circuit creates the Bell state (|00⟩+|11⟩)/√2, yielding perfectly correlated 50/50 outcomes.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-BELL-STATES",
+      "related_topics": [
+        "QC-MEASUREMENT"
+      ],
+      "learning_objectives": [
+        "Predict measurement outcome distributions from a Bell-state circuit"
+      ],
+      "skills_tagged": [
+        "circuit_analysis",
+        "measurement_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M04-S04-Q003",
+      "module_id": "M04",
+      "subtopic_id": "M04-S04",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Consider a 2-qubit circuit starting from |00⟩: H on q0, CNOT(q0 control, q1 target), then X on q1. What is the resulting state?",
+      "options": {
+        "A": "(|00⟩+|11⟩)/√2",
+        "B": "(|01⟩+|10⟩)/√2",
+        "C": "|01⟩",
+        "D": "(|00⟩+|01⟩)/√2"
+      },
+      "correct_answer": "B",
+      "explanation": "H and CNOT give (|00⟩+|11⟩)/√2; applying X to q1 flips the second bit in each term, giving (|01⟩+|10⟩)/√2.",
+      "difficulty_level": "Hard",
+      "initial_irt_difficulty": 1.5,
+      "irt_difficulty": 1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-BELL-STATES",
+      "related_topics": [
+        "QC-CNOT",
+        "QC-PAULI-X"
+      ],
+      "learning_objectives": [
+        "Trace a multi-gate two-qubit circuit to its final state"
+      ],
+      "skills_tagged": [
+        "circuit_analysis",
+        "statevector_interpretation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M05-S01-Q001",
+      "module_id": "M05",
+      "subtopic_id": "M05-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Measuring a qubit in the Z-basis means measurement outcomes correspond to which states?",
+      "options": {
+        "A": "|0⟩ and |1⟩",
+        "B": "|+⟩ and |−⟩",
+        "C": "Only |1⟩",
+        "D": "Any arbitrary state"
+      },
+      "correct_answer": "A",
+      "explanation": "The Z-basis (computational basis) outcomes are |0⟩ and |1⟩.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-MEASUREMENT-BASIS",
+      "related_topics": [],
+      "learning_objectives": [
+        "Recall the Z-basis measurement outcomes"
+      ],
+      "skills_tagged": [
+        "measurement_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M05-S01-Q002",
+      "module_id": "M05",
+      "subtopic_id": "M05-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "To measure a qubit in the X-basis, which gate is typically applied before a standard Z-basis measurement?",
+      "options": {
+        "A": "Pauli-Z",
+        "B": "Hadamard (H)",
+        "C": "Pauli-X",
+        "D": "Identity"
+      },
+      "correct_answer": "B",
+      "explanation": "Applying H before Z-basis measurement effectively measures in the X-basis.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-MEASUREMENT-BASIS",
+      "related_topics": [
+        "QC-HADAMARD"
+      ],
+      "learning_objectives": [
+        "Describe how to perform an X-basis measurement"
+      ],
+      "skills_tagged": [
+        "measurement_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M05-S01-Q003",
+      "module_id": "M05",
+      "subtopic_id": "M05-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "A qubit in state |+⟩ = (|0⟩+|1⟩)/√2 is measured in the X-basis (H applied, then Z-basis measurement). What is the expected outcome?",
+      "options": {
+        "A": "50% |0⟩, 50% |1⟩",
+        "B": "Always |0⟩ with certainty",
+        "C": "Always |1⟩ with certainty",
+        "D": "50% |+⟩, 50% |−⟩"
+      },
+      "correct_answer": "B",
+      "explanation": "H|+⟩ = |0⟩, so measuring afterward always yields |0⟩ with certainty.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-MEASUREMENT-BASIS",
+      "related_topics": [
+        "QC-HADAMARD"
+      ],
+      "learning_objectives": [
+        "Predict outcome distributions for basis-transformed measurements"
+      ],
+      "skills_tagged": [
+        "measurement_reasoning",
+        "statevector_interpretation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M05-S01-Q004",
+      "module_id": "M05",
+      "subtopic_id": "M05-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "A qubit in state |0⟩ is measured directly in the X-basis (H then Z-measurement). What are the expected outcome probabilities?",
+      "options": {
+        "A": "100% |0⟩",
+        "B": "100% |1⟩",
+        "C": "50% |0⟩, 50% |1⟩",
+        "D": "0% for both outcomes"
+      },
+      "correct_answer": "C",
+      "explanation": "H|0⟩=|+⟩, giving a 50/50 measurement outcome.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-MEASUREMENT-BASIS",
+      "related_topics": [],
+      "learning_objectives": [
+        "Predict outcome distributions from a given basis and initial state"
+      ],
+      "skills_tagged": [
+        "measurement_reasoning",
+        "probability_calculation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M05-S01-Q005",
+      "module_id": "M05",
+      "subtopic_id": "M05-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Why might measuring the same qubit state in different bases (Z vs X) give different probability distributions?",
+      "options": {
+        "A": "Because measurement bases only affect classical bits",
+        "B": "Because the choice of basis determines which set of orthogonal states the qubit's amplitude is projected onto, which can yield different probabilities depending on the state's orientation on the Bloch sphere",
+        "C": "Because measurement always destroys the qubit regardless of basis",
+        "D": "Because only the Z-basis is a valid measurement basis"
+      },
+      "correct_answer": "B",
+      "explanation": "Different measurement bases project the state onto different orthogonal axes on the Bloch sphere, changing outcome probabilities.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-MEASUREMENT-BASIS",
+      "related_topics": [
+        "QC-BLOCH-SPHERE"
+      ],
+      "learning_objectives": [
+        "Explain why measurement basis choice affects probabilities"
+      ],
+      "skills_tagged": [
+        "measurement_reasoning",
+        "bloch_sphere_interpretation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M05-S02-Q001",
+      "module_id": "M05",
+      "subtopic_id": "M05-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "In a quantum simulator, what does a 'shot' refer to?",
+      "options": {
+        "A": "A single execution and measurement of the circuit",
+        "B": "The total number of qubits used",
+        "C": "A type of quantum gate",
+        "D": "An error in the circuit"
+      },
+      "correct_answer": "A",
+      "explanation": "A shot is one run of the circuit followed by a measurement.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-MEASUREMENT",
+      "related_topics": [],
+      "learning_objectives": [
+        "Define a 'shot' in quantum experiments"
+      ],
+      "skills_tagged": [
+        "measurement_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M05-S02-Q002",
+      "module_id": "M05",
+      "subtopic_id": "M05-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Why do quantum experiments typically run a circuit for many shots rather than just once?",
+      "options": {
+        "A": "Because a single shot gives no output at all",
+        "B": "Because measurement outcomes are probabilistic, and many shots are needed to estimate the underlying probability distribution",
+        "C": "Because qubits can only be measured once per day",
+        "D": "Because more shots always eliminate all noise"
+      },
+      "correct_answer": "B",
+      "explanation": "Many shots allow estimation of the underlying probability distribution from the statistics of outcomes.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-MEASUREMENT",
+      "related_topics": [
+        "QC-PROBABILITY"
+      ],
+      "learning_objectives": [
+        "Explain why multiple shots are needed to interpret results"
+      ],
+      "skills_tagged": [
+        "measurement_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M05-S02-Q003",
+      "module_id": "M05",
+      "subtopic_id": "M05-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "A circuit is run 1000 times (shots) and yields |0⟩ approximately 500 times and |1⟩ approximately 500 times. What does this histogram suggest about the qubit's state before measurement?",
+      "options": {
+        "A": "The qubit was exactly in state |0⟩",
+        "B": "The qubit was likely in an equal superposition state, such as |+⟩",
+        "C": "The qubit was in state |1⟩",
+        "D": "The circuit must have had a hardware fault"
+      },
+      "correct_answer": "B",
+      "explanation": "A roughly 50/50 split across many shots is consistent with an equal superposition state.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-MEASUREMENT",
+      "related_topics": [
+        "QC-PROBABILITY"
+      ],
+      "learning_objectives": [
+        "Interpret a measurement histogram to infer a likely quantum state"
+      ],
+      "skills_tagged": [
+        "measurement_reasoning",
+        "probability_calculation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M05-S02-Q004",
+      "module_id": "M05",
+      "subtopic_id": "M05-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "If a circuit run for 1000 shots yields |0⟩ about 900 times and |1⟩ about 100 times, what would you estimate for |β|² in the state α|0⟩+β|1⟩?",
+      "options": {
+        "A": "~0.9",
+        "B": "~0.1",
+        "C": "~0.5",
+        "D": "~1.0"
+      },
+      "correct_answer": "B",
+      "explanation": "The observed frequency of |1⟩ (10%) is the empirical estimate of |β|².",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-PROBABILITY",
+      "related_topics": [
+        "QC-MEASUREMENT"
+      ],
+      "learning_objectives": [
+        "Estimate amplitude-squared probabilities from shot histograms"
+      ],
+      "skills_tagged": [
+        "probability_calculation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M05-S03-Q001",
+      "module_id": "M05",
+      "subtopic_id": "M05-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Which resource is essential for both quantum teleportation and superdense coding?",
+      "options": {
+        "A": "A shared entangled qubit pair between sender and receiver",
+        "B": "A classical bit sent before any quantum operations",
+        "C": "A quantum computer with at least 10 qubits",
+        "D": "A measurement-free quantum channel"
+      },
+      "correct_answer": "A",
+      "explanation": "Both protocols rely on a pre-shared entangled pair (e.g., a Bell pair) between sender and receiver.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-TELEPORTATION",
+      "related_topics": [
+        "QC-SUPERDENSE-CODING",
+        "QC-ENTANGLEMENT"
+      ],
+      "learning_objectives": [
+        "Identify the shared resource required for teleportation and superdense coding"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M05-S03-Q002",
+      "module_id": "M05",
+      "subtopic_id": "M05-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "In quantum teleportation, what is physically transmitted from sender to receiver in addition to the shared entanglement?",
+      "options": {
+        "A": "The original qubit itself, physically moved",
+        "B": "Two classical bits, resulting from Bell-basis measurement of the sender's qubits",
+        "C": "Nothing at all — the state appears without transmission",
+        "D": "A copy of the quantum state, violating the no-cloning theorem"
+      },
+      "correct_answer": "B",
+      "explanation": "Teleportation requires sending 2 classical bits derived from a Bell-basis measurement to complete state transfer.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-TELEPORTATION",
+      "related_topics": [],
+      "learning_objectives": [
+        "Describe the classical communication step in teleportation"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M05-S03-Q003",
+      "module_id": "M05",
+      "subtopic_id": "M05-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "In superdense coding, how many classical bits of information can be transmitted by sending a single qubit, given pre-shared entanglement?",
+      "options": {
+        "A": "0",
+        "B": "1",
+        "C": "2",
+        "D": "4"
+      },
+      "correct_answer": "C",
+      "explanation": "Superdense coding allows 2 classical bits to be conveyed by transmitting a single qubit, using pre-shared entanglement.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-SUPERDENSE-CODING",
+      "related_topics": [],
+      "learning_objectives": [
+        "State the information capacity of superdense coding"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M05-S03-Q004",
+      "module_id": "M05",
+      "subtopic_id": "M05-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Why does quantum teleportation not violate the no-cloning theorem, even though it recreates a quantum state at a distant location?",
+      "options": {
+        "A": "Because the original qubit's state is destroyed (via measurement) in the process, so no copy ever coexists with the original",
+        "B": "Because no-cloning only applies to classical information",
+        "C": "Because teleportation actually clones the qubit, and no-cloning is simply wrong",
+        "D": "Because teleportation does not involve measurement at all"
+      },
+      "correct_answer": "A",
+      "explanation": "The sender's original state is destroyed by measurement, so at no point do two copies of the state coexist.",
+      "difficulty_level": "Hard",
+      "initial_irt_difficulty": 1.5,
+      "irt_difficulty": 1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-TELEPORTATION",
+      "related_topics": [],
+      "learning_objectives": [
+        "Explain why teleportation is consistent with the no-cloning theorem"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning",
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M05-S03-Q005",
+      "module_id": "M05",
+      "subtopic_id": "M05-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Which statement correctly compares teleportation and superdense coding in terms of resources used?",
+      "options": {
+        "A": "Teleportation sends 2 classical bits and uses shared entanglement to transmit a quantum state; superdense coding sends 1 qubit (plus shared entanglement) to transmit 2 classical bits — they are, in a sense, resource-duals of each other",
+        "B": "Both protocols require sending physical qubits without any entanglement",
+        "C": "Teleportation requires no classical communication at all",
+        "D": "Superdense coding can transmit qubits without any quantum channel"
+      },
+      "correct_answer": "A",
+      "explanation": "Teleportation and superdense coding are often described as duals: one transmits quantum info using classical bits plus entanglement, the other transmits classical info using a qubit plus entanglement.",
+      "difficulty_level": "Hard",
+      "initial_irt_difficulty": 1.5,
+      "irt_difficulty": 1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-TELEPORTATION",
+      "related_topics": [
+        "QC-SUPERDENSE-CODING"
+      ],
+      "learning_objectives": [
+        "Compare the resource requirements of teleportation and superdense coding"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M06-S01-Q001",
+      "module_id": "M06",
+      "subtopic_id": "M06-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What does 'quantum parallelism' refer to?",
+      "options": {
+        "A": "Running two separate classical computers at once",
+        "B": "The ability of a quantum computer, via superposition, to evaluate a function on many inputs simultaneously within a single circuit execution",
+        "C": "Running multiple quantum computers in different countries",
+        "D": "Doubling the clock speed of a quantum processor"
+      },
+      "correct_answer": "B",
+      "explanation": "Superposition allows a quantum circuit to encode evaluations over many inputs at once in a single execution.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-QUANTUM-PARALLELISM",
+      "related_topics": [],
+      "learning_objectives": [
+        "Define quantum parallelism"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M06-S01-Q002",
+      "module_id": "M06",
+      "subtopic_id": "M06-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "In quantum algorithms, what is an 'oracle'?",
+      "options": {
+        "A": "A classical database lookup table only",
+        "B": "A black-box quantum operation that encodes a function, which the algorithm can query in superposition",
+        "C": "A person who predicts quantum measurement outcomes",
+        "D": "A synonym for a qubit"
+      },
+      "correct_answer": "B",
+      "explanation": "An oracle is a unitary black box implementing a function that algorithms can query, often in superposition.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-ORACLE",
+      "related_topics": [],
+      "learning_objectives": [
+        "Define the role of an oracle in quantum algorithms"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M06-S01-Q003",
+      "module_id": "M06",
+      "subtopic_id": "M06-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Why is quantum parallelism alone not sufficient to guarantee a speedup over classical algorithms?",
+      "options": {
+        "A": "Because measurement collapses the superposition, and extracting useful information requires clever interference-based algorithm design, not just parallel evaluation",
+        "B": "Because quantum parallelism does not actually exist",
+        "C": "Because oracles cannot be implemented as quantum circuits",
+        "D": "Because classical computers are always faster regardless"
+      },
+      "correct_answer": "A",
+      "explanation": "Simply evaluating a function in superposition is useless unless interference is engineered to extract a useful global answer upon measurement.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-QUANTUM-PARALLELISM",
+      "related_topics": [
+        "QC-ORACLE"
+      ],
+      "learning_objectives": [
+        "Explain why superposition alone doesn't guarantee quantum speedup"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M06-S02-Q001",
+      "module_id": "M06",
+      "subtopic_id": "M06-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What is the goal of the Deutsch-Jozsa algorithm?",
+      "options": {
+        "A": "To sort a list of numbers",
+        "B": "To determine whether a given function is constant or balanced, using fewer queries than any classical deterministic algorithm",
+        "C": "To factor large integers",
+        "D": "To simulate protein folding"
+      },
+      "correct_answer": "B",
+      "explanation": "Deutsch-Jozsa distinguishes constant from balanced functions with a speedup over classical determinism.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-DEUTSCH-JOZSA",
+      "related_topics": [],
+      "learning_objectives": [
+        "State the goal of the Deutsch-Jozsa algorithm"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M06-S02-Q002",
+      "module_id": "M06",
+      "subtopic_id": "M06-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "How many oracle queries does the Deutsch-Jozsa algorithm require to determine with certainty whether a function is constant or balanced?",
+      "options": {
+        "A": "A number of queries that scales exponentially with input size",
+        "B": "Exactly one query, regardless of input size",
+        "C": "Half of all possible inputs plus one, same as the worst classical case",
+        "D": "Zero queries"
+      },
+      "correct_answer": "B",
+      "explanation": "Deutsch-Jozsa achieves certainty with a single oracle query, unlike classical algorithms.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-DEUTSCH-JOZSA",
+      "related_topics": [],
+      "learning_objectives": [
+        "State the query complexity of Deutsch-Jozsa"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M06-S02-Q003",
+      "module_id": "M06",
+      "subtopic_id": "M06-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What role does the Hadamard transform play in the Deutsch-Jozsa algorithm?",
+      "options": {
+        "A": "It creates superposition over all possible inputs before querying the oracle, and creates interference after the query to reveal global information about the function",
+        "B": "It measures the qubits directly without any computation",
+        "C": "It replaces the need for an oracle entirely",
+        "D": "It clones the input qubits"
+      },
+      "correct_answer": "A",
+      "explanation": "Hadamards prepare the uniform superposition and later produce interference that reveals whether the function is constant or balanced.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-DEUTSCH-JOZSA",
+      "related_topics": [
+        "QC-HADAMARD"
+      ],
+      "learning_objectives": [
+        "Explain the role of Hadamard gates in Deutsch-Jozsa"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning",
+        "circuit_analysis"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M06-S02-Q004",
+      "module_id": "M06",
+      "subtopic_id": "M06-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "In the Deutsch-Jozsa algorithm, after the oracle query and final Hadamard transform, measuring all-zero on the input register indicates:",
+      "options": {
+        "A": "The function is balanced",
+        "B": "The function is constant",
+        "C": "The oracle malfunctioned",
+        "D": "The function is neither constant nor balanced"
+      },
+      "correct_answer": "B",
+      "explanation": "An all-zero measurement outcome on the input register indicates the function is constant.",
+      "difficulty_level": "Hard",
+      "initial_irt_difficulty": 1.5,
+      "irt_difficulty": 1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-DEUTSCH-JOZSA",
+      "related_topics": [
+        "QC-QUANTUM-PARALLELISM"
+      ],
+      "learning_objectives": [
+        "Interpret Deutsch-Jozsa measurement outcomes"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning",
+        "measurement_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M06-S03-Q001",
+      "module_id": "M06",
+      "subtopic_id": "M06-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What does the Bernstein-Vazirani algorithm find?",
+      "options": {
+        "A": "A hidden bit string 's' used in a linear oracle function, in a single query",
+        "B": "The prime factors of a number",
+        "C": "A minimum value in an unsorted list",
+        "D": "The ground state energy of a molecule"
+      },
+      "correct_answer": "A",
+      "explanation": "Bernstein-Vazirani efficiently recovers a hidden bit string encoded in a linear oracle.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-BERNSTEIN-VAZIRANI",
+      "related_topics": [],
+      "learning_objectives": [
+        "State the goal of the Bernstein-Vazirani algorithm"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M06-S03-Q002",
+      "module_id": "M06",
+      "subtopic_id": "M06-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "How does the number of oracle queries needed by Bernstein-Vazirani compare to the best classical algorithm for finding the same hidden bit string?",
+      "options": {
+        "A": "Bernstein-Vazirani needs more queries than any classical algorithm",
+        "B": "Bernstein-Vazirani needs only 1 query, while classical algorithms need n queries for an n-bit string",
+        "C": "Both need exactly the same number of queries",
+        "D": "Bernstein-Vazirani needs n² queries"
+      },
+      "correct_answer": "B",
+      "explanation": "Bernstein-Vazirani finds the n-bit hidden string in a single query, versus n queries classically.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-BERNSTEIN-VAZIRANI",
+      "related_topics": [],
+      "learning_objectives": [
+        "Compare Bernstein-Vazirani's query complexity to the classical case"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M06-S03-Q003",
+      "module_id": "M06",
+      "subtopic_id": "M06-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "The Bernstein-Vazirani algorithm can be seen as a special case of which broader algorithmic idea?",
+      "options": {
+        "A": "Grover's amplitude amplification",
+        "B": "Using quantum parallelism and interference to extract a global property of a function (the hidden string) in one query, similar in spirit to Deutsch-Jozsa's structure",
+        "C": "Quantum error correction",
+        "D": "Superdense coding"
+      },
+      "correct_answer": "B",
+      "explanation": "Both Bernstein-Vazirani and Deutsch-Jozsa rely on superposition-based querying plus interference to extract global function properties in one query.",
+      "difficulty_level": "Hard",
+      "initial_irt_difficulty": 1.5,
+      "irt_difficulty": 1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-BERNSTEIN-VAZIRANI",
+      "related_topics": [
+        "QC-DEUTSCH-JOZSA",
+        "QC-QUANTUM-PARALLELISM"
+      ],
+      "learning_objectives": [
+        "Relate Bernstein-Vazirani to the broader class of oracle-interference algorithms"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M06-S04-Q001",
+      "module_id": "M06",
+      "subtopic_id": "M06-S04",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What speedup does Grover's algorithm provide for searching an unsorted database of N items?",
+      "options": {
+        "A": "A quadratic speedup, from O(N) classical queries to O(√N) quantum queries",
+        "B": "An exponential speedup",
+        "C": "No speedup at all",
+        "D": "A speedup only for sorted databases"
+      },
+      "correct_answer": "A",
+      "explanation": "Grover's algorithm provides a quadratic speedup for unstructured search.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-GROVER",
+      "related_topics": [],
+      "learning_objectives": [
+        "State the speedup Grover's algorithm provides"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M06-S04-Q002",
+      "module_id": "M06",
+      "subtopic_id": "M06-S04",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What are the two main components repeated in each iteration of Grover's algorithm?",
+      "options": {
+        "A": "Measurement and re-initialization",
+        "B": "The oracle (marking the target state) and the diffusion operator (amplitude amplification about the average)",
+        "C": "Only Hadamard gates applied repeatedly",
+        "D": "CNOT gates applied to all qubit pairs"
+      },
+      "correct_answer": "B",
+      "explanation": "Each Grover iteration consists of an oracle call followed by the diffusion (inversion-about-mean) operator.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-GROVER",
+      "related_topics": [],
+      "learning_objectives": [
+        "Describe the two components of a Grover iteration"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning",
+        "circuit_analysis"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M06-S04-Q003",
+      "module_id": "M06",
+      "subtopic_id": "M06-S04",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "For a search space of N=4 items (2 qubits) with exactly one marked item, approximately how many Grover iterations are optimal?",
+      "options": {
+        "A": "0",
+        "B": "1",
+        "C": "N",
+        "D": "N²"
+      },
+      "correct_answer": "B",
+      "explanation": "The optimal number of iterations is approximately (π/4)√N ≈ 1.57 for N=4, which rounds to 1.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-GROVER",
+      "related_topics": [],
+      "learning_objectives": [
+        "Estimate the optimal number of Grover iterations for a given search space"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning",
+        "probability_calculation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M06-S04-Q004",
+      "module_id": "M06",
+      "subtopic_id": "M06-S04",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "In a 2-qubit Grover search with one marked state, applying too many iterations (overshooting the optimal number) causes:",
+      "options": {
+        "A": "The success probability to keep increasing indefinitely",
+        "B": "The success probability to decrease again, since amplitude amplification is periodic and can 'overshoot' past the marked state's peak amplitude",
+        "C": "No effect on the outcome probabilities",
+        "D": "The circuit to fail to execute"
+      },
+      "correct_answer": "B",
+      "explanation": "Grover amplitude amplification is periodic; too many iterations overshoot the peak and reduce success probability.",
+      "difficulty_level": "Hard",
+      "initial_irt_difficulty": 1.5,
+      "irt_difficulty": 1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-GROVER",
+      "related_topics": [],
+      "learning_objectives": [
+        "Explain the effect of over-iterating Grover's algorithm"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M06-S04-Q005",
+      "module_id": "M06",
+      "subtopic_id": "M06-S04",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Trace a small Grover iteration on 2 qubits (4 items, 1 marked as |11⟩) starting from equal superposition. After the oracle marks |11⟩ (flips its phase) and before the diffusion operator, the state is:",
+      "options": {
+        "A": "(|00⟩+|01⟩+|10⟩+|11⟩)/2, unchanged",
+        "B": "(|00⟩+|01⟩+|10⟩−|11⟩)/2",
+        "C": "|11⟩ only",
+        "D": "(|00⟩−|01⟩−|10⟩−|11⟩)/2"
+      },
+      "correct_answer": "B",
+      "explanation": "The oracle flips only the sign of the marked |11⟩ amplitude, giving (|00⟩+|01⟩+|10⟩−|11⟩)/2.",
+      "difficulty_level": "Hard",
+      "initial_irt_difficulty": 1.5,
+      "irt_difficulty": 1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-GROVER",
+      "related_topics": [
+        "QC-QUANTUM-PARALLELISM"
+      ],
+      "learning_objectives": [
+        "Trace the state after an oracle call in a small Grover circuit"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning",
+        "statevector_interpretation"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M06-S05-Q001",
+      "module_id": "M06",
+      "subtopic_id": "M06-S05",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What is the primary role of the Quantum Fourier Transform (QFT) in quantum algorithms like Shor's algorithm?",
+      "options": {
+        "A": "To directly factor integers without any other computation",
+        "B": "To transform a state encoding periodic information into a state where that period can be extracted via measurement",
+        "C": "To measure qubits directly",
+        "D": "To create entanglement only, with no other function"
+      },
+      "correct_answer": "B",
+      "explanation": "QFT converts periodicity encoded in amplitudes into a form where the period is revealed by measurement.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-QFT",
+      "related_topics": [],
+      "learning_objectives": [
+        "Describe the role of QFT in algorithms like Shor's algorithm"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M06-S05-Q002",
+      "module_id": "M06",
+      "subtopic_id": "M06-S05",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "How does the QFT relate to the classical Discrete Fourier Transform (DFT)?",
+      "options": {
+        "A": "They are unrelated mathematical concepts",
+        "B": "The QFT performs an analogous transformation to the classical DFT, but acts on quantum amplitudes and can be implemented exponentially faster in terms of gate count for the transform itself",
+        "C": "The QFT is a classical-only algorithm",
+        "D": "The QFT eliminates the need for any Fourier-based intuition"
+      },
+      "correct_answer": "B",
+      "explanation": "QFT is the quantum analogue of the DFT, implementable with exponentially fewer gates than a classical FFT circuit for the same size.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-QFT",
+      "related_topics": [],
+      "learning_objectives": [
+        "Relate the QFT to the classical Discrete Fourier Transform"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning",
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M06-S05-Q003",
+      "module_id": "M06",
+      "subtopic_id": "M06-S05",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "In a small QFT circuit example on 2-3 qubits, which gates are primarily combined to implement the transform?",
+      "options": {
+        "A": "Only Pauli-X gates",
+        "B": "Hadamard gates and controlled-phase rotation gates, followed by qubit reordering (e.g., swaps)",
+        "C": "Only CNOT gates",
+        "D": "Only measurement operations"
+      },
+      "correct_answer": "B",
+      "explanation": "QFT circuits use Hadamards and controlled-phase gates, with a final qubit reordering step.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-QFT",
+      "related_topics": [
+        "QC-PHASE-GATES"
+      ],
+      "learning_objectives": [
+        "Identify the gates used to build a small QFT circuit"
+      ],
+      "skills_tagged": [
+        "circuit_analysis"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M07-S01-Q001",
+      "module_id": "M07",
+      "subtopic_id": "M07-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What is decoherence?",
+      "options": {
+        "A": "The process by which a qubit's superposition/quantum information is lost due to unwanted interaction with its environment",
+        "B": "A type of quantum gate",
+        "C": "A measurement technique",
+        "D": "A method to increase qubit count"
+      },
+      "correct_answer": "A",
+      "explanation": "Decoherence describes the loss of quantum coherence due to environmental interaction.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-DECOHERENCE",
+      "related_topics": [],
+      "learning_objectives": [
+        "Define decoherence"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M07-S01-Q002",
+      "module_id": "M07",
+      "subtopic_id": "M07-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Which time constant characterizes how quickly a qubit relaxes from |1⟩ to |0⟩ due to energy loss?",
+      "options": {
+        "A": "T1",
+        "B": "T2",
+        "C": "Planck time",
+        "D": "Clock cycle time"
+      },
+      "correct_answer": "A",
+      "explanation": "T1 is the relaxation time associated with energy loss from |1⟩ to |0⟩.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-DECOHERENCE",
+      "related_topics": [],
+      "learning_objectives": [
+        "Identify T1 as the relaxation time constant"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M07-S01-Q003",
+      "module_id": "M07",
+      "subtopic_id": "M07-S01",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Which of these is a typical physical source of noise in real superconducting qubits?",
+      "options": {
+        "A": "Perfect vacuum isolation with zero environmental coupling",
+        "B": "Thermal fluctuations and imperfect control pulse calibration",
+        "C": "Classical bit flips in RAM",
+        "D": "Overclocking the CPU"
+      },
+      "correct_answer": "B",
+      "explanation": "Real devices experience noise from thermal effects and imperfect control electronics, among other sources.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-NOISE",
+      "related_topics": [],
+      "learning_objectives": [
+        "Identify realistic physical noise sources in quantum hardware"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M07-S02-Q001",
+      "module_id": "M07",
+      "subtopic_id": "M07-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What does NISQ stand for?",
+      "options": {
+        "A": "New Interconnected Superconducting Qubits",
+        "B": "Noisy Intermediate-Scale Quantum",
+        "C": "Non-Interactive Simulated Quantum",
+        "D": "Normalized Ideal State Qubit"
+      },
+      "correct_answer": "B",
+      "explanation": "NISQ stands for Noisy Intermediate-Scale Quantum, coined by John Preskill.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-NISQ",
+      "related_topics": [],
+      "learning_objectives": [
+        "Recall the meaning of the NISQ acronym"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M07-S02-Q002",
+      "module_id": "M07",
+      "subtopic_id": "M07-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Which of the following best describes a key limitation of NISQ-era devices?",
+      "options": {
+        "A": "They have full fault-tolerant error correction built in",
+        "B": "They have limited qubit count, imperfect gate fidelity, and short coherence times, without full error correction",
+        "C": "They can run any algorithm perfectly regardless of size",
+        "D": "They require no calibration at all"
+      },
+      "correct_answer": "B",
+      "explanation": "NISQ devices lack fault tolerance and are constrained by qubit count, fidelity, and coherence time.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-NISQ",
+      "related_topics": [
+        "QC-DECOHERENCE"
+      ],
+      "learning_objectives": [
+        "Describe key limitations of NISQ devices"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M07-S02-Q003",
+      "module_id": "M07",
+      "subtopic_id": "M07-S02",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "Why are shallow, hybrid quantum-classical algorithms (like VQE) especially suited to the NISQ era?",
+      "options": {
+        "A": "Because they require thousands of perfectly error-corrected qubits",
+        "B": "Because their reduced circuit depth limits the accumulation of gate errors and decoherence effects, which is critical on noisy devices with short coherence times",
+        "C": "Because they avoid using quantum hardware altogether",
+        "D": "Because they eliminate the need for any classical computation"
+      },
+      "correct_answer": "B",
+      "explanation": "Shallow circuits limit error accumulation, making hybrid algorithms more robust to NISQ-era noise and short coherence times.",
+      "difficulty_level": "Hard",
+      "initial_irt_difficulty": 1.5,
+      "irt_difficulty": 1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-NISQ",
+      "related_topics": [
+        "QC-DECOHERENCE"
+      ],
+      "learning_objectives": [
+        "Explain why hybrid, shallow-circuit algorithms suit NISQ hardware"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning",
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M07-S03-Q001",
+      "module_id": "M07",
+      "subtopic_id": "M07-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What is measurement error mitigation designed to correct?",
+      "options": {
+        "A": "Errors in classical post-processing code",
+        "B": "Misclassification errors that occur when reading out a qubit's state (e.g., reading |0⟩ as |1⟩)",
+        "C": "Errors in the initial preparation of the quantum computer's power supply",
+        "D": "Software bugs in the quantum programming language"
+      },
+      "correct_answer": "B",
+      "explanation": "Measurement error mitigation corrects readout misclassification using a calibration matrix.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-ERROR-MITIGATION",
+      "related_topics": [],
+      "learning_objectives": [
+        "Describe the purpose of measurement error mitigation"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M07-S03-Q002",
+      "module_id": "M07",
+      "subtopic_id": "M07-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "How does error mitigation fundamentally differ from full quantum error correction (QEC)?",
+      "options": {
+        "A": "Error mitigation uses classical post-processing on results from noisy runs, without extra encoding qubits, while QEC actively encodes and corrects errors using redundant physical qubits",
+        "B": "They are identical techniques with different names",
+        "C": "QEC requires no additional qubits while error mitigation does",
+        "D": "Error mitigation eliminates all physical noise sources"
+      },
+      "correct_answer": "A",
+      "explanation": "Error mitigation is a lightweight, post-processing approach, unlike QEC's active redundant encoding.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-ERROR-MITIGATION",
+      "related_topics": [],
+      "learning_objectives": [
+        "Distinguish error mitigation from quantum error correction"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M07-S03-Q003",
+      "module_id": "M07",
+      "subtopic_id": "M07-S03",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "In zero-noise extrapolation (ZNE), what is the general procedure?",
+      "options": {
+        "A": "Run the circuit once at the lowest possible noise and report the raw result",
+        "B": "Deliberately run the circuit at several artificially amplified noise levels, then extrapolate the resulting expectation values back to the theoretical zero-noise limit",
+        "C": "Physically eliminate all sources of noise from the device before running",
+        "D": "Ignore all noisy results and substitute values from an ideal simulator"
+      },
+      "correct_answer": "B",
+      "explanation": "ZNE amplifies noise deliberately at multiple levels and extrapolates back to the zero-noise limit.",
+      "difficulty_level": "Hard",
+      "initial_irt_difficulty": 1.5,
+      "irt_difficulty": 1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-ERROR-MITIGATION",
+      "related_topics": [],
+      "learning_objectives": [
+        "Describe the zero-noise extrapolation procedure"
+      ],
+      "skills_tagged": [
+        "algorithm_reasoning",
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M07-S04-Q001",
+      "module_id": "M07",
+      "subtopic_id": "M07-S04",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What is the key difference between an ideal (noiseless) simulator and a real quantum backend?",
+      "options": {
+        "A": "There is no difference; they always give identical results",
+        "B": "An ideal simulator assumes perfect qubits and gates, while a real backend is subject to actual physical noise, decoherence, and hardware imperfections",
+        "C": "A real backend runs faster than any simulator",
+        "D": "An ideal simulator can only run classical circuits"
+      },
+      "correct_answer": "B",
+      "explanation": "Ideal simulators model perfect physics, while real backends are subject to genuine physical noise.",
+      "difficulty_level": "Easy",
+      "initial_irt_difficulty": -1.5,
+      "irt_difficulty": -1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-REAL-HARDWARE",
+      "related_topics": [],
+      "learning_objectives": [
+        "Differentiate ideal simulators from real quantum hardware"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M07-S04-Q002",
+      "module_id": "M07",
+      "subtopic_id": "M07-S04",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "What is 'transpilation' when preparing a circuit to run on real quantum hardware?",
+      "options": {
+        "A": "Translating the circuit into a classical programming language",
+        "B": "Rewriting the circuit to use the device's native gate set and respect its physical qubit connectivity",
+        "C": "Compressing the number of measurement shots",
+        "D": "Encrypting the circuit for secure transmission"
+      },
+      "correct_answer": "B",
+      "explanation": "Transpilation adapts a logical circuit to a specific device's native gates and connectivity.",
+      "difficulty_level": "Medium",
+      "initial_irt_difficulty": 0.0,
+      "irt_difficulty": 0.0,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-REAL-HARDWARE",
+      "related_topics": [],
+      "learning_objectives": [
+        "Define transpilation for real hardware execution"
+      ],
+      "skills_tagged": [
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    },
+    {
+      "id": "M07-S04-Q003",
+      "module_id": "M07",
+      "subtopic_id": "M07-S04",
+      "assessment_type": "subtopic_practice",
+      "question_type": "MCQ",
+      "question": "If two logical qubits requiring a two-qubit gate are not physically adjacent on a real device's connectivity graph, what typically happens during transpilation, and what is the downstream effect?",
+      "options": {
+        "A": "The circuit fails to compile with no workaround",
+        "B": "Extra routing (e.g., SWAP) gates are inserted, which increases circuit depth and therefore accumulated error due to imperfect gate fidelities and finite coherence times",
+        "C": "The device automatically adds more physical qubits to connect them",
+        "D": "The two qubits are merged into one"
+      },
+      "correct_answer": "B",
+      "explanation": "Non-adjacent qubits require inserted routing gates, increasing depth and thus accumulated physical error.",
+      "difficulty_level": "Hard",
+      "initial_irt_difficulty": 1.5,
+      "irt_difficulty": 1.5,
+      "irt_status": "expert_initialized",
+      "irt_response_count": 0,
+      "primary_concept_id": "QC-REAL-HARDWARE",
+      "related_topics": [
+        "QC-NOISE",
+        "QC-DECOHERENCE"
+      ],
+      "learning_objectives": [
+        "Explain the effect of qubit connectivity on transpiled circuit error"
+      ],
+      "skills_tagged": [
+        "circuit_analysis",
+        "conceptual_understanding"
+      ],
+      "question_source": "module_content",
+      "is_active": true
+    }
+  ]
+}
