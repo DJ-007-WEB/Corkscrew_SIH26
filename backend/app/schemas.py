@@ -373,6 +373,8 @@ class AssessmentQuestionResult(AdaptiveQuestion):
     selected_answer: Optional[str] = None
     is_correct: bool = False
     irt_response_count: int = 0
+    selected_answer_explanation: Optional[str] = None
+    correct_answer_explanation: Optional[str] = None
 
 
 class AdaptiveAssessment(BaseModel):

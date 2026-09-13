@@ -150,6 +150,17 @@ def apply_responses(mastery_collection, item_stats_collection, user: dict[str, A
         selected_answer = str(selected).upper()
         correct = selected_answer == question["correct_answer"]
         concept = question["primary_concept_id"]
+        correct_text = question["options"].get(question["correct_answer"], "")
+        base_explanation = question["explanation"]
+        correct_explanation = (
+            f"The correct answer is {question['correct_answer']}: {correct_text}. {base_explanation} "
+            f"This question is checking {concept}, so focus on why this option matches the rule or idea in the explanation above."
+        )
+        if not correct:
+            selected_text = question["options"].get(selected_answer, "No answer selected")
+            correct_explanation += (
+                f" Your selected answer ({selected_answer}) was: {selected_text}. Compare it with the correct option and notice which part of the concept it misses."
+            )
         concepts[concept] = update_mastery(concepts.get(concept, DEFAULT_BKT_PARAMS.initial_mastery), correct)
         ability = update_ability(ability, float(question["irt_difficulty"]), correct)
         item_state = record_response(item_stats_collection, user["sub"], question, correct)
@@ -159,6 +170,8 @@ def apply_responses(mastery_collection, item_stats_collection, user: dict[str, A
             "is_correct": correct,
             "irt_status": item_state["irt_status"],
             "irt_response_count": item_state["irt_response_count"],
+            "selected_answer_explanation": None,
+            "correct_answer_explanation": correct_explanation,
         })
     mastery_doc["ability"] = ability
     mastery_doc["ability_response_count"] = int(mastery_doc.get("ability_response_count", 0)) + len(results)

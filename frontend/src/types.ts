@@ -293,6 +293,8 @@ export interface AssessmentQuestionResult extends AdaptiveQuestion {
   selected_answer?: string | null;
   is_correct: boolean;
   irt_response_count: number;
+  selected_answer_explanation?: string | null;
+  correct_answer_explanation?: string | null;
 }
 
 export interface AdaptiveAssessment {

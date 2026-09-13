@@ -138,9 +138,7 @@ const BASE_LESSONS: Lesson[] = [
   ] },
 ];
 
-const LESSONS: Lesson[] = [
-  ...BASE_LESSONS,
-  ...learningModules.flatMap((module) => module.topics.map((topic) => ({
+const MODULE_LESSONS: Lesson[] = learningModules.flatMap((module) => module.topics.map((topic) => ({
     id: `${module.id}-${topic.id}`,
     title: `${topic.id} · ${topic.title}`,
     summary: topic.summary,
@@ -153,14 +151,18 @@ const LESSONS: Lesson[] = [
       ...(topic.visualizations.length ? [{ heading: "What to visualize", body: topic.visualizations.map((item, index) => `${index + 1}. ${item}`).join("\n") }] : []),
       ...(topic.misconceptions.length ? [{ heading: "Common misconceptions", body: topic.misconceptions.map((item, index) => `${index + 1}. ${item}`).join("\n") }] : []),
     ],
-  }))),
+  })));
+
+const LESSONS: Lesson[] = [
+  ...MODULE_LESSONS,
+  ...BASE_LESSONS,
 ];
 
 const QUIZ_ORDER = learningModules.flatMap((module) => [...module.topics.map((topic) => `${module.id}-${topic.id}`), `${module.id}-final`]);
 const QUIZ_PROGRESS_KEY = "quantum-completed-module-quizzes";
 
 export default function LearningPage({ activeLessonId, onLessonChange, onOpenBuilder, onOpenVisualizations, token }: { activeLessonId?: string; onLessonChange?: (id: string) => void; onOpenBuilder: (preset?: Circuit, originLessonId?: string) => void; onOpenVisualizations: () => void; token?: string | null }) {
-  const [uncontrolled, setUncontrolled] = useState(BASE_LESSONS.length);
+  const [uncontrolled, setUncontrolled] = useState(0);
   const [expandedModuleId, setExpandedModuleId] = useState<string | null>(learningModules[0].id);
   const [finalModuleId, setFinalModuleId] = useState<string | null>(null);
   const [completedQuizIds, setCompletedQuizIds] = useState<Set<string>>(() => {
@@ -181,6 +183,7 @@ export default function LearningPage({ activeLessonId, onLessonChange, onOpenBui
     else setUncontrolled(index);
   };
   const lesson = LESSONS[selected];
+  const moduleLessonNumber = MODULE_LESSONS.findIndex((item) => item.id === lesson.id) + 1;
   const activeTopic = learningModules.flatMap((module) => module.topics.map((topic) => ({ module, topic }))).find(({ module, topic }) => `${module.id}-${topic.id}` === lesson.id);
   const finalModule = finalModuleId ? learningModules.find((module) => module.id === finalModuleId) : undefined;
   const activeQuiz = finalModule ? { id: `${finalModule.id}-final`, title: `${finalModule.title} · Final assessment`, questions: finalModule.finalQuestions } : activeTopic ? { id: `${activeTopic.module.id}-${activeTopic.topic.id}`, title: `${activeTopic.topic.id} · ${activeTopic.topic.title}`, questions: activeTopic.topic.questions } : undefined;
@@ -221,7 +224,7 @@ export default function LearningPage({ activeLessonId, onLessonChange, onOpenBui
     <div className="grid lg:grid-cols-[minmax(0,1fr)_300px] gap-5">
       <article className="min-w-0">
         <section className="bp-panel p-6 sm:p-8">
-          <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-cyan)]">{finalModule ? "Module final assessment" : `Lesson ${String(selected + 1).padStart(2, "0")} / ${LESSONS.length}`}</p>
+          <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-cyan)]">{finalModule ? "Module final assessment" : moduleLessonNumber > 0 ? `Lesson ${String(moduleLessonNumber).padStart(2, "0")} / ${MODULE_LESSONS.length}` : "Interactive circuit lab"}</p>
           {!finalModule && lesson.moduleTitle && <p className="mt-2 text-xs font-mono text-[var(--bp-amber)]">{lesson.moduleTitle}</p>}
           <h1 className="font-display text-3xl sm:text-4xl mt-2">{finalModule ? finalModule.title : lesson.title}</h1>
           <p className="whitespace-pre-line text-sm text-[var(--bp-text-dim)] mt-3 max-w-3xl leading-relaxed">{finalModule ? `Complete the 10-question cumulative assessment after finishing every subtopic quiz in this module.` : lesson.summary}</p>
@@ -254,7 +257,7 @@ export default function LearningPage({ activeLessonId, onLessonChange, onOpenBui
 
             {lesson.id === "teleportation" && <div className="mt-8 space-y-4"><h3 className="font-display text-lg">Recommended videos</h3><YouTubeVideo videoId="jxqnzltpDdE" title="Quantum teleportation explanation" /><YouTubeVideo videoId="KsvNsY4cVvE" title="Quantum teleportation circuit walkthrough" /></div>}
 
-            <div className="mt-10 pt-5 border-t border-[var(--bp-border)] flex justify-between gap-3"><button disabled={selected === 0} onClick={() => setSelected(selected - 1)} className="px-4 py-2 rounded border border-[var(--bp-border)] text-xs font-mono disabled:opacity-30">← Previous</button><button disabled={selected === LESSONS.length - 1} onClick={() => setSelected(selected + 1)} className="px-4 py-2 rounded border border-[var(--bp-border)] text-xs font-mono disabled:opacity-30">Next →</button></div>
+            {moduleLessonNumber > 0 && <div className="mt-10 pt-5 border-t border-[var(--bp-border)] flex justify-between gap-3"><button disabled={moduleLessonNumber === 1} onClick={() => setSelected(selected - 1)} className="px-4 py-2 rounded border border-[var(--bp-border)] text-xs font-mono disabled:opacity-30">← Previous</button><button disabled={moduleLessonNumber === MODULE_LESSONS.length} onClick={() => setSelected(selected + 1)} className="px-4 py-2 rounded border border-[var(--bp-border)] text-xs font-mono disabled:opacity-30">Next →</button></div>}
             </>}
             {activeQuiz && <LessonQuiz quizId={activeQuiz.id} title={activeQuiz.title} questions={activeQuiz.questions} locked={!isQuizUnlocked(activeQuiz.id)} completed={completedQuizIds.has(activeQuiz.id)} onComplete={completeQuiz} token={token} />}
           </div>
