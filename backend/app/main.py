@@ -138,6 +138,11 @@ def _seed_instructor_account() -> None:
 
 
 
+@app.get("/")
+def root():
+    return {"status": "ok", "service": "quantumlab-backend"}
+
+
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
