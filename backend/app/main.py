@@ -1,5 +1,6 @@
 import io
 import logging
+import os
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -120,10 +121,10 @@ logger = logging.getLogger("quantum_tutor")
 _chat_limits: dict[str, list[float]] = {}
 _sprint_solves_index_ready = False
 
-# Dev defaults; production should set FRONTEND_URL in the environment.
+_FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[_FRONTEND_URL, "http://localhost:5173"],
     allow_methods=["*"],
     allow_headers=["*"],
 )

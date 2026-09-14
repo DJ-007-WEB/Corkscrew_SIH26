@@ -22,6 +22,14 @@ import type {
 
 const OPTION_KEYS = ["A", "B", "C", "D"] as const;
 
+function getOptionText(options: Record<string, string> | string[], key: string): string {
+  if (Array.isArray(options)) {
+    const index = key.charCodeAt(0) - 65;
+    return options[index] ?? "";
+  }
+  return options[key] ?? "";
+}
+
 /* -------------------------------------------------------------------------- */
 /* Legacy / built-in practice quiz                                           */
 /* -------------------------------------------------------------------------- */
@@ -504,7 +512,7 @@ function TakeAssessment({
                   {graded.is_correct
                     ? "Correct"
                     : `Incorrect · Correct answer: ${
-                        graded.options[graded.correct_option]
+                        getOptionText(graded.options, OPTION_KEYS[graded.correct_option ?? 0] ?? "A")
                       }`}
                 </p>
 
@@ -1272,7 +1280,7 @@ function QuestionReview({
                 {key}
               </span>
 
-              {result.options[key.charCodeAt(0) - 65]}
+              {getOptionText(result.options, key)}
 
               {correct && (
                 <span className="ml-2 text-xs">

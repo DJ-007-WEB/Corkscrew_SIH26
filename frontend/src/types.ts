@@ -289,12 +289,17 @@ export interface Recommendation {
   suggested_question_concepts: string[];
 }
 
-export interface AssessmentQuestionResult extends AdaptiveQuestion {
+export interface AssessmentQuestionResult extends Omit<AdaptiveQuestion, "options"> {
+  options: Record<"A" | "B" | "C" | "D", string> | string[];
   selected_answer?: string | null;
   is_correct: boolean;
-  irt_response_count: number;
+  irt_response_count?: number;
   selected_answer_explanation?: string | null;
   correct_answer_explanation?: string | null;
+  // Instructor assessment fields (from grade_assessment)
+  your_option?: number | null;
+  correct_option?: number;
+  answered?: boolean;
 }
 
 export interface AdaptiveAssessment {
@@ -394,18 +399,6 @@ export interface AssessmentStudentDetail {
   title: string;
   description: string;
   questions: AssessmentQuestionPublic[];
-}
-
-export interface AssessmentQuestionResult {
-  id: string;
-  tag: string;
-  question: string;
-  options: string[];
-  your_option: number | null;
-  correct_option: number;
-  is_correct: boolean;
-  answered: boolean;
-  explanation: string;
 }
 
 export interface AssessmentAttemptResult {
