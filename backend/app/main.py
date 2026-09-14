@@ -121,12 +121,13 @@ logger = logging.getLogger("quantum_tutor")
 _chat_limits: dict[str, list[float]] = {}
 _sprint_solves_index_ready = False
 
-_FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+_FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[_FRONTEND_URL, "http://localhost:5173"],
+    allow_origins=[_FRONTEND_URL, "http://localhost:5173", "https://corkscrew-sih-26-git-main-dhairya-s-projects-7a835c2d.vercel.app"],
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=True,
 )
 
 
