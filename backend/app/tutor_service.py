@@ -215,7 +215,15 @@ def _nvidia_answer(prompt: str) -> str | None:
         logger.info("NVIDIA_API_KEY is not configured; skipping NVIDIA fallback.")
         return None
 
-    model = os.getenv("NVIDIA_MODEL", "z-ai/glm-5-3-flash").strip() or "z-ai/glm-5-3-flash"
+    # NVIDIA's API uses a dot between 5 and 3 in the model identifier.
+    # Accept the old hyphenated value too, so an already-configured
+    # deployment keeps working after the code is redeployed.
+    configured_model = os.getenv("NVIDIA_MODEL", "").strip()
+    if not configured_model or configured_model == "z-ai/glm-5-3-flash":
+        model = "z-ai/glm-5.3-flash"
+    else:
+        model = configured_model
+
     payload = {
         "model": model,
         "messages": [
