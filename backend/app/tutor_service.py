@@ -84,7 +84,7 @@ def answer(request: ChatRequest) -> ChatResponse:
         tools_used, facts = circuit_facts(request.circuit, _mentioned_qubit(request.message))
 
     prompt = _build_prompt(request, facts)
-    llm_answer = _gemini_answer(prompt)
+    llm_answer, provider = _ai_answer(prompt)
     if llm_answer:
         cleaned_answer = _clean_latex(llm_answer)
         response = ChatResponse(
@@ -92,7 +92,7 @@ def answer(request: ChatRequest) -> ChatResponse:
             mode="grounded" if grounded else "conceptual",
             tools_used=tools_used,
             facts=facts,
-            provider="gemini",
+            provider=provider,
             recommendation=recommendation(request.message, tools_used),
         )
         save_turn(request.conversation_id, request.message, response.answer, response.mode, tools_used)
@@ -132,48 +132,129 @@ import requests
 logger = logging.getLogger("quantum_tutor")
 
 
+def _ai_answer(prompt: str) -> tuple[str | None, str]:
+    """Try Gemini first, then NVIDIA, returning (answer, provider)."""
+    gemini = _gemini_answer(prompt)
+    if gemini:
+        return gemini, "gemini"
+
+    nvidia = _nvidia_answer(prompt)
+    if nvidia:
+        return nvidia, "nvidia"
+
+    return None, "local-fallback"
+
+
 def _gemini_answer(prompt: str) -> str | None:
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        logger.warning("GEMINI_API_KEY is not configured in .env")
+        logger.info("GEMINI_API_KEY is not configured; skipping Gemini.")
         return None
 
-    configured_model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
-    if "2.5-flash" in configured_model:
-        configured_model = "gemini-3.5-flash"
+    # Gemini 3.8 Flash is the current stable Flash model. An environment
+    # override is retained for controlled testing/rollbacks.
+    model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash").strip() or "gemini-3.8-flash"
 
-    candidate_models = [configured_model, "gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.1-flash-lite"]
-    # De-duplicate while preserving order
-    seen = set()
-    models_to_try = [m for m in candidate_models if not (m in seen or seen.add(m))]
-
+    # Gemini 3.x uses thinkingLevel rather than the older thinkingBudget.
+    # Temperature/top_p/top_k are intentionally omitted for Gemini 3.8.
     payload = {
-        "system_instruction": {"parts": [{"text": _SYSTEM_PROMPT}]},
+        "systemInstruction": {"parts": [{"text": _SYSTEM_PROMPT}]},
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {"maxOutputTokens": 8192, "temperature": 0.7},
+        "generationConfig": {
+            "maxOutputTokens": 4096,
+            "thinkingConfig": {"thinkingLevel": "low"},
+        },
     }
 
-    for model in models_to_try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-        try:
-            res = requests.post(url, json=payload, timeout=30)
-            if res.status_code == 200:
-                data = res.json()
-                candidates = data.get("candidates", [])
-                if candidates:
-                    parts = candidates[0].get("content", {}).get("parts", [])
-                    if parts:
-                        text = parts[0].get("text")
-                        if text and text.strip():
-                            return text
-            else:
-                logger.warning("Gemini model %s returned status %s: %s", model, res.status_code, res.text[:200])
-        except Exception as exc:
-            logger.warning("Gemini model %s request failed: %s", model, exc)
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    try:
+        res = requests.post(
+            url,
+            headers={
+                "x-goog-api-key": api_key,
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=15,
+        )
+        if res.status_code != 200:
+            logger.warning(
+                "Gemini model %s returned status %s: %s",
+                model,
+                res.status_code,
+                res.text[:300],
+            )
+            return None
+
+        data = res.json()
+        for candidate in data.get("candidates", []):
+            parts = candidate.get("content", {}).get("parts", [])
+            text_parts = [part.get("text", "") for part in parts if part.get("text")]
+            text = "".join(text_parts).strip()
+            if text:
+                return text
+
+        logger.warning("Gemini model %s returned no text candidate.", model)
+    except requests.RequestException as exc:
+        logger.warning("Gemini model %s request failed: %s", model, exc)
+    except (ValueError, TypeError, KeyError) as exc:
+        logger.warning("Gemini model %s returned an unexpected response: %s", model, exc)
 
     return None
 
 
+def _nvidia_answer(prompt: str) -> str | None:
+    """NVIDIA NIM fallback using its OpenAI-compatible chat-completions API."""
+    api_key = os.getenv("NVIDIA_API_KEY")
+    if not api_key:
+        logger.info("NVIDIA_API_KEY is not configured; skipping NVIDIA fallback.")
+        return None
+
+    model = os.getenv("NVIDIA_MODEL", "z-ai/glm-5-3-flash").strip() or "z-ai/glm-5-3-flash"
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0.7,
+        "max_tokens": 4096,
+        "stream": False,
+    }
+
+    try:
+        res = requests.post(
+            "https://integrate.api.nvidia.com/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=20,
+        )
+        if res.status_code != 200:
+            logger.warning(
+                "NVIDIA model %s returned status %s: %s",
+                model,
+                res.status_code,
+                res.text[:300],
+            )
+            return None
+
+        data = res.json()
+        choices = data.get("choices", [])
+        if choices:
+            text = choices[0].get("message", {}).get("content")
+            if isinstance(text, str) and text.strip():
+                return text.strip()
+
+        logger.warning("NVIDIA model %s returned no text choice.", model)
+    except requests.RequestException as exc:
+        logger.warning("NVIDIA model %s request failed: %s", model, exc)
+    except (ValueError, TypeError, KeyError) as exc:
+        logger.warning("NVIDIA model %s returned an unexpected response: %s", model, exc)
+
+    return None
 
 
 def _fallback_answer(message: str, facts: list[GroundedFact], grounded: bool, focus: str | None = None) -> str:
