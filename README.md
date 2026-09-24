@@ -14,7 +14,7 @@ An interactive, Qiskit-grounded quantum computing simulator, 3D visualization su
 - **Centralized Floating Quantum Tutor**:
   - Available across all tabs (Home, Circuit Builder, Visualizations, Learning).
   - **Qiskit-Grounded Pipeline**: Qiskit calculates the exact statevector, Bloch coordinates, and Q-Sphere phases *before* the AI is invoked. The LLM receives immutable verified facts, guaranteeing 0% mathematical hallucination.
-  - **Two-Tier System**: Works offline with a deterministic rule engine, and seamlessly connects to **Gemini 2.5 Flash** for dynamic conversational teaching when an API key is configured.
+  - **Resilient AI Tutor**: Uses **Gemini 3.8 Flash** as the primary conversational model, automatically falls back to **NVIDIA NIM / GLM-5.3-Flash** when Gemini times out or returns an error, and finally uses the deterministic local tutor if both providers are unavailable.
 
 ---
 
@@ -30,7 +30,11 @@ Qiskit Aer + quantum_info Tools
         ↓
 Immutable "CIRCUIT VERIFIED FACTS" Block
         ↓
-Google Gemini 2.5 Flash LLM
+Google Gemini 3.8 Flash (primary)
+        ↓ (timeout / error)
+NVIDIA NIM — GLM-5.3-Flash (fallback)
+        ↓ (both unavailable)
+Deterministic local tutor
         ↓
 Student-friendly, mathematically accurate AI response in Floating Drawer
 ```
@@ -66,11 +70,17 @@ pip install -r requirements.txt
 cp .env.example .env   # (or create backend/.env)
 ```
 
-Edit `backend/.env` and add your free Gemini key from [Google AI Studio](https://aistudio.google.com/):
+Edit `backend/.env` and configure the AI providers:
 ```env
-GEMINI_API_KEY=AIzaSy...your_actual_key_here
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-3.8-flash
+
+# Optional but recommended for automatic fallback
+NVIDIA_API_KEY=your_nvidia_api_key
+NVIDIA_MODEL=z-ai/glm-5-3-flash
 ```
+
+Gemini 3.8 Flash is the primary model. If the Gemini request times out or returns a non-200 response, the backend automatically tries NVIDIA NIM. If both hosted providers fail, the existing deterministic local tutor remains available.
 
 Start the FastAPI server:
 ```bash
