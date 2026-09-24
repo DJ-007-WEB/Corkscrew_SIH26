@@ -153,7 +153,14 @@ def _gemini_answer(prompt: str) -> str | None:
 
     # Gemini 3.8 Flash is the current stable Flash model. An environment
     # override is retained for controlled testing/rollbacks.
-    model = os.getenv("GEMINI_MODEL", "gemini-3.8-flash").strip() or "gemini-3.8-flash"
+    configured_model = os.getenv("GEMINI_MODEL", "").strip()
+    legacy_models = {
+        "gemini-2.5-flash",
+        "gemini-3.1-flash-lite",
+        "gemini-3.5-flash",
+        "gemini-3.6-flash",
+    }
+    model = "gemini-3.8-flash" if not configured_model or configured_model in legacy_models else configured_model
 
     # Gemini 3.x uses thinkingLevel rather than the older thinkingBudget.
     # Temperature/top_p/top_k are intentionally omitted for Gemini 3.8.
