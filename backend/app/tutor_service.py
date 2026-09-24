@@ -230,8 +230,11 @@ def _nvidia_answer(prompt: str) -> str | None:
             {"role": "system", "content": _SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
         ],
-        "temperature": 0.7,
-        "max_tokens": 4096,
+        # NVIDIA documents reasoning_effort as low/high/max and defaults it to max.
+        # Use low for the fallback so it can respond promptly when Gemini is unavailable.
+        "reasoning_effort": "low",
+        "temperature": 0.5,
+        "max_tokens": 2048,
         "stream": False,
     }
 
@@ -243,7 +246,7 @@ def _nvidia_answer(prompt: str) -> str | None:
                 "Content-Type": "application/json",
             },
             json=payload,
-            timeout=20,
+            timeout=60,
         )
         if res.status_code != 200:
             logger.warning(
