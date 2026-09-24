@@ -5,11 +5,11 @@ the resulting facts as read-only context.  The model is never asked to perform
 quantum calculation itself.
 """
 
-import json
+import logging
 import os
 import re
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+
+import requests
 from dotenv import load_dotenv
 
 from .circuit_builder import validate_circuit
@@ -126,8 +126,6 @@ def _build_prompt(request: ChatRequest, facts: list[GroundedFact]) -> str:
     return f"{history}\nuser: {request.message}\n\nCIRCUIT VERIFIED FACTS:\n{verified}"
 
 
-import logging
-import requests
 
 logger = logging.getLogger("quantum_tutor")
 
