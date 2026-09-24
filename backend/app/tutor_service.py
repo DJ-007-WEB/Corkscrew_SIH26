@@ -131,19 +131,29 @@ logger = logging.getLogger("quantum_tutor")
 
 
 def _ai_answer(prompt: str) -> tuple[str | None, str]:
-    """Try Gemini first, then NVIDIA, returning (answer, provider)."""
-    gemini = _gemini_answer(prompt)
+    """Use a bounded multi-provider chain so one upstream outage cannot hang the tutor."""
+    # Primary: latest Gemini.
+    gemini = _gemini_answer(prompt, model_override=None, timeout=10)
     if gemini:
         return gemini, "gemini"
 
+    # Required secondary: NVIDIA NIM.
     nvidia = _nvidia_answer(prompt)
     if nvidia:
         return nvidia, "nvidia"
 
+    # Emergency cloud fallback: a still-supported Gemini Flash release.
+    # This is deliberately after NVIDIA so the normal routing remains
+    # Gemini 3.8 -> NVIDIA, while transient provider outages do not leave
+    # the user waiting for a 60-second upstream timeout.
+    emergency = _gemini_answer(prompt, model_override="gemini-3.7-flash", timeout=8)
+    if emergency:
+        return emergency, "gemini-fallback"
+
     return None, "local-fallback"
 
 
-def _gemini_answer(prompt: str) -> str | None:
+def _gemini_answer(prompt: str, model_override: str | None = None, timeout: int = 10) -> str | None:
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         logger.info("GEMINI_API_KEY is not configured; skipping Gemini.")
@@ -152,6 +162,8 @@ def _gemini_answer(prompt: str) -> str | None:
     # Gemini 3.8 Flash is the current stable Flash model. An environment
     # override is retained for controlled testing/rollbacks.
     configured_model = os.getenv("GEMINI_MODEL", "").strip()
+    if model_override:
+        configured_model = model_override
     legacy_models = {
         "gemini-2.5-flash",
         "gemini-3.1-flash-lite",
@@ -180,7 +192,7 @@ def _gemini_answer(prompt: str) -> str | None:
                 "Content-Type": "application/json",
             },
             json=payload,
-            timeout=15,
+            timeout=timeout,
         )
         if res.status_code != 200:
             logger.warning(
@@ -246,7 +258,7 @@ def _nvidia_answer(prompt: str) -> str | None:
                 "Content-Type": "application/json",
             },
             json=payload,
-            timeout=60,
+            timeout=10,
         )
         if res.status_code != 200:
             logger.warning(
