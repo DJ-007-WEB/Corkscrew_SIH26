@@ -248,6 +248,7 @@ def _nvidia_answer(prompt: str) -> str | None:
         "temperature": 0.5,
         "max_tokens": 2048,
         "stream": False,
+        "clear_thinking": True,
     }
 
     try:
@@ -258,7 +259,10 @@ def _nvidia_answer(prompt: str) -> str | None:
                 "Content-Type": "application/json",
             },
             json=payload,
-            timeout=10,
+            # NVIDIA Playground shows this model can take ~30+ seconds before the
+            # first token, so a 10-second client timeout was cutting off healthy
+            # requests. Keep enough headroom for the hosted inference service.
+            timeout=60,
         )
         if res.status_code != 200:
             logger.warning(
