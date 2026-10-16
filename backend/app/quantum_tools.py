@@ -31,28 +31,34 @@ def _bell_state_explanation(circuit: Circuit, result: SimulationResult) -> str:
 
 def _deutsch_jozsa_explanation(circuit: Circuit, result: SimulationResult) -> str:
     """Generate explanation specific to Deutsch-Jozsa circuits."""
+    if not circuit.gates or circuit.qubits < 2:
+        return _general_explanation(circuit, result.final_probabilities)
     probabilities = result.final_probabilities
     n = circuit.qubits - 1
-    all_zeros_key = "0" * n
+    all_zeros_key = "0" * circuit.qubits
     prob_all_zeros = probabilities.get(all_zeros_key, 0)
     if abs(prob_all_zeros - 1.0) < 1e-8:
         return (
             f"This circuit implements the Deutsch-Jozsa algorithm with {n} input qubit(s). "
-            f"The measurement result shows all zeros (|{'0' * n}⟩), meaning the function is constant. "
+            f"The measurement result shows all zeros (|{'0' * n}⟩ on data qubits), meaning the function is constant. "
             f"The quantum algorithm achieved this with only 1 query."
         )
     balanced_outcomes = [basis for basis, prob in probabilities.items()
-                        if prob > 0.01 and basis != all_zeros_key]
-    return (
-        f"This circuit implements the Deutsch-Jozsa algorithm with {n} input qubit(s). "
-        f"The measurement outcomes show a balanced function. "
-        f"Non-zero probabilities: {', '.join(balanced_outcomes)}. "
-        f"The quantum algorithm determined this with 1 query."
-    )
+                        if prob > 0.01 and not basis.startswith("0" * n)]
+    if balanced_outcomes:
+        return (
+            f"This circuit implements the Deutsch-Jozsa algorithm with {n} input qubit(s). "
+            f"The measurement outcomes show a balanced function. "
+            f"Non-zero probabilities: {', '.join(balanced_outcomes)}. "
+            f"The quantum algorithm determined this with 1 query."
+        )
+    return _general_explanation(circuit, probabilities)
 
 
 def _grovers_explanation(circuit: Circuit, result: SimulationResult) -> str:
     """Generate explanation specific to Grover's algorithm circuits."""
+    if not circuit.gates:
+        return _general_explanation(circuit, result.final_probabilities)
     probabilities = result.final_probabilities
     target = "1" * circuit.qubits
     prob_target = probabilities.get(target, 0)
@@ -68,7 +74,8 @@ def _grovers_explanation(circuit: Circuit, result: SimulationResult) -> str:
 
 def _teleportation_explanation(circuit: Circuit, result: SimulationResult) -> str:
     """Generate explanation specific to quantum teleportation circuits."""
-    probabilities = result.final_probabilities
+    if circuit.qubits < 3 or len(circuit.gates) < 2:
+        return _general_explanation(circuit, result.final_probabilities)
     return (
         "This circuit implements quantum teleportation of a qubit state across 3 qubits. "
         "A Bell pair is created between qubits 1 and 2, then Alice performs a joint measurement "

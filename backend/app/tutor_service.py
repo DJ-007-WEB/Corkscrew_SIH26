@@ -26,20 +26,27 @@ _CIRCUIT_WORDS = (
     "entanglement", "bell", "constant", "balanced", "oracle", "deutsch", "grover", "teleport"
 )
 _SYSTEM_PROMPT = """You are QuantumLab AI, an expert, inspiring, and friendly Quantum Physics Professor & AI Tutor.
-Your mission is to guide students through quantum computing, circuit simulations, and quantum phenomena with clarity, deep physical intuition, and engaging conversational warmth — just like modern ChatGPT and Gemini.
+Your mission is to guide students through quantum computing, circuit simulations, and quantum phenomena with clarity, deep physical intuition, and engaging conversational warmth.
+
+CRITICAL INSTRUCTIONS:
+- Directly output your final, beautifully formatted pedagogical response.
+- NEVER output internal monologue, chain-of-thought, scratchpads, meta-commentary, or phrases like "The user wants me to...", "Let me analyze...", or "I need to handle this carefully".
+- Start immediately with the student-facing answer.
 
 FORMATTING & STYLE RULES:
 1. RICH VISUAL STRUCTURE:
    - Organize your answer with clear bold headings (e.g. ### 🌀 Gate Dynamics, ### ⚛️ Statevector Evolution, ### 📊 Measurement Outcomes, ### 💡 Physical Intuition).
    - Use clean bulleted lists with bold keywords to break down complex mechanisms step-by-step.
    - Use helpful contextual emojis (⚛️, 🌀, 🔗, 📊, 💡, 🎯, 🚀) to make explanations inviting and visually engaging.
-2. CLEAN PLAIN TEXT NOTATION (NO LATEX):
-   - Never use dollar signs ($ or $$) or raw LaTeX backslash commands (never write \\rangle, \\langle, \\to, \\frac, \\psi, etc.).
-   - Write quantum states and gates using standard readable text: |0>, |1>, |+>, |->, |00>, |11>, (|00> + |11>)/sqrt(2), q0, q1, ->.
+   - Use Markdown tables when comparing states, gates, or measurement outcomes.
+2. CLEAN PLAIN TEXT NOTATION (NO RAW UNRENDERED LATEX):
+   - Never use raw LaTeX commands that break readability (never write \\rangle, \\langle, \\to, \\frac, \\psi).
+   - Write quantum states and gates using standard readable notation: |0>, |1>, |+>, |->, |00>, |11>, (|00> + |11>)/sqrt(2), q0, q1, ->.
 3. GROUNDED IN REAL SIMULATION FACTS:
    - When a 'CIRCUIT VERIFIED FACTS' block is provided, explain why those exact measurement probabilities, Bloch vectors, and Q-Sphere phases follow mathematically and physically from the gates in the circuit.
-4. FULL & POLISHED:
-   - Always deliver a complete, friendly, and comprehensive pedagogical explanation from start to finish."""
+   - If the user asks about an advanced protocol (like teleportation or Grover) but the current circuit is empty or in an initial state |00>, clearly explain both how the protocol works and note that the current simulator circuit is at step 0 / initial state ready for gates to be added.
+4. FULL, INVITING & POLISHED:
+   - Always deliver a complete, friendly, structured explanation from start to finish."""
 
 
 
@@ -74,6 +81,29 @@ def _clean_latex(text: str) -> str:
     return t
 
 
+def _clean_ai_output(text: str) -> str:
+    """Filter out chain-of-thought, reasoning tags, and clean math notation."""
+    if not text:
+        return ""
+    t = text
+    # 1. Strip explicit reasoning/thinking tags
+    t = re.sub(r"<(think|thought)>.*?</\1>", "", t, flags=re.DOTALL).strip()
+
+    # 2. If model leaked untagged self-talk preamble before a Markdown heading, strip it
+    match = re.search(r"(###?\s+[^\n]+)", t)
+    if match and match.start() > 0:
+        preamble = t[:match.start()].strip()
+        thinking_markers = [
+            "the user wants", "circuit verified facts", "let me analyze", "i need to handle",
+            "let's check", "wait, there's", "i should:", "my task is", "looking at the facts"
+        ]
+        if any(marker in preamble.lower() for marker in thinking_markers):
+            t = t[match.start():].strip()
+
+    # 3. Clean LaTeX artifacts
+    return _clean_latex(t)
+
+
 def answer(request: ChatRequest) -> ChatResponse:
     grounded = request.circuit is not None and _is_circuit_question(request.message)
     tools_used: list[str] = []
@@ -86,7 +116,7 @@ def answer(request: ChatRequest) -> ChatResponse:
     prompt = _build_prompt(request, facts)
     llm_answer, provider = _ai_answer(prompt)
     if llm_answer:
-        cleaned_answer = _clean_latex(llm_answer)
+        cleaned_answer = _clean_ai_output(llm_answer)
         response = ChatResponse(
             answer=cleaned_answer,
             mode="grounded" if grounded else "conceptual",
@@ -132,6 +162,11 @@ logger = logging.getLogger("quantum_tutor")
 
 def _ai_answer(prompt: str) -> tuple[str | None, str]:
     """Use a bounded multi-provider chain so one upstream outage cannot hang the tutor."""
+    # OpenRouter (if OPENROUTER_API_KEY configured)
+    openrouter = _openrouter_answer(prompt)
+    if openrouter:
+        return openrouter, "openrouter"
+
     # Primary: latest Gemini.
     gemini = _gemini_answer(prompt, model_override=None, timeout=10)
     if gemini:
@@ -151,6 +186,64 @@ def _ai_answer(prompt: str) -> tuple[str | None, str]:
         return emergency, "gemini-fallback"
 
     return None, "local-fallback"
+
+
+def _openrouter_answer(prompt: str, timeout: int = 30) -> str | None:
+    """OpenRouter API integration using OpenAI-compatible chat-completions."""
+    api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+    if not api_key:
+        logger.info("OPENROUTER_API_KEY is not configured; skipping OpenRouter.")
+        return None
+
+    configured_model = os.getenv("OPENROUTER_MODEL", "").strip()
+    model = configured_model if configured_model else "google/gemini-2.0-flash-001"
+
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0.5,
+        "max_tokens": 4096,
+    }
+
+    try:
+        res = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "HTTP-Referer": "http://localhost:5173",
+                "X-Title": "QuantumLab AI Tutor",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=timeout,
+        )
+        if res.status_code != 200:
+            logger.warning(
+                "OpenRouter model %s returned status %s: %s",
+                model,
+                res.status_code,
+                res.text[:300],
+            )
+            return None
+
+        data = res.json()
+        choices = data.get("choices", [])
+        if choices:
+            message = choices[0].get("message", {})
+            content = message.get("content")
+            if isinstance(content, str) and content.strip():
+                return content.strip()
+
+        logger.warning("OpenRouter model %s returned no text choice.", model)
+    except requests.RequestException as exc:
+        logger.warning("OpenRouter model %s request failed: %s", model, exc)
+    except (ValueError, TypeError, KeyError) as exc:
+        logger.warning("OpenRouter model %s returned an unexpected response: %s", model, exc)
+
+    return None
 
 
 def _gemini_answer(prompt: str, model_override: str | None = None, timeout: int = 10) -> str | None:

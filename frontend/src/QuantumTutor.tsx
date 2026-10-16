@@ -120,8 +120,15 @@ export default function QuantumTutor({ circuit, isOpen, onToggle }: Props) {
                           strong: ({ children }) => <strong className="font-semibold text-[var(--bp-cyan)]">{children}</strong>,
                           em: ({ children }) => <em className="italic text-[var(--bp-text)]">{children}</em>,
                           code: ({ children }) => <code className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-[var(--bp-panel)] text-[var(--bp-amber)] border border-[var(--bp-border)]">{children}</code>,
+                          table: ({ children }) => <div className="overflow-x-auto my-3 rounded border border-[var(--bp-border)] shadow-inner"><table className="w-full text-left text-[11px] border-collapse bg-[var(--bp-panel)]/40">{children}</table></div>,
+                          thead: ({ children }) => <thead className="bg-[var(--bp-panel-raised)] text-[var(--bp-cyan)] border-b border-[var(--bp-border)] font-mono">{children}</thead>,
+                          tbody: ({ children }) => <tbody className="divide-y divide-[var(--bp-border)]/50">{children}</tbody>,
+                          tr: ({ children }) => <tr className="hover:bg-[var(--bp-panel-raised)]/40 transition-colors">{children}</tr>,
+                          th: ({ children }) => <th className="p-2 font-semibold tracking-wider text-[var(--bp-cyan)]">{children}</th>,
+                          td: ({ children }) => <td className="p-2 text-[var(--bp-text)] font-mono leading-relaxed">{children}</td>,
+                          pre: ({ children }) => <pre className="font-mono text-[11px] p-2.5 my-2.5 rounded bg-[var(--bp-panel)] text-[var(--bp-amber)] border border-[var(--bp-border)] overflow-x-auto leading-normal">{children}</pre>,
                           hr: () => <hr className="border-[var(--bp-border)] my-2.5" />,
-                          blockquote: ({ children }) => <blockquote className="border-l-2 border-[var(--bp-cyan)] pl-2.5 my-2 italic text-[var(--bp-text-dim)]">{children}</blockquote>,
+                          blockquote: ({ children }) => <blockquote className="border-l-2 border-[var(--bp-cyan)] pl-2.5 my-2 italic text-[var(--bp-text-dim)] bg-[var(--bp-panel)]/30 py-1 rounded-r">{children}</blockquote>,
                         }}
                       >
                         {message.content}
