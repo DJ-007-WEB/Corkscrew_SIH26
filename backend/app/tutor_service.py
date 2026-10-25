@@ -8,6 +8,7 @@ quantum calculation itself.
 import logging
 import os
 import re
+import time
 
 import requests
 from dotenv import load_dotenv
@@ -105,16 +106,34 @@ def _clean_ai_output(text: str) -> str:
 
 
 def answer(request: ChatRequest) -> ChatResponse:
+    total_start = time.perf_counter()
+    sim_time = 0.0
+
     grounded = request.circuit is not None and _is_circuit_question(request.message)
     tools_used: list[str] = []
     facts: list[GroundedFact] = []
 
     if grounded:
+        sim_start = time.perf_counter()
         validate_circuit(request.circuit)
         tools_used, facts = circuit_facts(request.circuit, _mentioned_qubit(request.message))
+        sim_time = time.perf_counter() - sim_start
 
     prompt = _build_prompt(request, facts)
-    llm_answer, provider = _ai_answer(prompt)
+    llm_answer, model_name, usage, llm_time = _openrouter_answer(prompt)
+    total_time = time.perf_counter() - total_start
+
+    logger.info(
+        "Tutor timing: simulation=%.3fs, llm=%.3fs, total=%.3fs | Model: %s | Usage: prompt_tokens=%s, completion_tokens=%s, total_tokens=%s",
+        sim_time,
+        llm_time,
+        total_time,
+        model_name or "none",
+        usage.get("prompt_tokens", 0) if usage else 0,
+        usage.get("completion_tokens", 0) if usage else 0,
+        usage.get("total_tokens", 0) if usage else 0,
+    )
+
     if llm_answer:
         cleaned_answer = _clean_ai_output(llm_answer)
         response = ChatResponse(
@@ -122,7 +141,7 @@ def answer(request: ChatRequest) -> ChatResponse:
             mode="grounded" if grounded else "conceptual",
             tools_used=tools_used,
             facts=facts,
-            provider=provider,
+            provider="openrouter",
             recommendation=recommendation(request.message, tools_used),
         )
         save_turn(request.conversation_id, request.message, response.answer, response.mode, tools_used)
@@ -156,230 +175,141 @@ def _build_prompt(request: ChatRequest, facts: list[GroundedFact]) -> str:
     return f"{history}\nuser: {request.message}\n\nCIRCUIT VERIFIED FACTS:\n{verified}"
 
 
-
 logger = logging.getLogger("quantum_tutor")
 
 
-def _ai_answer(prompt: str) -> tuple[str | None, str]:
-    """Use a bounded multi-provider chain so one upstream outage cannot hang the tutor."""
-    # OpenRouter (if OPENROUTER_API_KEY configured)
-    openrouter = _openrouter_answer(prompt)
-    if openrouter:
-        return openrouter, "openrouter"
-
-    # Primary: latest Gemini.
-    gemini = _gemini_answer(prompt, model_override=None, timeout=10)
-    if gemini:
-        return gemini, "gemini"
-
-    # Required secondary: NVIDIA NIM.
-    nvidia = _nvidia_answer(prompt)
-    if nvidia:
-        return nvidia, "nvidia"
-
-    # Emergency cloud fallback: a still-supported Gemini Flash release.
-    # This is deliberately after NVIDIA so the normal routing remains
-    # Gemini 3.8 -> NVIDIA, while transient provider outages do not leave
-    # the user waiting for a 60-second upstream timeout.
-    emergency = _gemini_answer(prompt, model_override="gemini-3.7-flash", timeout=8)
-    if emergency:
-        return emergency, "gemini-fallback"
-
-    return None, "local-fallback"
+def _get_model_priority() -> list[str]:
+    """Read MODEL_PRIORITY list from environment without hardcoded models."""
+    raw = os.getenv("MODEL_PRIORITY", "").strip()
+    if not raw:
+        raw = os.getenv("OPENROUTER_MODEL", "").strip()
+    if not raw:
+        return []
+    return [model.strip() for model in raw.split(",") if model.strip()]
 
 
-def _openrouter_answer(prompt: str, timeout: int = 30) -> str | None:
-    """OpenRouter API integration using OpenAI-compatible chat-completions."""
+def _openrouter_answer(prompt: str) -> tuple[str | None, str, dict, float]:
+    """Try models from MODEL_PRIORITY in order with retry, error handling, and 20s total cap.
+
+    Returns:
+        (answer_text, model_name, usage_dict, total_llm_duration)
+    """
     api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
     if not api_key:
         logger.info("OPENROUTER_API_KEY is not configured; skipping OpenRouter.")
-        return None
+        return None, "", {}, 0.0
 
-    configured_model = os.getenv("OPENROUTER_MODEL", "").strip()
-    model = configured_model if configured_model else "google/gemini-2.0-flash-001"
+    models = _get_model_priority()
+    if not models:
+        logger.warning("No models found in MODEL_PRIORITY or OPENROUTER_MODEL; skipping OpenRouter.")
+        return None, "", {}, 0.0
 
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": _SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
-        ],
-        "temperature": 0.5,
-        "max_tokens": 4096,
-    }
+    overall_start = time.perf_counter()
+    total_cap = 20.0
+    deadline = overall_start + total_cap
 
-    try:
-        res = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "HTTP-Referer": "http://localhost:5173",
-                "X-Title": "QuantumLab AI Tutor",
-                "Content-Type": "application/json",
-            },
-            json=payload,
-            timeout=timeout,
-        )
-        if res.status_code != 200:
-            logger.warning(
-                "OpenRouter model %s returned status %s: %s",
-                model,
-                res.status_code,
-                res.text[:300],
-            )
-            return None
+    for model in models:
+        remaining = deadline - time.perf_counter()
+        if remaining <= 0:
+            logger.warning("Total LLM time budget (%.1fs) exhausted before trying model %s", total_cap, model)
+            break
 
-        data = res.json()
-        choices = data.get("choices", [])
-        if choices:
-            message = choices[0].get("message", {})
-            content = message.get("content")
-            if isinstance(content, str) and content.strip():
-                return content.strip()
+        # Max 1 retry on 429 or 503 (attempt 0 = initial, attempt 1 = retry)
+        for attempt in range(2):
+            now = time.perf_counter()
+            remaining = deadline - now
+            if remaining <= 0.5:
+                break
 
-        logger.warning("OpenRouter model %s returned no text choice.", model)
-    except requests.RequestException as exc:
-        logger.warning("OpenRouter model %s request failed: %s", model, exc)
-    except (ValueError, TypeError, KeyError) as exc:
-        logger.warning("OpenRouter model %s returned an unexpected response: %s", model, exc)
+            call_timeout = min(10.0, remaining)
+            payload = {
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": _SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt},
+                ],
+                "temperature": 0.5,
+                "max_tokens": 4096,
+            }
 
-    return None
+            try:
+                res = requests.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "HTTP-Referer": "http://localhost:5173",
+                        "X-Title": "QuantumLab AI Tutor",
+                        "Content-Type": "application/json",
+                    },
+                    json=payload,
+                    timeout=call_timeout,
+                )
 
+                # Check 404 or "model not found"
+                if res.status_code == 404 or "model not found" in res.text.lower() or "model_not_found" in res.text.lower():
+                    logger.error(
+                        "Configuration error: OpenRouter model '%s' was not found (404). Check MODEL_PRIORITY in .env.",
+                        model,
+                    )
+                    break  # Skip this model immediately, do not retry
 
-def _gemini_answer(prompt: str, model_override: str | None = None, timeout: int = 10) -> str | None:
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        logger.info("GEMINI_API_KEY is not configured; skipping Gemini.")
-        return None
+                # Check 429 or 503: retry max 1 time with wait
+                if res.status_code in (429, 503):
+                    if attempt == 0:
+                        retry_after = res.headers.get("Retry-After")
+                        wait_sec = 1.5
+                        if retry_after:
+                            try:
+                                wait_sec = max(1.0, min(float(retry_after), 3.0))
+                            except ValueError:
+                                wait_sec = 1.5
+                        logger.warning(
+                            "OpenRouter model %s returned %s (attempt %d/2). Waiting %.1fs before retry...",
+                            model,
+                            res.status_code,
+                            attempt + 1,
+                            wait_sec,
+                        )
+                        if deadline - time.perf_counter() > wait_sec:
+                            time.sleep(wait_sec)
+                            continue
+                        else:
+                            break
+                    else:
+                        logger.warning("OpenRouter model %s failed on retry with status %s", model, res.status_code)
+                        break
 
-    # Gemini 3.8 Flash is the current stable Flash model. An environment
-    # override is retained for controlled testing/rollbacks.
-    configured_model = os.getenv("GEMINI_MODEL", "").strip()
-    if model_override:
-        configured_model = model_override
-    legacy_models = {
-        "gemini-2.5-flash",
-        "gemini-3.1-flash-lite",
-        "gemini-3.5-flash",
-        "gemini-3.6-flash",
-    }
-    model = "gemini-3.8-flash" if not configured_model or configured_model in legacy_models else configured_model
+                if res.status_code != 200:
+                    logger.warning("OpenRouter model %s returned status %s: %s", model, res.status_code, res.text[:300])
+                    break  # Try next model
 
-    # Gemini 3.x uses thinkingLevel rather than the older thinkingBudget.
-    # Temperature/top_p/top_k are intentionally omitted for Gemini 3.8.
-    payload = {
-        "systemInstruction": {"parts": [{"text": _SYSTEM_PROMPT}]},
-        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "maxOutputTokens": 4096,
-            "thinkingConfig": {"thinkingLevel": "low"},
-        },
-    }
+                data = res.json()
+                answered_model = data.get("model", model)
+                usage = data.get("usage", {})
+                choices = data.get("choices", [])
+                if choices:
+                    message = choices[0].get("message", {})
+                    content = message.get("content")
+                    if isinstance(content, str) and content.strip():
+                        duration = time.perf_counter() - overall_start
+                        return content.strip(), answered_model, usage, duration
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-    try:
-        res = requests.post(
-            url,
-            headers={
-                "x-goog-api-key": api_key,
-                "Content-Type": "application/json",
-            },
-            json=payload,
-            timeout=timeout,
-        )
-        if res.status_code != 200:
-            logger.warning(
-                "Gemini model %s returned status %s: %s",
-                model,
-                res.status_code,
-                res.text[:300],
-            )
-            return None
+                logger.warning("OpenRouter model %s returned no text choice in response.", model)
+                break  # Try next model
 
-        data = res.json()
-        for candidate in data.get("candidates", []):
-            parts = candidate.get("content", {}).get("parts", [])
-            text_parts = [part.get("text", "") for part in parts if part.get("text")]
-            text = "".join(text_parts).strip()
-            if text:
-                return text
+            except requests.Timeout:
+                logger.warning("OpenRouter model %s timed out after %.1fs (attempt %d/2)", model, call_timeout, attempt + 1)
+                break  # Timed out, try next model
+            except requests.RequestException as exc:
+                logger.warning("OpenRouter model %s request failed: %s", model, exc)
+                break
+            except (ValueError, TypeError, KeyError) as exc:
+                logger.warning("OpenRouter model %s returned unexpected response structure: %s", model, exc)
+                break
 
-        logger.warning("Gemini model %s returned no text candidate.", model)
-    except requests.RequestException as exc:
-        logger.warning("Gemini model %s request failed: %s", model, exc)
-    except (ValueError, TypeError, KeyError) as exc:
-        logger.warning("Gemini model %s returned an unexpected response: %s", model, exc)
-
-    return None
-
-
-def _nvidia_answer(prompt: str) -> str | None:
-    """NVIDIA NIM fallback using its OpenAI-compatible chat-completions API."""
-    api_key = os.getenv("NVIDIA_API_KEY")
-    if not api_key:
-        logger.info("NVIDIA_API_KEY is not configured; skipping NVIDIA fallback.")
-        return None
-
-    # NVIDIA's API uses a dot between 5 and 3 in the model identifier.
-    # Accept the old hyphenated value too, so an already-configured
-    # deployment keeps working after the code is redeployed.
-    configured_model = os.getenv("NVIDIA_MODEL", "").strip()
-    if not configured_model or configured_model == "z-ai/glm-5-3-flash":
-        model = "z-ai/glm-5.3-flash"
-    else:
-        model = configured_model
-
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": _SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
-        ],
-        # NVIDIA documents reasoning_effort as low/high/max and defaults it to max.
-        # Use low for the fallback so it can respond promptly when Gemini is unavailable.
-        "reasoning_effort": "low",
-        "temperature": 0.5,
-        "max_tokens": 2048,
-        "stream": False,
-        "clear_thinking": True,
-    }
-
-    try:
-        res = requests.post(
-            "https://integrate.api.nvidia.com/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            json=payload,
-            # NVIDIA Playground shows this model can take ~30+ seconds before the
-            # first token, so a 10-second client timeout was cutting off healthy
-            # requests. Keep enough headroom for the hosted inference service.
-            timeout=60,
-        )
-        if res.status_code != 200:
-            logger.warning(
-                "NVIDIA model %s returned status %s: %s",
-                model,
-                res.status_code,
-                res.text[:300],
-            )
-            return None
-
-        data = res.json()
-        choices = data.get("choices", [])
-        if choices:
-            text = choices[0].get("message", {}).get("content")
-            if isinstance(text, str) and text.strip():
-                return text.strip()
-
-        logger.warning("NVIDIA model %s returned no text choice.", model)
-    except requests.RequestException as exc:
-        logger.warning("NVIDIA model %s request failed: %s", model, exc)
-    except (ValueError, TypeError, KeyError) as exc:
-        logger.warning("NVIDIA model %s returned an unexpected response: %s", model, exc)
-
-    return None
+    duration = time.perf_counter() - overall_start
+    logger.info("All OpenRouter models in MODEL_PRIORITY failed or timed out after %.3fs. Falling back to rule engine.", duration)
+    return None, "", {}, duration
 
 
 def _fallback_answer(message: str, facts: list[GroundedFact], grounded: bool, focus: str | None = None) -> str:
