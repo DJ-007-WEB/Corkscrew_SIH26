@@ -120,18 +120,29 @@ def answer(request: ChatRequest) -> ChatResponse:
         sim_time = time.perf_counter() - sim_start
 
     prompt = _build_prompt(request, facts)
+    
+    # 1. Try OpenRouter first if configured
     llm_answer, model_name, usage, llm_time = _openrouter_answer(prompt)
+    provider_used = "openrouter"
+
+    # 2. If OpenRouter returned nothing/timed out, try direct Google Gemini API
+    if not llm_answer:
+        gemini_answer, gemini_model, g_time = _gemini_direct_answer(prompt)
+        if gemini_answer:
+            llm_answer = gemini_answer
+            model_name = gemini_model
+            llm_time = g_time
+            provider_used = "gemini"
+
     total_time = time.perf_counter() - total_start
 
     logger.info(
-        "Tutor timing: simulation=%.3fs, llm=%.3fs, total=%.3fs | Model: %s | Usage: prompt_tokens=%s, completion_tokens=%s, total_tokens=%s",
+        "Tutor timing: simulation=%.3fs, llm=%.3fs, total=%.3fs | Provider: %s | Model: %s",
         sim_time,
         llm_time,
         total_time,
+        provider_used,
         model_name or "none",
-        usage.get("prompt_tokens", 0) if usage else 0,
-        usage.get("completion_tokens", 0) if usage else 0,
-        usage.get("total_tokens", 0) if usage else 0,
     )
 
     if llm_answer:
@@ -141,7 +152,7 @@ def answer(request: ChatRequest) -> ChatResponse:
             mode="grounded" if grounded else "conceptual",
             tools_used=tools_used,
             facts=facts,
-            provider="openrouter",
+            provider=provider_used,
             recommendation=recommendation(request.message, tools_used),
         )
         save_turn(request.conversation_id, request.message, response.answer, response.mode, tools_used)
@@ -157,6 +168,176 @@ def answer(request: ChatRequest) -> ChatResponse:
     )
     save_turn(request.conversation_id, request.message, response.answer, response.mode, tools_used)
     return response
+
+
+def _gemini_direct_answer(prompt: str) -> tuple[str | None, str, float]:
+    """Direct fast call to Google Gemini REST endpoint as secondary provider."""
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        return None, "", 0.0
+
+    model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+    payload = {
+        "contents": [{"parts": [{"text": f"{_SYSTEM_PROMPT}\n\n{prompt}"}]}],
+        "generationConfig": {
+            "temperature": 0.5,
+            "maxOutputTokens": 1024,
+        },
+    }
+    t0 = time.perf_counter()
+    try:
+        res = requests.post(url, json=payload, timeout=7.0)
+        dur = time.perf_counter() - t0
+        if res.status_code == 200:
+            data = res.json()
+            candidates = data.get("candidates", [])
+            if candidates:
+                parts = candidates[0].get("content", {}).get("parts", [])
+                text = "".join(p.get("text", "") for p in parts if "text" in p)
+                if text.strip():
+                    return text.strip(), model, dur
+        else:
+            logger.warning("Direct Gemini call returned %s: %s", res.status_code, res.text[:200])
+    except Exception as exc:
+        logger.warning("Direct Gemini call failed: %s", exc)
+    return None, "", time.perf_counter() - t0
+
+
+def stream_answer(request: ChatRequest):
+    """Generator yielding SSE events formatted as JSON chunks."""
+    import json
+
+    grounded = request.circuit is not None and _is_circuit_question(request.message)
+    tools_used: list[str] = []
+    facts: list[GroundedFact] = []
+
+    if grounded:
+        try:
+            validate_circuit(request.circuit)
+            tools_used, facts = circuit_facts(request.circuit, _mentioned_qubit(request.message))
+        except Exception as exc:
+            logger.warning("Circuit pre-computation error in streaming: %s", exc)
+
+    rec = recommendation(request.message, tools_used)
+
+    # Initial metadata chunk
+    init_meta = {
+        "type": "meta",
+        "mode": "grounded" if grounded else "conceptual",
+        "tools_used": tools_used,
+        "facts": [f.model_dump() if hasattr(f, "model_dump") else f.__dict__ for f in facts],
+        "recommendation": rec,
+    }
+    yield f"data: {json.dumps(init_meta)}\n\n"
+
+    prompt = _build_prompt(request, facts)
+    full_text: list[str] = []
+
+    # 1. Try streaming from OpenRouter
+    streamed = False
+    api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+    models = _get_model_priority()
+
+    if api_key and models:
+        for model in models:
+            try:
+                res = requests.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "HTTP-Referer": "http://localhost:5173",
+                        "X-Title": "QuantumLab AI Tutor",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": model,
+                        "messages": [
+                            {"role": "system", "content": _SYSTEM_PROMPT},
+                            {"role": "user", "content": prompt},
+                        ],
+                        "temperature": 0.5,
+                        "max_tokens": 1024,
+                        "stream": True,
+                    },
+                    timeout=7.0,
+                    stream=True,
+                )
+                if res.status_code == 200:
+                    for line in res.iter_lines():
+                        if not line:
+                            continue
+                        if line.startswith(b"data: "):
+                            raw = line[6:].decode("utf-8").strip()
+                            if raw == "[DONE]":
+                                streamed = True
+                                break
+                            try:
+                                chunk = json.loads(raw)
+                                choices = chunk.get("choices", [])
+                                if choices:
+                                    delta = choices[0].get("delta", {})
+                                    delta_text = delta.get("content", "")
+                                    if delta_text:
+                                        cleaned = _clean_latex(delta_text)
+                                        full_text.append(cleaned)
+                                        yield f"data: {json.dumps({'type': 'token', 'token': cleaned})}\n\n"
+                            except Exception:
+                                continue
+                    if streamed:
+                        break
+            except Exception as exc:
+                logger.warning("Streaming from OpenRouter model %s failed: %s", model, exc)
+
+    # 2. If OpenRouter didn't stream, try direct Gemini streaming
+    if not streamed:
+        gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
+        gemini_model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
+        if gemini_key:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:streamGenerateContent?alt=sse&key={gemini_key}"
+                res = requests.post(
+                    url,
+                    json={
+                        "contents": [{"parts": [{"text": f"{_SYSTEM_PROMPT}\n\n{prompt}"}]}],
+                        "generationConfig": {"temperature": 0.5, "maxOutputTokens": 1024},
+                    },
+                    timeout=8.0,
+                    stream=True,
+                )
+                if res.status_code == 200:
+                    for line in res.iter_lines():
+                        if not line:
+                            continue
+                        if line.startswith(b"data: "):
+                            raw = line[6:].decode("utf-8").strip()
+                            try:
+                                chunk = json.loads(raw)
+                                candidates = chunk.get("candidates", [])
+                                if candidates:
+                                    parts = candidates[0].get("content", {}).get("parts", [])
+                                    for p in parts:
+                                        t = p.get("text", "")
+                                        if t:
+                                            cleaned = _clean_latex(t)
+                                            full_text.append(cleaned)
+                                            yield f"data: {json.dumps({'type': 'token', 'token': cleaned})}\n\n"
+                                    if candidates[0].get("finishReason") in ("STOP", "MAX_TOKENS"):
+                                        streamed = True
+                            except Exception:
+                                continue
+            except Exception as exc:
+                logger.warning("Streaming from direct Gemini failed: %s", exc)
+
+    # 3. Fallback if no stream succeeded
+    if not full_text:
+        fallback = _fallback_answer(request.message, facts, grounded, request.focus)
+        full_text.append(fallback)
+        yield f"data: {json.dumps({'type': 'token', 'token': fallback})}\n\n"
+
+    final_content = "".join(full_text).strip()
+    save_turn(request.conversation_id, request.message, final_content, "grounded" if grounded else "conceptual", tools_used)
+    yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
 
 def _is_circuit_question(message: str) -> bool:
@@ -229,7 +410,7 @@ def _openrouter_answer(prompt: str) -> tuple[str | None, str, dict, float]:
                     {"role": "user", "content": prompt},
                 ],
                 "temperature": 0.5,
-                "max_tokens": 4096,
+                "max_tokens": 1024,
             }
 
             try:
