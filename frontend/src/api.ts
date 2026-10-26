@@ -107,6 +107,53 @@ export function askTutor(message: string, circuit: Circuit, history: ChatMessage
   });
 }
 
+export async function askTutorStream(
+  message: string,
+  circuit: Circuit,
+  history: ChatMessage[],
+  conversationId: string,
+  focus: string | undefined,
+  onToken: (token: string) => void,
+  onMeta?: (meta: { mode: string; tools_used: string[]; recommendation?: string | null }) => void
+): Promise<void> {
+  const response = await fetch(`${API_BASE}/api/tutor/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, circuit, history, conversation_id: conversationId, focus }),
+  });
+
+  if (!response.ok || !response.body) {
+    throw new Error(`Stream request failed with status ${response.status}`);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data: ")) continue;
+      try {
+        const payload = JSON.parse(trimmed.slice(6));
+        if (payload.type === "token" && payload.token) {
+          onToken(payload.token);
+        } else if (payload.type === "meta" && onMeta) {
+          onMeta(payload);
+        }
+      } catch {
+        // ignore parse errors for partial chunks
+      }
+    }
+  }
+}
+
 function authHeaders(token: string) {
   return { Authorization: `Bearer ${token}` };
 }

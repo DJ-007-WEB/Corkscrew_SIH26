@@ -8,6 +8,7 @@ quantum calculation itself.
 import logging
 import os
 import re
+import time
 
 import requests
 from dotenv import load_dotenv
@@ -26,20 +27,27 @@ _CIRCUIT_WORDS = (
     "entanglement", "bell", "constant", "balanced", "oracle", "deutsch", "grover", "teleport"
 )
 _SYSTEM_PROMPT = """You are QuantumLab AI, an expert, inspiring, and friendly Quantum Physics Professor & AI Tutor.
-Your mission is to guide students through quantum computing, circuit simulations, and quantum phenomena with clarity, deep physical intuition, and engaging conversational warmth — just like modern ChatGPT and Gemini.
+Your mission is to guide students through quantum computing, circuit simulations, and quantum phenomena with clarity, deep physical intuition, and engaging conversational warmth.
+
+CRITICAL INSTRUCTIONS:
+- Directly output your final, beautifully formatted pedagogical response.
+- NEVER output internal monologue, chain-of-thought, scratchpads, meta-commentary, or phrases like "The user wants me to...", "Let me analyze...", or "I need to handle this carefully".
+- Start immediately with the student-facing answer.
 
 FORMATTING & STYLE RULES:
 1. RICH VISUAL STRUCTURE:
    - Organize your answer with clear bold headings (e.g. ### 🌀 Gate Dynamics, ### ⚛️ Statevector Evolution, ### 📊 Measurement Outcomes, ### 💡 Physical Intuition).
    - Use clean bulleted lists with bold keywords to break down complex mechanisms step-by-step.
    - Use helpful contextual emojis (⚛️, 🌀, 🔗, 📊, 💡, 🎯, 🚀) to make explanations inviting and visually engaging.
-2. CLEAN PLAIN TEXT NOTATION (NO LATEX):
-   - Never use dollar signs ($ or $$) or raw LaTeX backslash commands (never write \\rangle, \\langle, \\to, \\frac, \\psi, etc.).
-   - Write quantum states and gates using standard readable text: |0>, |1>, |+>, |->, |00>, |11>, (|00> + |11>)/sqrt(2), q0, q1, ->.
+   - Use Markdown tables when comparing states, gates, or measurement outcomes.
+2. CLEAN PLAIN TEXT NOTATION (NO RAW UNRENDERED LATEX):
+   - Never use raw LaTeX commands that break readability (never write \\rangle, \\langle, \\to, \\frac, \\psi).
+   - Write quantum states and gates using standard readable notation: |0>, |1>, |+>, |->, |00>, |11>, (|00> + |11>)/sqrt(2), q0, q1, ->.
 3. GROUNDED IN REAL SIMULATION FACTS:
    - When a 'CIRCUIT VERIFIED FACTS' block is provided, explain why those exact measurement probabilities, Bloch vectors, and Q-Sphere phases follow mathematically and physically from the gates in the circuit.
-4. FULL & POLISHED:
-   - Always deliver a complete, friendly, and comprehensive pedagogical explanation from start to finish."""
+   - If the user asks about an advanced protocol (like teleportation or Grover) but the current circuit is empty or in an initial state |00>, clearly explain both how the protocol works and note that the current simulator circuit is at step 0 / initial state ready for gates to be added.
+4. FULL, INVITING & POLISHED:
+   - Always deliver a complete, friendly, structured explanation from start to finish."""
 
 
 
@@ -74,25 +82,77 @@ def _clean_latex(text: str) -> str:
     return t
 
 
+def _clean_ai_output(text: str) -> str:
+    """Filter out chain-of-thought, reasoning tags, and clean math notation."""
+    if not text:
+        return ""
+    t = text
+    # 1. Strip explicit reasoning/thinking tags
+    t = re.sub(r"<(think|thought)>.*?</\1>", "", t, flags=re.DOTALL).strip()
+
+    # 2. If model leaked untagged self-talk preamble before a Markdown heading, strip it
+    match = re.search(r"(###?\s+[^\n]+)", t)
+    if match and match.start() > 0:
+        preamble = t[:match.start()].strip()
+        thinking_markers = [
+            "the user wants", "circuit verified facts", "let me analyze", "i need to handle",
+            "let's check", "wait, there's", "i should:", "my task is", "looking at the facts"
+        ]
+        if any(marker in preamble.lower() for marker in thinking_markers):
+            t = t[match.start():].strip()
+
+    # 3. Clean LaTeX artifacts
+    return _clean_latex(t)
+
+
 def answer(request: ChatRequest) -> ChatResponse:
+    total_start = time.perf_counter()
+    sim_time = 0.0
+
     grounded = request.circuit is not None and _is_circuit_question(request.message)
     tools_used: list[str] = []
     facts: list[GroundedFact] = []
 
     if grounded:
+        sim_start = time.perf_counter()
         validate_circuit(request.circuit)
         tools_used, facts = circuit_facts(request.circuit, _mentioned_qubit(request.message))
+        sim_time = time.perf_counter() - sim_start
 
     prompt = _build_prompt(request, facts)
-    llm_answer, provider = _ai_answer(prompt)
+    
+    # 1. Try OpenRouter first if configured
+    llm_answer, model_name, usage, llm_time = _openrouter_answer(prompt)
+    provider_used = "openrouter"
+
+    # 2. If OpenRouter returned nothing/timed out, try direct Google Gemini API
+    if not llm_answer:
+        gemini_answer, gemini_model, g_time = _gemini_direct_answer(prompt)
+        if gemini_answer:
+            llm_answer = gemini_answer
+            model_name = gemini_model
+            llm_time = g_time
+            provider_used = "gemini"
+
+    total_time = time.perf_counter() - total_start
+
+    logger.info(
+        "Tutor timing: simulation=%.3fs, llm=%.3fs, total=%.3fs | Provider: %s | Model: %s",
+        sim_time,
+        llm_time,
+        total_time,
+        provider_used,
+        model_name or "none",
+    )
+
     if llm_answer:
-        cleaned_answer = _clean_latex(llm_answer)
+        cleaned_answer = _clean_ai_output(llm_answer)
         response = ChatResponse(
             answer=cleaned_answer,
             mode="grounded" if grounded else "conceptual",
             tools_used=tools_used,
             facts=facts,
-            provider=provider,
+            provider=provider_used,
             recommendation=recommendation(request.message, tools_used),
         )
         save_turn(request.conversation_id, request.message, response.answer, response.mode, tools_used)
@@ -108,6 +168,176 @@ def answer(request: ChatRequest) -> ChatResponse:
     )
     save_turn(request.conversation_id, request.message, response.answer, response.mode, tools_used)
     return response
+
+
+def _gemini_direct_answer(prompt: str) -> tuple[str | None, str, float]:
+    """Direct fast call to Google Gemini REST endpoint as secondary provider."""
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        return None, "", 0.0
+
+    model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+    payload = {
+        "contents": [{"parts": [{"text": f"{_SYSTEM_PROMPT}\n\n{prompt}"}]}],
+        "generationConfig": {
+            "temperature": 0.5,
+            "maxOutputTokens": 1024,
+        },
+    }
+    t0 = time.perf_counter()
+    try:
+        res = requests.post(url, json=payload, timeout=7.0)
+        dur = time.perf_counter() - t0
+        if res.status_code == 200:
+            data = res.json()
+            candidates = data.get("candidates", [])
+            if candidates:
+                parts = candidates[0].get("content", {}).get("parts", [])
+                text = "".join(p.get("text", "") for p in parts if "text" in p)
+                if text.strip():
+                    return text.strip(), model, dur
+        else:
+            logger.warning("Direct Gemini call returned %s: %s", res.status_code, res.text[:200])
+    except Exception as exc:
+        logger.warning("Direct Gemini call failed: %s", exc)
+    return None, "", time.perf_counter() - t0
+
+
+def stream_answer(request: ChatRequest):
+    """Generator yielding SSE events formatted as JSON chunks."""
+    import json
+
+    grounded = request.circuit is not None and _is_circuit_question(request.message)
+    tools_used: list[str] = []
+    facts: list[GroundedFact] = []
+
+    if grounded:
+        try:
+            validate_circuit(request.circuit)
+            tools_used, facts = circuit_facts(request.circuit, _mentioned_qubit(request.message))
+        except Exception as exc:
+            logger.warning("Circuit pre-computation error in streaming: %s", exc)
+
+    rec = recommendation(request.message, tools_used)
+
+    # Initial metadata chunk
+    init_meta = {
+        "type": "meta",
+        "mode": "grounded" if grounded else "conceptual",
+        "tools_used": tools_used,
+        "facts": [f.model_dump() if hasattr(f, "model_dump") else f.__dict__ for f in facts],
+        "recommendation": rec,
+    }
+    yield f"data: {json.dumps(init_meta)}\n\n"
+
+    prompt = _build_prompt(request, facts)
+    full_text: list[str] = []
+
+    # 1. Try streaming from OpenRouter
+    streamed = False
+    api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+    models = _get_model_priority()
+
+    if api_key and models:
+        for model in models:
+            try:
+                res = requests.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "HTTP-Referer": "http://localhost:5173",
+                        "X-Title": "QuantumLab AI Tutor",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": model,
+                        "messages": [
+                            {"role": "system", "content": _SYSTEM_PROMPT},
+                            {"role": "user", "content": prompt},
+                        ],
+                        "temperature": 0.5,
+                        "max_tokens": 1024,
+                        "stream": True,
+                    },
+                    timeout=7.0,
+                    stream=True,
+                )
+                if res.status_code == 200:
+                    for line in res.iter_lines():
+                        if not line:
+                            continue
+                        if line.startswith(b"data: "):
+                            raw = line[6:].decode("utf-8").strip()
+                            if raw == "[DONE]":
+                                streamed = True
+                                break
+                            try:
+                                chunk = json.loads(raw)
+                                choices = chunk.get("choices", [])
+                                if choices:
+                                    delta = choices[0].get("delta", {})
+                                    delta_text = delta.get("content", "")
+                                    if delta_text:
+                                        cleaned = _clean_latex(delta_text)
+                                        full_text.append(cleaned)
+                                        yield f"data: {json.dumps({'type': 'token', 'token': cleaned})}\n\n"
+                            except Exception:
+                                continue
+                    if streamed:
+                        break
+            except Exception as exc:
+                logger.warning("Streaming from OpenRouter model %s failed: %s", model, exc)
+
+    # 2. If OpenRouter didn't stream, try direct Gemini streaming
+    if not streamed:
+        gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
+        gemini_model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
+        if gemini_key:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:streamGenerateContent?alt=sse&key={gemini_key}"
+                res = requests.post(
+                    url,
+                    json={
+                        "contents": [{"parts": [{"text": f"{_SYSTEM_PROMPT}\n\n{prompt}"}]}],
+                        "generationConfig": {"temperature": 0.5, "maxOutputTokens": 1024},
+                    },
+                    timeout=8.0,
+                    stream=True,
+                )
+                if res.status_code == 200:
+                    for line in res.iter_lines():
+                        if not line:
+                            continue
+                        if line.startswith(b"data: "):
+                            raw = line[6:].decode("utf-8").strip()
+                            try:
+                                chunk = json.loads(raw)
+                                candidates = chunk.get("candidates", [])
+                                if candidates:
+                                    parts = candidates[0].get("content", {}).get("parts", [])
+                                    for p in parts:
+                                        t = p.get("text", "")
+                                        if t:
+                                            cleaned = _clean_latex(t)
+                                            full_text.append(cleaned)
+                                            yield f"data: {json.dumps({'type': 'token', 'token': cleaned})}\n\n"
+                                    if candidates[0].get("finishReason") in ("STOP", "MAX_TOKENS"):
+                                        streamed = True
+                            except Exception:
+                                continue
+            except Exception as exc:
+                logger.warning("Streaming from direct Gemini failed: %s", exc)
+
+    # 3. Fallback if no stream succeeded
+    if not full_text:
+        fallback = _fallback_answer(request.message, facts, grounded, request.focus)
+        full_text.append(fallback)
+        yield f"data: {json.dumps({'type': 'token', 'token': fallback})}\n\n"
+
+    final_content = "".join(full_text).strip()
+    save_turn(request.conversation_id, request.message, final_content, "grounded" if grounded else "conceptual", tools_used)
+    yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
 
 def _is_circuit_question(message: str) -> bool:
@@ -126,167 +356,141 @@ def _build_prompt(request: ChatRequest, facts: list[GroundedFact]) -> str:
     return f"{history}\nuser: {request.message}\n\nCIRCUIT VERIFIED FACTS:\n{verified}"
 
 
-
 logger = logging.getLogger("quantum_tutor")
 
 
-def _ai_answer(prompt: str) -> tuple[str | None, str]:
-    """Use a bounded multi-provider chain so one upstream outage cannot hang the tutor."""
-    # Primary: latest Gemini.
-    gemini = _gemini_answer(prompt, model_override=None, timeout=10)
-    if gemini:
-        return gemini, "gemini"
-
-    # Required secondary: NVIDIA NIM.
-    nvidia = _nvidia_answer(prompt)
-    if nvidia:
-        return nvidia, "nvidia"
-
-    # Emergency cloud fallback: a still-supported Gemini Flash release.
-    # This is deliberately after NVIDIA so the normal routing remains
-    # Gemini 3.8 -> NVIDIA, while transient provider outages do not leave
-    # the user waiting for a 60-second upstream timeout.
-    emergency = _gemini_answer(prompt, model_override="gemini-3.7-flash", timeout=8)
-    if emergency:
-        return emergency, "gemini-fallback"
-
-    return None, "local-fallback"
+def _get_model_priority() -> list[str]:
+    """Read MODEL_PRIORITY list from environment without hardcoded models."""
+    raw = os.getenv("MODEL_PRIORITY", "").strip()
+    if not raw:
+        raw = os.getenv("OPENROUTER_MODEL", "").strip()
+    if not raw:
+        return []
+    return [model.strip() for model in raw.split(",") if model.strip()]
 
 
-def _gemini_answer(prompt: str, model_override: str | None = None, timeout: int = 10) -> str | None:
-    api_key = os.getenv("GEMINI_API_KEY")
+def _openrouter_answer(prompt: str) -> tuple[str | None, str, dict, float]:
+    """Try models from MODEL_PRIORITY in order with retry, error handling, and 20s total cap.
+
+    Returns:
+        (answer_text, model_name, usage_dict, total_llm_duration)
+    """
+    api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
     if not api_key:
-        logger.info("GEMINI_API_KEY is not configured; skipping Gemini.")
-        return None
+        logger.info("OPENROUTER_API_KEY is not configured; skipping OpenRouter.")
+        return None, "", {}, 0.0
 
-    # Gemini 3.8 Flash is the current stable Flash model. An environment
-    # override is retained for controlled testing/rollbacks.
-    configured_model = os.getenv("GEMINI_MODEL", "").strip()
-    if model_override:
-        configured_model = model_override
-    legacy_models = {
-        "gemini-2.5-flash",
-        "gemini-3.1-flash-lite",
-        "gemini-3.5-flash",
-        "gemini-3.6-flash",
-    }
-    model = "gemini-3.8-flash" if not configured_model or configured_model in legacy_models else configured_model
+    models = _get_model_priority()
+    if not models:
+        logger.warning("No models found in MODEL_PRIORITY or OPENROUTER_MODEL; skipping OpenRouter.")
+        return None, "", {}, 0.0
 
-    # Gemini 3.x uses thinkingLevel rather than the older thinkingBudget.
-    # Temperature/top_p/top_k are intentionally omitted for Gemini 3.8.
-    payload = {
-        "systemInstruction": {"parts": [{"text": _SYSTEM_PROMPT}]},
-        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "maxOutputTokens": 4096,
-            "thinkingConfig": {"thinkingLevel": "low"},
-        },
-    }
+    overall_start = time.perf_counter()
+    total_cap = 20.0
+    deadline = overall_start + total_cap
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-    try:
-        res = requests.post(
-            url,
-            headers={
-                "x-goog-api-key": api_key,
-                "Content-Type": "application/json",
-            },
-            json=payload,
-            timeout=timeout,
-        )
-        if res.status_code != 200:
-            logger.warning(
-                "Gemini model %s returned status %s: %s",
-                model,
-                res.status_code,
-                res.text[:300],
-            )
-            return None
+    for model in models:
+        remaining = deadline - time.perf_counter()
+        if remaining <= 0:
+            logger.warning("Total LLM time budget (%.1fs) exhausted before trying model %s", total_cap, model)
+            break
 
-        data = res.json()
-        for candidate in data.get("candidates", []):
-            parts = candidate.get("content", {}).get("parts", [])
-            text_parts = [part.get("text", "") for part in parts if part.get("text")]
-            text = "".join(text_parts).strip()
-            if text:
-                return text
+        # Max 1 retry on 429 or 503 (attempt 0 = initial, attempt 1 = retry)
+        for attempt in range(2):
+            now = time.perf_counter()
+            remaining = deadline - now
+            if remaining <= 0.5:
+                break
 
-        logger.warning("Gemini model %s returned no text candidate.", model)
-    except requests.RequestException as exc:
-        logger.warning("Gemini model %s request failed: %s", model, exc)
-    except (ValueError, TypeError, KeyError) as exc:
-        logger.warning("Gemini model %s returned an unexpected response: %s", model, exc)
+            call_timeout = min(10.0, remaining)
+            payload = {
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": _SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt},
+                ],
+                "temperature": 0.5,
+                "max_tokens": 1024,
+            }
 
-    return None
+            try:
+                res = requests.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "HTTP-Referer": "http://localhost:5173",
+                        "X-Title": "QuantumLab AI Tutor",
+                        "Content-Type": "application/json",
+                    },
+                    json=payload,
+                    timeout=call_timeout,
+                )
 
+                # Check 404 or "model not found"
+                if res.status_code == 404 or "model not found" in res.text.lower() or "model_not_found" in res.text.lower():
+                    logger.error(
+                        "Configuration error: OpenRouter model '%s' was not found (404). Check MODEL_PRIORITY in .env.",
+                        model,
+                    )
+                    break  # Skip this model immediately, do not retry
 
-def _nvidia_answer(prompt: str) -> str | None:
-    """NVIDIA NIM fallback using its OpenAI-compatible chat-completions API."""
-    api_key = os.getenv("NVIDIA_API_KEY")
-    if not api_key:
-        logger.info("NVIDIA_API_KEY is not configured; skipping NVIDIA fallback.")
-        return None
+                # Check 429 or 503: retry max 1 time with wait
+                if res.status_code in (429, 503):
+                    if attempt == 0:
+                        retry_after = res.headers.get("Retry-After")
+                        wait_sec = 1.5
+                        if retry_after:
+                            try:
+                                wait_sec = max(1.0, min(float(retry_after), 3.0))
+                            except ValueError:
+                                wait_sec = 1.5
+                        logger.warning(
+                            "OpenRouter model %s returned %s (attempt %d/2). Waiting %.1fs before retry...",
+                            model,
+                            res.status_code,
+                            attempt + 1,
+                            wait_sec,
+                        )
+                        if deadline - time.perf_counter() > wait_sec:
+                            time.sleep(wait_sec)
+                            continue
+                        else:
+                            break
+                    else:
+                        logger.warning("OpenRouter model %s failed on retry with status %s", model, res.status_code)
+                        break
 
-    # NVIDIA's API uses a dot between 5 and 3 in the model identifier.
-    # Accept the old hyphenated value too, so an already-configured
-    # deployment keeps working after the code is redeployed.
-    configured_model = os.getenv("NVIDIA_MODEL", "").strip()
-    if not configured_model or configured_model == "z-ai/glm-5-3-flash":
-        model = "z-ai/glm-5.3-flash"
-    else:
-        model = configured_model
+                if res.status_code != 200:
+                    logger.warning("OpenRouter model %s returned status %s: %s", model, res.status_code, res.text[:300])
+                    break  # Try next model
 
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": _SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
-        ],
-        # NVIDIA documents reasoning_effort as low/high/max and defaults it to max.
-        # Use low for the fallback so it can respond promptly when Gemini is unavailable.
-        "reasoning_effort": "low",
-        "temperature": 0.5,
-        "max_tokens": 2048,
-        "stream": False,
-        "clear_thinking": True,
-    }
+                data = res.json()
+                answered_model = data.get("model", model)
+                usage = data.get("usage", {})
+                choices = data.get("choices", [])
+                if choices:
+                    message = choices[0].get("message", {})
+                    content = message.get("content")
+                    if isinstance(content, str) and content.strip():
+                        duration = time.perf_counter() - overall_start
+                        return content.strip(), answered_model, usage, duration
 
-    try:
-        res = requests.post(
-            "https://integrate.api.nvidia.com/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            json=payload,
-            # NVIDIA Playground shows this model can take ~30+ seconds before the
-            # first token, so a 10-second client timeout was cutting off healthy
-            # requests. Keep enough headroom for the hosted inference service.
-            timeout=60,
-        )
-        if res.status_code != 200:
-            logger.warning(
-                "NVIDIA model %s returned status %s: %s",
-                model,
-                res.status_code,
-                res.text[:300],
-            )
-            return None
+                logger.warning("OpenRouter model %s returned no text choice in response.", model)
+                break  # Try next model
 
-        data = res.json()
-        choices = data.get("choices", [])
-        if choices:
-            text = choices[0].get("message", {}).get("content")
-            if isinstance(text, str) and text.strip():
-                return text.strip()
+            except requests.Timeout:
+                logger.warning("OpenRouter model %s timed out after %.1fs (attempt %d/2)", model, call_timeout, attempt + 1)
+                break  # Timed out, try next model
+            except requests.RequestException as exc:
+                logger.warning("OpenRouter model %s request failed: %s", model, exc)
+                break
+            except (ValueError, TypeError, KeyError) as exc:
+                logger.warning("OpenRouter model %s returned unexpected response structure: %s", model, exc)
+                break
 
-        logger.warning("NVIDIA model %s returned no text choice.", model)
-    except requests.RequestException as exc:
-        logger.warning("NVIDIA model %s request failed: %s", model, exc)
-    except (ValueError, TypeError, KeyError) as exc:
-        logger.warning("NVIDIA model %s returned an unexpected response: %s", model, exc)
-
-    return None
+    duration = time.perf_counter() - overall_start
+    logger.info("All OpenRouter models in MODEL_PRIORITY failed or timed out after %.3fs. Falling back to rule engine.", duration)
+    return None, "", {}, duration
 
 
 def _fallback_answer(message: str, facts: list[GroundedFact], grounded: bool, focus: str | None = None) -> str:

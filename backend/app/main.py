@@ -108,7 +108,8 @@ from .schemas import (
     UserPublicProfile,
     UserStats,
 )
-from .tutor_service import answer as tutor_answer
+from .tutor_service import answer as tutor_answer, stream_answer
+from fastapi.responses import StreamingResponse
 
 try:
     from pypdf import PdfReader
@@ -1597,3 +1598,24 @@ def tutor_chat(request: ChatRequest):
     except Exception as exc:
         logger.exception("Tutor request failed")
         raise HTTPException(502, "Tutor is temporarily unavailable") from exc
+
+
+@app.post("/api/tutor/stream")
+def tutor_stream(request: ChatRequest):
+    """Real-time SSE token streaming for low-latency chat interactions."""
+    client = request.conversation_id or "anonymous"
+    now = time.monotonic()
+    recent = [stamp for stamp in _chat_limits.get(client, []) if now - stamp < 60]
+    if len(recent) >= 25:
+        raise HTTPException(429, "Tutor request limit reached. Please retry in a minute.")
+    recent.append(now)
+    _chat_limits[client] = recent
+    return StreamingResponse(
+        stream_answer(request),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )

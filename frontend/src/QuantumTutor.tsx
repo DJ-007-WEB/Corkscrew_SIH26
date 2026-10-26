@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { askTutor } from "./api";
+import { askTutor, askTutorStream } from "./api";
 import type { ChatMessage, Circuit } from "./types";
 
 interface Props {
@@ -25,16 +25,57 @@ export default function QuantumTutor({ circuit, isOpen, onToggle }: Props) {
   async function send(preset?: string, focus?: string) {
     const question = preset ?? input.trim();
     if (!question || loading) return;
-    const next = [...messages, { role: "user" as const, content: question }];
-    setMessages(next);
+    const historyWithUser = [...messages, { role: "user" as const, content: question }];
+    
+    // Add empty assistant placeholder for streaming tokens
+    const nextWithAssistant = [...historyWithUser, { role: "assistant" as const, content: "" }];
+    setMessages(nextWithAssistant);
     setInput("");
     setLoading(true);
+
+    let accumulatedAnswer = "";
+
     try {
-      const response = await askTutor(question, circuit, messages, conversationId, focus);
-      setMessages([...next, { role: "assistant", content: response.answer }]);
-      setRecommendation(response.recommendation ?? null);
+      await askTutorStream(
+        question,
+        circuit,
+        messages,
+        conversationId,
+        focus,
+        (token) => {
+          accumulatedAnswer += token;
+          setMessages((prev) => {
+            const updated = [...prev];
+            if (updated.length > 0) {
+              updated[updated.length - 1] = {
+                role: "assistant",
+                content: accumulatedAnswer,
+              };
+            }
+            return updated;
+          });
+        },
+        (meta) => {
+          if (meta.recommendation) {
+            setRecommendation(meta.recommendation);
+          }
+        }
+      );
     } catch {
-      setMessages([...next, { role: "assistant", content: "I could not reach the tutor service. Please ensure the FastAPI backend is running and try again." }]);
+      // If streaming fails, fallback gracefully to standard REST endpoint
+      try {
+        const response = await askTutor(question, circuit, messages, conversationId, focus);
+        setMessages([...historyWithUser, { role: "assistant", content: response.answer }]);
+        setRecommendation(response.recommendation ?? null);
+      } catch {
+        setMessages([
+          ...historyWithUser,
+          {
+            role: "assistant",
+            content: "I could not reach the tutor service. Please ensure the FastAPI backend is running and try again.",
+          },
+        ]);
+      }
     } finally {
       setLoading(false);
     }
@@ -105,7 +146,7 @@ export default function QuantumTutor({ circuit, isOpen, onToggle }: Props) {
                     <div className="rounded-lg p-3 text-xs sm:text-sm leading-relaxed max-w-[90%] whitespace-pre-wrap bg-[var(--bp-cyan-dim)] text-[var(--bp-text)] border border-[var(--bp-cyan)]/30 rounded-tr-none">
                       {message.content}
                     </div>
-                  ) : (
+                  ) : message.content ? (
                     <div className="rounded-lg p-3.5 text-xs sm:text-sm leading-relaxed max-w-[95%] bg-[var(--bp-panel-raised)] text-[var(--bp-text)] border border-[var(--bp-border)] rounded-tl-none space-y-2 shadow-lg">
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
@@ -120,17 +161,29 @@ export default function QuantumTutor({ circuit, isOpen, onToggle }: Props) {
                           strong: ({ children }) => <strong className="font-semibold text-[var(--bp-cyan)]">{children}</strong>,
                           em: ({ children }) => <em className="italic text-[var(--bp-text)]">{children}</em>,
                           code: ({ children }) => <code className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-[var(--bp-panel)] text-[var(--bp-amber)] border border-[var(--bp-border)]">{children}</code>,
+                          table: ({ children }) => <div className="overflow-x-auto my-3 rounded border border-[var(--bp-border)] shadow-inner"><table className="w-full text-left text-[11px] border-collapse bg-[var(--bp-panel)]/40">{children}</table></div>,
+                          thead: ({ children }) => <thead className="bg-[var(--bp-panel-raised)] text-[var(--bp-cyan)] border-b border-[var(--bp-border)] font-mono">{children}</thead>,
+                          tbody: ({ children }) => <tbody className="divide-y divide-[var(--bp-border)]/50">{children}</tbody>,
+                          tr: ({ children }) => <tr className="hover:bg-[var(--bp-panel-raised)]/40 transition-colors">{children}</tr>,
+                          th: ({ children }) => <th className="p-2 font-semibold tracking-wider text-[var(--bp-cyan)]">{children}</th>,
+                          td: ({ children }) => <td className="p-2 text-[var(--bp-text)] font-mono leading-relaxed">{children}</td>,
+                          pre: ({ children }) => <pre className="font-mono text-[11px] p-2.5 my-2.5 rounded bg-[var(--bp-panel)] text-[var(--bp-amber)] border border-[var(--bp-border)] overflow-x-auto leading-normal">{children}</pre>,
                           hr: () => <hr className="border-[var(--bp-border)] my-2.5" />,
-                          blockquote: ({ children }) => <blockquote className="border-l-2 border-[var(--bp-cyan)] pl-2.5 my-2 italic text-[var(--bp-text-dim)]">{children}</blockquote>,
+                          blockquote: ({ children }) => <blockquote className="border-l-2 border-[var(--bp-cyan)] pl-2.5 my-2 italic text-[var(--bp-text-dim)] bg-[var(--bp-panel)]/30 py-1 rounded-r">{children}</blockquote>,
                         }}
                       >
                         {message.content}
                       </ReactMarkdown>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               ))}
-              {loading && <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--bp-panel-raised)] border border-[var(--bp-border)] max-w-[70%]"><span className="animate-spin text-xs text-[var(--bp-cyan)]">✦</span><p className="text-xs font-mono text-[var(--bp-text-dim)]">Simulating in Qiskit…</p></div>}
+              {loading && !messages[messages.length - 1]?.content && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--bp-panel-raised)] border border-[var(--bp-border)] max-w-[70%]">
+                  <span className="animate-spin text-xs text-[var(--bp-cyan)]">✦</span>
+                  <p className="text-xs font-mono text-[var(--bp-text-dim)]">Simulating in Qiskit & generating…</p>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
 
