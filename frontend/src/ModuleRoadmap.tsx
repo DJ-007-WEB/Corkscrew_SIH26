@@ -13,7 +13,7 @@ type Props = {
 
 export default function ModuleRoadmap({ modules, expandedModuleId, selectedTopicId, onExpandModule, onSelectTopic, onSelectFinal, completedQuizIds = new Set(), isQuizUnlocked = () => true }: Props) {
   return (
-    <aside className="scrollbar-hidden bp-panel p-4 lg:sticky lg:top-5 lg:self-start max-h-[calc(100vh-120px)] overflow-y-auto">
+    <aside className="bp-panel p-4">
       <p className="text-xs font-mono uppercase tracking-wider text-[var(--bp-cyan)]">Learning roadmap</p>
       <h2 className="font-display text-lg mt-1">Modules 1–7</h2>
       <div className="mt-4 space-y-2">

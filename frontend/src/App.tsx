@@ -29,6 +29,10 @@ const BASE_TABS: { id: Tab; label: string }[] = [
   { id: "about", label: "About" },
 ];
 
+// These are account workspaces, not public marketing pages. They must never be
+// shown in the navigation until the learner has signed in.
+const AUTH_REQUIRED_TABS: Tab[] = ["works", "assessment", "contests"];
+
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
 
 const BLANK_CIRCUIT: Circuit = { qubits: 2, gates: [] };
@@ -83,6 +87,7 @@ export default function App() {
   const prevSub = useRef<string | null>(tokenSub(localStorage.getItem("quantum-token")));
 
   const isInstructor = user?.role === "instructor";
+  const isAuthenticated = Boolean(token && user);
 
   // Instructors have a deliberately isolated navigation surface. Their dashboard
   // contains the instructor-only tools (Overview, Circuit Builder, Visualizations
@@ -95,6 +100,7 @@ export default function App() {
     { id: "works", label: "My Works" },
   ];
   const TABS = isInstructor ? INSTRUCTOR_TABS : BASE_TABS;
+  const visibleTabs = TABS.filter((item) => isAuthenticated || !AUTH_REQUIRED_TABS.includes(item.id));
 
   const instructorSection = tab.startsWith("instructor-") ? tab.replace("instructor-", "") as "overview" | "builder" | "visualizations" | "assessments" : "overview";
 
@@ -106,6 +112,18 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("quantum-tab", tab);
   }, [tab]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [tab]);
+
+  // A stored tab from a previous authenticated session must not expose account
+  // workspaces to a signed-out visitor.
+  useEffect(() => {
+    if (!isAuthenticated && AUTH_REQUIRED_TABS.includes(tab)) {
+      setTab("home");
+    }
+  }, [isAuthenticated, tab]);
 
   // Keep the current page valid for the authenticated role. This also handles
   // stale tab state left in localStorage from a previous session.
@@ -131,6 +149,7 @@ export default function App() {
     localStorage.removeItem("quantum-user");
     setToken(null);
     setUser(null);
+    setAuthModal(null);
     setTab("home");
   }
 
@@ -144,7 +163,9 @@ export default function App() {
       setBuilderOrigin(null);
       setTutorOpen(false);
       setActiveLessonId(localStorage.getItem(lessonKeyFor(sub)) ?? "intro");
-      setTab("home");
+      // Do not force the Home tab here. AuthPage callers choose their own
+      // destination (e.g. Learning -> Learning) and this effect used to
+      // overwrite that choice immediately after a successful login.
     }
   }, [token]);
 
@@ -194,63 +215,63 @@ export default function App() {
   };
 
   const content = (
-    <div className="h-screen flex flex-col overflow-hidden">
-      <header className="border-b border-[var(--bp-border)] px-6 py-4 flex items-baseline gap-3 shrink-0">
-        <button onClick={() => setTab("home")} className="font-display text-xl font-semibold text-[var(--bp-text)]">
-          Quantum<span style={{ color: "var(--bp-cyan)" }}>Lab</span>
-        </button>
-        <p className="text-xs font-mono text-[var(--bp-text-faint)]">circuit builder · SIH 2026</p>
-        <div className="ml-auto flex items-center gap-2">
-          {token && user ? (
-            <>
-              <span className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-[var(--bp-border)] text-[10px] font-mono text-[var(--bp-text-dim)]">
-                {user.picture && <img src={user.picture} alt="" className="w-4 h-4 rounded-full" />}
-                {user.name}
-                <span className="uppercase text-[var(--bp-cyan)]">· {user.role}</span>
-              </span>
-              <button onClick={logout} className="px-3 py-1.5 rounded border border-[var(--bp-border)] text-[10px] font-mono text-[var(--bp-text-dim)] hover:text-[var(--bp-cyan)]">Sign out</button>
-            </>
-          ) : (
-            <>
-              <button onClick={() => setAuthModal("signin")} className="px-3 py-1.5 rounded border border-[var(--bp-border)] text-[10px] font-mono text-[var(--bp-text-dim)] hover:text-[var(--bp-cyan)]">Log in</button>
-              <button onClick={() => setAuthModal("signup")} className="px-3 py-1.5 rounded font-mono text-[10px] font-semibold" style={{ background: "var(--bp-cyan)", color: "#081527" }}>Sign up</button>
-            </>
-          )}
-          <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="px-3 py-1.5 rounded border border-[var(--bp-border)] text-[10px] font-mono text-[var(--bp-text-dim)] hover:text-[var(--bp-cyan)]">{theme === "dark" ? "☼ Light" : "☾ Dark"}</button>
-        </div>
-      </header>
-
-      <nav className="flex gap-1 px-6 pt-4 border-b border-[var(--bp-border)] overflow-x-auto shrink-0">
-        {TABS.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)} className="px-4 py-2 text-sm font-mono rounded-t-md border-b-2 transition-colors whitespace-nowrap" style={{ borderColor: tab === t.id ? "var(--bp-cyan)" : "transparent", color: tab === t.id ? "var(--bp-text)" : "var(--bp-text-faint)" }}>
-            {t.label}{t.id === "learn" && !token ? " · Free login" : ""}
+    <div className="min-h-screen flex flex-col">
+      <div className="sticky top-0 z-40 bg-[var(--bp-ink)]/95 backdrop-blur-sm">
+        <header className="border-b border-[var(--bp-border)] px-6 py-4 flex items-baseline gap-3 shrink-0">
+          <button onClick={() => setTab("home")} className="font-display text-xl font-semibold text-[var(--bp-text)]">
+            Quantum<span style={{ color: "var(--bp-cyan)" }}>Lab</span>
           </button>
-        ))}
-      </nav>
+          <p className="text-xs font-mono text-[var(--bp-text-faint)]">circuit builder · SIH 2026</p>
+          <div className="ml-auto flex items-center gap-2">
+            {token && user ? (
+              <>
+                <span className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-[var(--bp-border)] text-[10px] font-mono text-[var(--bp-text-dim)]">
+                  {user.picture && <img src={user.picture} alt="" className="w-4 h-4 rounded-full" />}
+                  {user.name}
+                  <span className="uppercase text-[var(--bp-cyan)]">· {user.role}</span>
+                </span>
+                <button onClick={logout} className="px-3 py-1.5 rounded border border-[var(--bp-border)] text-[10px] font-mono text-[var(--bp-text-dim)] hover:text-[var(--bp-cyan)]">Sign out</button>
+              </>
+            ) : (
+              <>
+                <button onClick={() => setAuthModal("signin")} className="px-3 py-1.5 rounded border border-[var(--bp-border)] text-[10px] font-mono text-[var(--bp-text-dim)] hover:text-[var(--bp-cyan)]">Log in</button>
+                <button onClick={() => setAuthModal("signup")} className="px-3 py-1.5 rounded font-mono text-[10px] font-semibold" style={{ background: "var(--bp-cyan)", color: "#081527" }}>Sign up</button>
+              </>
+            )}
+            <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="px-3 py-1.5 rounded border border-[var(--bp-border)] text-[10px] font-mono text-[var(--bp-text-dim)] hover:text-[var(--bp-cyan)]">{theme === "dark" ? "☼ Light" : "☾ Dark"}</button>
+          </div>
+        </header>
 
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <main className={`h-full overflow-y-auto p-6 max-w-6xl mx-auto w-full ${tab === "learn" || tab === "assessment" ? "scrollbar-hidden" : ""}`}>
-          {tab === "home" && <LandingPage onOpenBuilder={(preset?: Circuit) => { if (preset) setPresetCircuit(preset); setBuilderOrigin(null); setTab("builder"); }} onOpenCode={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} onOpenHowToUse={() => setTab("howtouse")} />}
-          {tab === "builder" && <CircuitBuilder circuit={circuit} onCircuitChange={setCircuit} presetCircuit={presetCircuit} onPresetClear={() => setPresetCircuit(null)} theme={theme} token={token} onRequireLogin={() => setTab("works")} returnLabel={builderOrigin ? LESSON_TITLES[builderOrigin] ?? builderOrigin : null} onReturn={builderOrigin ? () => setTab("learn") : undefined} />}
-          {tab === "waves" && <VisualizationPage result={latestResult} />}
-          {tab === "learn" && (token ? <LearningPage activeLessonId={activeLessonId} onLessonChange={handleLessonChange} onOpenBuilder={openBuilderFromLesson} onOpenVisualizations={() => setTab("waves")} /> : <AuthPage onAuthenticated={(auth) => { handleAuthenticated(auth); setTab("learn"); }} />)}
-          {tab === "works" && (token ? <MyWorksPage token={token} onOpenCircuit={(nextCircuit) => { setCircuit(nextCircuit); setTab("builder"); }} /> : <AuthPage onAuthenticated={(auth) => { handleAuthenticated(auth); setTab("works"); }} />)}
-          {tab === "assessment" && <AssessmentPage token={token} />}
-          {tab === "contests" && (token ? <ContestPage token={token} circuit={circuit} onOpenBuilder={() => setTab("builder")} /> : <AuthPage onAuthenticated={(auth) => { handleAuthenticated(auth); setTab("contests"); }} />)}
-          {tab === "howtouse" && <HowToUsePage onOpenLearn={() => setTab("learn")} />}
-          {tab === "about" && <AboutPage />}
-          {["instructor-overview", "instructor-builder", "instructor-visualizations", "instructor-assessments"].includes(tab) && (token && isInstructor ? (
-            <InstructorDashboard
-              token={token}
-              circuit={circuit}
-              onCircuitChange={setCircuit}
-              latestResult={latestResult}
-              theme={theme}
-              activeSubTab={instructorSection}
-            />
-          ) : <AuthPage onAuthenticated={(auth) => { handleAuthenticated(auth); setTab("instructor-overview"); }} />)}
-        </main>
+        <nav className="flex gap-1 px-6 pt-4 border-b border-[var(--bp-border)] overflow-x-auto shrink-0">
+          {visibleTabs.map((t) => (
+            <button key={t.id} onClick={() => setTab(t.id)} className="px-4 py-2 text-sm font-mono rounded-t-md border-b-2 transition-colors whitespace-nowrap" style={{ borderColor: tab === t.id ? "var(--bp-cyan)" : "transparent", color: tab === t.id ? "var(--bp-text)" : "var(--bp-text-faint)" }}>
+              {t.label}{t.id === "learn" && !isAuthenticated ? " · Free login" : ""}
+            </button>
+          ))}
+        </nav>
       </div>
+
+      <main className="flex-1 w-full overflow-x-hidden p-6 max-w-6xl mx-auto">
+        {tab === "home" && <LandingPage onOpenBuilder={(preset?: Circuit) => { if (preset) setPresetCircuit(preset); setBuilderOrigin(null); setTab("builder"); }} onOpenCode={() => setTab("builder")} onOpenVisualizations={() => setTab("waves")} onOpenHowToUse={() => setTab("howtouse")} />}
+        {tab === "builder" && <CircuitBuilder circuit={circuit} onCircuitChange={setCircuit} presetCircuit={presetCircuit} onPresetClear={() => setPresetCircuit(null)} theme={theme} token={token} onRequireLogin={() => setTab("works")} returnLabel={builderOrigin ? LESSON_TITLES[builderOrigin] ?? builderOrigin : null} onReturn={builderOrigin ? () => setTab("learn") : undefined} />}
+        {tab === "waves" && <VisualizationPage result={latestResult} />}
+        {tab === "learn" && (isAuthenticated ? <LearningPage activeLessonId={activeLessonId} onLessonChange={handleLessonChange} onOpenBuilder={openBuilderFromLesson} onOpenVisualizations={() => setTab("waves")} /> : <AuthPage onAuthenticated={(auth) => { handleAuthenticated(auth); setTab("learn"); }} />)}
+        {tab === "works" && (isAuthenticated ? <MyWorksPage token={token as string} onOpenCircuit={(nextCircuit) => { setCircuit(nextCircuit); setTab("builder"); }} /> : <AuthPage onAuthenticated={(auth) => { handleAuthenticated(auth); setTab("works"); }} />)}
+        {tab === "assessment" && (isAuthenticated ? <AssessmentPage token={token} /> : <AuthPage onAuthenticated={(auth) => { handleAuthenticated(auth); setTab("assessment"); }} />)}
+        {tab === "contests" && (isAuthenticated ? <ContestPage token={token as string} circuit={circuit} onOpenBuilder={() => setTab("builder")} /> : <AuthPage onAuthenticated={(auth) => { handleAuthenticated(auth); setTab("contests"); }} />)}
+        {tab === "howtouse" && <HowToUsePage onOpenLearn={() => setTab("learn")} />}
+        {tab === "about" && <AboutPage />}
+        {["instructor-overview", "instructor-builder", "instructor-visualizations", "instructor-assessments"].includes(tab) && (token && isInstructor ? (
+          <InstructorDashboard
+            token={token}
+            circuit={circuit}
+            onCircuitChange={setCircuit}
+            latestResult={latestResult}
+            theme={theme}
+            activeSubTab={instructorSection}
+          />
+        ) : <AuthPage onAuthenticated={(auth) => { handleAuthenticated(auth); setTab("instructor-overview"); }} />)}
+      </main>
       <QuantumTutor circuit={circuit} isOpen={tutorOpen} onToggle={setTutorOpen} />
       {authModal && <AuthModal initialMode={authModal} onAuthenticated={handleAuthenticated} onClose={() => setAuthModal(null)} />}
     </div>

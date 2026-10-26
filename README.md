@@ -109,6 +109,7 @@ npm run dev
 ## 👤 Role-based Auth, Assessments & Instructor Dashboard
 
 - **Login / Signup (top-right)**: signup is student-only (email+password, or Google) — there is no instructor signup. The single instructor account is seeded automatically on backend startup: `Quantumlab@gmail.com` / `Quantumlab` (change `INSTRUCTOR_DEFAULT_PASSWORD` in `auth.py` before a real deployment).
+- **Protected tabs**: Learning requires an account, while My Works, Assessment, and Contests are hidden from the navigation until the visitor signs in. After auth, the app returns the user to the tab they were trying to open.
 - **Instructor Dashboard** (instructor-role only) is a hub with four sub-tabs:
   - **Overview** — total sign-ups, active learners (last 7 days), cumulative average assessment score, a 14-day sign-up trend line, a score-distribution histogram, the assessment leaderboard, a per-assessment breakdown, and a real contest/XP leaderboard pulled from the gamification system. All computed live — nothing hardcoded.
   - **Circuit Builder** and **Visualizations** — the same components students use, embedded directly so instructors don't have to leave the dashboard.
@@ -197,7 +198,7 @@ Corkscrew_SIH26/
 │   │   ├── CodePanel.tsx       # Monaco-powered Qiskit Python code builder
 │   │   ├── AuthForm.tsx        # Shared role-based login/signup form (+ Google)
 │   │   ├── AuthModal.tsx       # Top-right header Login/Signup modal
-│   │   ├── AuthPage.tsx        # Full-page auth gate for Learning/My Works tabs
+│   │   ├── AuthPage.tsx        # Full-page auth gate for Learning/My Works/Assessment/Contests
 │   │   ├── InstructorDashboard.tsx # Instructor hub: overview + builder + visualizations + assessments
 │   │   ├── InstructorAssessments.tsx # Create/edit assessments, one-by-one or via PDF upload
 │   │   ├── MiniCharts.tsx      # Dependency-free SVG bar/line charts for the dashboard

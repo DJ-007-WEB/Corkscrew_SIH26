@@ -82,7 +82,7 @@ export default function HowToUsePage({ onOpenLearn }: { onOpenLearn?: () => void
             ["Backend down", "If Run or the tutor says the service is unreachable, make sure the FastAPI backend is running on http://localhost:8000 and VITE_API_URL matches it."],
             ["Invalid circuit", "If validation rejects a circuit, check CNOT has one control and one target on different qubits, and every qubit index is below the qubit count."],
             ["Empty visualizations", "The Visualizations tab shows “Run a circuit first” until you press Run in Circuit Builder — results flow there automatically."],
-            ["Login gate", "Learning and My Works require Google sign-in. If you land on Auth, sign in and you return to your tab."],
+            ["Login gate", "Learning, My Works, Assessment, and Contests require an account. My Works, Assessment, and Contests stay hidden from the navigation until you sign in; if you open a protected page, sign in and you return to it."],
             ["Tutor modes", "Replies labeled grounded use live Qiskit numbers from your circuit; conceptual replies cover theory with no circuit attached."],
           ].map(([label, text]) => (
             <div key={label} className="flex gap-3 p-3 border border-[var(--bp-border)] bg-[var(--bp-ink)]/30">

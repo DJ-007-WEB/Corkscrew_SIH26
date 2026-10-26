@@ -11,6 +11,10 @@ def clear_ai_keys(monkeypatch):
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.delenv("NVIDIA_API_KEY", raising=False)
+    # Production deliberately has no hardcoded model. Tests that mock a
+    # successful OpenRouter response still need one configured, so keep the
+    # suite independent of the developer's shell environment.
+    monkeypatch.setenv("OPENROUTER_MODEL", "test/model")
 
 
 def test_grounded_question_uses_qiskit_tools(monkeypatch):
@@ -73,6 +77,45 @@ def test_gates_fallback(monkeypatch):
     assert response.mode == "grounded"
     assert "gate sequence" in response.answer
     assert "X(q0)" in response.answer
+
+
+def test_grounded_fallback_is_full_structured_markdown(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    response = answer(ChatRequest(
+        message="Explain this Bell circuit.",
+        circuit=Circuit(
+            qubits=2,
+            gates=[Gate(type="H", targets=[0]), Gate(type="CNOT", controls=[0], targets=[1])],
+        ),
+    ))
+    assert response.provider == "local-fallback"
+    assert response.mode == "grounded"
+    assert "### 🔗 Bell State Analysis" in response.answer
+    assert "### 📊 Verified Measurement Outcomes" in response.answer
+    assert "### 🔗 Gate Sequence" in response.answer
+    assert "| Basis state | Probability |" in response.answer
+    # Kets inside tables must use the HTML pipe entity so GFM keeps the cells intact.
+    assert "| &#124;00⟩ | 50.00% |" in response.answer
+    assert "| &#124;11⟩ | 50.00% |" in response.answer
+    assert response.answer.count("This circuit creates a Bell state.") == 1
+
+
+def test_conceptual_fallback_is_full_markdown(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    response = answer(ChatRequest(message="What is superposition?", circuit=None))
+    assert response.provider == "local-fallback"
+    assert response.mode == "conceptual"
+    assert response.answer.count("### ") >= 3
+    assert "|ψ⟩ = α|0⟩ + β|1⟩" in response.answer
+    assert "Common Misconception" in response.answer
+
+
+def test_plain_concept_request_gets_full_answer(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    response = answer(ChatRequest(message="Explain superposition.", circuit=None))
+    assert response.provider == "local-fallback"
+    assert "### 🌊 Superposition, Explained" in response.answer
+    assert "Common Misconception" in response.answer
 
 
 def test_general_qsphere_concept(monkeypatch):
