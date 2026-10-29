@@ -18,25 +18,25 @@ An interactive, Qiskit-grounded quantum computing simulator, 3D visualization su
 
 ---
 
-## 🧠 Quantum Tutor Architecture
+## 🧠 Quantum Tutor Architecture (Hybrid Qiskit + RAG)
 
 ```
 Student Question + Active Circuit
-        ↓
-FastAPI Intent & Focus Router
-        ↓
-Qiskit Aer + quantum_info Tools
-  (Computes: statevector, probabilities, timeline, Bloch vectors, Q-Sphere phases)
-        ↓
-Immutable "CIRCUIT VERIFIED FACTS" Block
-        ↓
-OpenRouter / Google Gemini (primary)
-        ↓ (timeout / error / unconfigured)
-NVIDIA NIM — GLM-5.3-Flash (fallback)
-        ↓ (all unavailable)
-Deterministic local tutor
-        ↓
-Student-friendly, mathematically accurate AI response in Floating Drawer
+        │
+        ├─► 1. Qiskit Aer + quantum_info Tools
+        │      (Computes: statevector, probabilities, timeline, Bloch vectors, Q-Sphere phases)
+        │      → Immutable "CIRCUIT VERIFIED FACTS" Block
+        │
+        └─► 2. Curriculum RAG Indexer & Retriever
+               (Indexes: 7 curated modules, subtopics, analogies, formulas, misconceptions)
+               → Grounded "CURRICULUM CONTEXT" Block
+                           │
+                           ▼
+              OpenRouter / Google Gemini (primary)
+                           ↓ (timeout / error / unconfigured)
+              Deterministic local tutor (fallback)
+                           ▼
+   Pedagogical response with 📖 Syllabus Grounding citations in Floating Drawer
 ```
 
 ---
@@ -172,6 +172,7 @@ Corkscrew_SIH26/
 │   │   ├── circuit_builder.py  # Qiskit code parsing & circuit IR validation
 │   │   ├── quantum_engine.py   # Qiskit Aer simulation engine
 │   │   ├── quantum_tools.py    # Deterministic Qiskit factual extraction tools
+│   │   ├── rag/                # Curriculum RAG indexer, BM25 retriever & syllabus grounding
 │   │   ├── tutor_service.py    # Grounding prompt builder, Gemini API, offline fallbacks
 │   │   ├── tutor_store.py      # Conversation turn persistence & learning signals
 │   │   ├── auth.py             # Google OAuth, password auth, JWT, seeded instructor account
@@ -179,6 +180,7 @@ Corkscrew_SIH26/
 │   │   ├── schemas.py          # Shared Pydantic data models & contracts
 │   │   └── main.py             # FastAPI routing & rate limiting
 │   ├── tests/
+│   │   ├── test_rag.py         # Unit tests for curriculum RAG indexing and retrieval
 │   │   └── test_tutor.py       # Automated unit tests for Quantum Tutor
 │   ├── .env.example            # Environment configuration template
 │   ├── requirements.txt        # Backend dependencies

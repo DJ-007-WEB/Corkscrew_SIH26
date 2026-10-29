@@ -48,6 +48,7 @@ export default function QuantumTutor({ circuit, isOpen, onToggle }: Props) {
             const updated = [...prev];
             if (updated.length > 0) {
               updated[updated.length - 1] = {
+                ...updated[updated.length - 1],
                 role: "assistant",
                 content: accumulatedAnswer,
               };
@@ -59,13 +60,25 @@ export default function QuantumTutor({ circuit, isOpen, onToggle }: Props) {
           if (meta.recommendation) {
             setRecommendation(meta.recommendation);
           }
+          if (meta.sources && meta.sources.length > 0) {
+            setMessages((prev) => {
+              const updated = [...prev];
+              if (updated.length > 0) {
+                updated[updated.length - 1] = {
+                  ...updated[updated.length - 1],
+                  sources: meta.sources,
+                };
+              }
+              return updated;
+            });
+          }
         }
       );
     } catch {
       // If streaming fails, fallback gracefully to standard REST endpoint
       try {
         const response = await askTutor(question, circuit, messages, conversationId, focus);
-        setMessages([...historyWithUser, { role: "assistant", content: response.answer }]);
+        setMessages([...historyWithUser, { role: "assistant", content: response.answer, sources: response.sources }]);
         setRecommendation(response.recommendation ?? null);
       } catch {
         setMessages([
@@ -112,7 +125,11 @@ export default function QuantumTutor({ circuit, isOpen, onToggle }: Props) {
               <div className="flex items-center gap-2">
                 <span className="text-base">⚡</span>
                 <div>
-                  <div className="flex items-center gap-2"><p className="font-mono text-sm font-semibold text-[var(--bp-cyan)]">Quantum Tutor</p><span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[var(--bp-mint)]/15 text-[var(--bp-mint)] border border-[var(--bp-mint)]/30">Qiskit Verified</span></div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-mono text-sm font-semibold text-[var(--bp-cyan)]">Quantum Tutor</p>
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[var(--bp-mint)]/15 text-[var(--bp-mint)] border border-[var(--bp-mint)]/30">Qiskit Verified</span>
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[var(--bp-cyan)]/15 text-[var(--bp-cyan)] border border-[var(--bp-cyan)]/30">RAG Grounded</span>
+                  </div>
                   <p className="text-[10px] text-[var(--bp-text-faint)]">Circuit context: {circuit.qubits} qubit{circuit.qubits > 1 ? "s" : ""} · {circuit.gates.length} gate{circuit.gates.length !== 1 ? "s" : ""}</p>
                 </div>
               </div>
@@ -174,6 +191,25 @@ export default function QuantumTutor({ circuit, isOpen, onToggle }: Props) {
                       >
                         {message.content}
                       </ReactMarkdown>
+                      {message.sources && message.sources.length > 0 && (
+                        <div className="pt-2 mt-2 border-t border-[var(--bp-border)]/60 flex flex-col gap-1.5">
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--bp-text-faint)] flex items-center gap-1">
+                            <span>📖</span> Syllabus Grounding (RAG):
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {message.sources.map((src, sIdx) => (
+                              <div
+                                key={sIdx}
+                                className="group relative inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-[var(--bp-panel)] hover:bg-[var(--bp-cyan-dim)] text-[var(--bp-cyan)] border border-[var(--bp-border)] hover:border-[var(--bp-cyan)]/40 transition-colors cursor-help"
+                                title={src.snippet}
+                              >
+                                <span>Module {src.subtopic_id}:</span>
+                                <span className="text-[var(--bp-text)] group-hover:text-[var(--bp-cyan)] truncate max-w-[190px]">{src.concept}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : null}
                 </div>

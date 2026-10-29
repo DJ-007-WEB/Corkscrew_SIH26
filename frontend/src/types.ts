@@ -83,9 +83,19 @@ export interface SimulationResult {
   backend: string;
 }
 
+export interface CurriculumSource {
+  module_title: string;
+  subtopic_id: string;
+  concept: string;
+  concept_id?: string | null;
+  snippet: string;
+  score: number;
+}
+
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  sources?: CurriculumSource[];
 }
 
 export interface GroundedFact {
@@ -236,6 +246,7 @@ export interface TutorResponse {
   mode: "grounded" | "conceptual";
   tools_used: string[];
   facts: GroundedFact[];
+  sources?: CurriculumSource[];
   provider: string;
   recommendation?: string | null;
 }

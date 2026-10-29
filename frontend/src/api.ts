@@ -15,6 +15,7 @@ import type {
   Circuit,
   CircuitDiagnosis,
   CodeRequest,
+  CurriculumSource,
   DuelState,
   GateDefinition,
   InstructorDashboard,
@@ -114,7 +115,7 @@ export async function askTutorStream(
   conversationId: string,
   focus: string | undefined,
   onToken: (token: string) => void,
-  onMeta?: (meta: { mode: string; tools_used: string[]; recommendation?: string | null }) => void
+  onMeta?: (meta: { mode: string; tools_used: string[]; sources?: CurriculumSource[]; recommendation?: string | null }) => void
 ): Promise<void> {
   const response = await fetch(`${API_BASE}/api/tutor/stream`, {
     method: "POST",

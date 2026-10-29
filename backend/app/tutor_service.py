@@ -16,7 +16,8 @@ from dotenv import load_dotenv
 
 from .circuit_builder import validate_circuit
 from .quantum_tools import circuit_facts
-from .schemas import ChatRequest, ChatResponse, Circuit, Gate, GroundedFact
+from .rag import retrieve_curriculum
+from .schemas import ChatRequest, ChatResponse, Circuit, CurriculumSource, Gate, GroundedFact
 from .tutor_store import recommendation, save_turn
 
 load_dotenv()
@@ -48,7 +49,10 @@ FORMATTING & STYLE RULES:
    - When a 'CIRCUIT VERIFIED FACTS' block is provided, explain why those exact measurement probabilities, Bloch vectors, and Q-Sphere phases follow mathematically and physically from the gates in the circuit.
    - If the user asks about an advanced protocol (like teleportation or Grover) but the current circuit is empty or in an initial state |00>, clearly explain both how the protocol works and note that the current simulator circuit is at step 0 / initial state ready for gates to be added.
 4. FULL, INVITING & POLISHED:
-   - Always deliver a complete, friendly, structured explanation from start to finish."""
+   - Always deliver a complete, friendly, structured explanation from start to finish.
+5. SYLLABUS & CURRICULUM GROUNDING (RAG):
+   - When a 'CURRICULUM CONTEXT' block is provided from the Corkscrew curriculum, ground your explanation in its concepts, analogies, and formal notations.
+   - Mention the relevant course module/subtopic when helpful so learners can connect the concept directly to their course progression."""
 
 
 
@@ -120,7 +124,21 @@ def answer(request: ChatRequest) -> ChatResponse:
         tools_used, facts = circuit_facts(request.circuit, _mentioned_qubit(request.message))
         sim_time = time.perf_counter() - sim_start
 
-    prompt = _build_prompt(request, facts)
+    # RAG: Retrieve relevant syllabus concepts to ground conceptual tutoring
+    retrieved = retrieve_curriculum(request.message, focus=request.focus, circuit=request.circuit)
+    curriculum_sources = [
+        CurriculumSource(
+            module_title=s.module_title,
+            subtopic_id=s.subtopic_id,
+            concept=s.concept,
+            concept_id=s.concept_id,
+            snippet=s.snippet,
+            score=s.score,
+        )
+        for s in retrieved
+    ]
+
+    prompt = _build_prompt(request, facts, curriculum_sources)
     
     # 1. Try OpenRouter first if configured
     llm_answer, model_name, usage, llm_time = _openrouter_answer(prompt)
@@ -161,6 +179,7 @@ def answer(request: ChatRequest) -> ChatResponse:
             mode="grounded" if grounded else "conceptual",
             tools_used=tools_used,
             facts=facts,
+            sources=curriculum_sources,
             provider=provider_used,
             recommendation=recommendation(request.message, tools_used),
         )
@@ -172,6 +191,7 @@ def answer(request: ChatRequest) -> ChatResponse:
         mode="grounded" if grounded else "conceptual",
         tools_used=tools_used,
         facts=facts,
+        sources=curriculum_sources,
         provider="local-fallback",
         recommendation=recommendation(request.message, tools_used),
     )
@@ -228,6 +248,20 @@ def stream_answer(request: ChatRequest):
         except Exception as exc:
             logger.warning("Circuit pre-computation error in streaming: %s", exc)
 
+    # RAG: Retrieve relevant syllabus concepts to ground conceptual tutoring
+    retrieved = retrieve_curriculum(request.message, focus=request.focus, circuit=request.circuit)
+    curriculum_sources = [
+        CurriculumSource(
+            module_title=s.module_title,
+            subtopic_id=s.subtopic_id,
+            concept=s.concept,
+            concept_id=s.concept_id,
+            snippet=s.snippet,
+            score=s.score,
+        )
+        for s in retrieved
+    ]
+
     rec = recommendation(request.message, tools_used)
 
     # Initial metadata chunk
@@ -236,11 +270,12 @@ def stream_answer(request: ChatRequest):
         "mode": "grounded" if grounded else "conceptual",
         "tools_used": tools_used,
         "facts": [f.model_dump() if hasattr(f, "model_dump") else f.__dict__ for f in facts],
+        "sources": [s.model_dump() if hasattr(s, "model_dump") else s.__dict__ for s in curriculum_sources],
         "recommendation": rec,
     }
     yield f"data: {json.dumps(init_meta)}\n\n"
 
-    prompt = _build_prompt(request, facts)
+    prompt = _build_prompt(request, facts, curriculum_sources)
     full_text: list[str] = []
 
     # 1. Try streaming from OpenRouter
@@ -359,10 +394,27 @@ def _mentioned_qubit(message: str) -> int | None:
     return int(match.group(1)) if match else None
 
 
-def _build_prompt(request: ChatRequest, facts: list[GroundedFact]) -> str:
+def _build_prompt(
+    request: ChatRequest,
+    facts: list[GroundedFact],
+    sources: list[CurriculumSource] | None = None,
+) -> str:
     history = "\n".join(f"{item.role}: {item.content}" for item in request.history[-6:])
     verified = "\n".join(f"- {fact.name}: {fact.value}" for fact in facts) or "(No circuit facts: this is a theory or general visualization question.)"
-    return f"{history}\nuser: {request.message}\n\nCIRCUIT VERIFIED FACTS:\n{verified}"
+
+    if sources:
+        curriculum_text = "\n\n".join(
+            f"[{s.module_title} — Subtopic {s.subtopic_id}: {s.concept}]\n{s.snippet}"
+            for s in sources
+        )
+    else:
+        curriculum_text = "(No specific curriculum module retrieved.)"
+
+    return (
+        f"{history}\nuser: {request.message}\n\n"
+        f"CURRICULUM CONTEXT (from Corkscrew Course Syllabus):\n{curriculum_text}\n\n"
+        f"CIRCUIT VERIFIED FACTS:\n{verified}"
+    )
 
 
 logger = logging.getLogger("quantum_tutor")

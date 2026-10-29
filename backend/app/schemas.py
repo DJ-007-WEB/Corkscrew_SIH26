@@ -120,11 +120,21 @@ class GroundedFact(BaseModel):
     value: str
 
 
+class CurriculumSource(BaseModel):
+    module_title: str
+    subtopic_id: str
+    concept: str
+    concept_id: Optional[str] = None
+    snippet: str
+    score: float = 0.0
+
+
 class ChatResponse(BaseModel):
     answer: str
     mode: Literal["grounded", "conceptual"]
     tools_used: list[str] = Field(default_factory=list)
     facts: list[GroundedFact] = Field(default_factory=list)
+    sources: list[CurriculumSource] = Field(default_factory=list)
     provider: str
     recommendation: Optional[str] = None
 
